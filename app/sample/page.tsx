@@ -1,5 +1,11 @@
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function SamplePage() {
   return (
@@ -11,24 +17,33 @@ export default function SamplePage() {
         </p>
       </div>
 
-      <Card
-        title="Empty Workspace"
-        description="Get started by editing this page or adding customized widgets here."
-      >
-        <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-zinc-200 rounded-xl dark:border-zinc-800">
-          <div className="h-12 w-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
-            <span className="text-xl">✨</span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Empty Workspace</CardTitle>
+          <CardDescription>
+            Get started by editing this page or adding customized widgets here.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-zinc-200 rounded-xl dark:border-zinc-800">
+            <div className="h-12 w-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
+              <span className="text-xl">✨</span>
+            </div>
+
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+              No items found
+            </h3>
+
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs">
+              Start by creating a new data project or configuring the integration parameters.
+            </p>
+
+            <Button variant="default" className="mt-6">
+              Get Started
+            </Button>
           </div>
-          <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
-            No items found
-          </h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs">
-            Start by creating a new data project or configuring the integration parameters.
-          </p>
-          <Button variant="primary" className="mt-6">
-            Get Started
-          </Button>
-        </div>
+        </CardContent>
       </Card>
     </div>
   );
