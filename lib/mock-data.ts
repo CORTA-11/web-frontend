@@ -2,6 +2,7 @@
 
 export type User = {
   id: string;
+  orgId: string;
   name: string;
   email: string;
   avatarUrl: string;
@@ -44,9 +45,9 @@ export type ResourceBooking = {
 };
 
 export const mockUsers: User[] = [
-  { id: "u1", name: "Kamsan Perera", email: "kamsan@corta.dev", avatarUrl: "/avatars/u1.png", role: "admin" },
-  { id: "u2", name: "Nadia Silva", email: "nadia@corta.dev", avatarUrl: "/avatars/u2.png", role: "member" },
-  { id: "u3", name: "Ruwan Fernando", email: "ruwan@corta.dev", avatarUrl: "/avatars/u3.png", role: "member" },
+  { id: "u1", orgId: "1", name: "Sangeeth Perera", email: "sangeeth@corta.dev", avatarUrl: "/avatars/u1.png", role: "admin" },
+  { id: "u2", orgId: "1", name: "Nipun Silva", email: "nipun@corta.dev", avatarUrl: "/avatars/u2.png", role: "member" },
+  { id: "u3", orgId: "1", name: "Ruwan Fernando", email: "ruwan@corta.dev", avatarUrl: "/avatars/u3.png", role: "member" },
 ];
 
 export const mockColumns: Column[] = [
