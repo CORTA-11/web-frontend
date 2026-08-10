@@ -1,20 +1,23 @@
+import type { ApiResponse } from "@/lib/api/client";
+import { getAccessToken, setAccessToken } from "@/lib/api/token";
+import { mockDelay } from "@/lib/mock/delay";
+import {
+  clearMockSession,
+  issueMockToken,
+  loadMockSessionUserId,
+  saveMockSession,
+  userIdFromMockToken,
+} from "@/lib/mock/session";
+import {
+  MOCK_ORG_ID,
+  MOCK_ORG_PUBLIC_ID,
+  addMockAccount,
+  findAccountByEmail,
+  findAccountById,
+  toUser,
+  type MockAccount,
+} from "@/lib/mock/users";
 import type { User } from "@/lib/types/user";
-import { apiFetch, type ApiResponse } from "@/lib/api/client";
-import { setAccessToken } from "@/lib/api/token";
-
-type BackendAuthUser = {
-  id: number;
-  org_id: number;
-  email: string;
-  name: string;
-  org_role: string;
-  avatar_url?: string;
-};
-
-type BackendAuthResponse = {
-  access_token: string;
-  user: BackendAuthUser;
-};
 
 export type AuthPayload = {
   accessToken: string;
@@ -23,22 +26,11 @@ export type AuthPayload = {
 
 export type RegisterMode = "create_org" | "join_org";
 
-function mapUser(user: BackendAuthUser): User {
-  return {
-    id: String(user.id),
-    orgId: String(user.org_id),
-    name: user.name,
-    email: user.email,
-    avatarUrl: user.avatar_url ?? "",
-    role: user.org_role === "ORG_ADMIN" ? "admin" : "member",
-  };
-}
-
-function toPayload(data: BackendAuthResponse): AuthPayload {
-  return {
-    accessToken: data.access_token,
-    user: mapUser(data.user),
-  };
+function sessionPayload(account: MockAccount): AuthPayload {
+  const accessToken = issueMockToken(account.id);
+  setAccessToken(accessToken);
+  saveMockSession(account.id);
+  return { accessToken, user: toUser(account) };
 }
 
 export const authApi = {
@@ -46,25 +38,18 @@ export const authApi = {
     email: string;
     password: string;
   }): Promise<ApiResponse<AuthPayload>> => {
+    await mockDelay();
     const email = input.email.trim();
     const password = input.password;
     if (!email || !password) {
       return { success: false, error: "Email and password are required." };
     }
 
-    const result = await apiFetch<BackendAuthResponse>(
-      "/auth/login",
-      {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      },
-      { auth: false }
-    );
-    if (!result.success) return result;
-
-    const payload = toPayload(result.data);
-    setAccessToken(payload.accessToken);
-    return { success: true, data: payload };
+    const account = findAccountByEmail(email);
+    if (!account || account.password !== password) {
+      return { success: false, error: "Invalid email or password." };
+    }
+    return { success: true, data: sessionPayload(account) };
   },
 
   register: async (input: {
@@ -75,6 +60,7 @@ export const authApi = {
     orgName?: string;
     orgPublicId?: string;
   }): Promise<ApiResponse<AuthPayload>> => {
+    await mockDelay();
     const name = input.name.trim();
     const email = input.email.trim();
     const password = input.password;
@@ -93,42 +79,44 @@ export const authApi = {
     if (input.mode === "join_org" && !orgPublicId) {
       return { success: false, error: "Organization ID is required." };
     }
+    if (findAccountByEmail(email)) {
+      return { success: false, error: "Email is already registered." };
+    }
+    if (
+      input.mode === "join_org" &&
+      orgPublicId !== MOCK_ORG_PUBLIC_ID
+    ) {
+      return { success: false, error: "Organization not found." };
+    }
 
-    const result = await apiFetch<BackendAuthResponse>(
-      "/auth/register",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          mode: input.mode,
-          name,
-          email,
-          password,
-          org_name: orgName || undefined,
-          org_public_id: orgPublicId || undefined,
-        }),
-      },
-      { auth: false }
-    );
-    if (!result.success) return result;
-
-    const payload = toPayload(result.data);
-    setAccessToken(payload.accessToken);
-    return { success: true, data: payload };
+    const account: MockAccount = {
+      id: String(Date.now()),
+      orgId: MOCK_ORG_ID,
+      name,
+      email,
+      avatarUrl: "",
+      role: input.mode === "create_org" ? "admin" : "member",
+      password,
+    };
+    addMockAccount(account);
+    return { success: true, data: sessionPayload(account) };
   },
 
   logout: async (): Promise<ApiResponse<null>> => {
-    await apiFetch<null>(
-      "/auth/logout",
-      { method: "POST", body: "{}" },
-      { auth: false, retry: false }
-    );
+    await mockDelay(100);
+    clearMockSession();
     setAccessToken(null);
     return { success: true, data: null };
   },
 
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    const result = await apiFetch<BackendAuthUser>("/me");
-    if (!result.success) return result;
-    return { success: true, data: mapUser(result.data) };
+    await mockDelay(100);
+    const userId =
+      userIdFromMockToken(getAccessToken()) ?? loadMockSessionUserId();
+    const account = userId ? findAccountById(userId) : undefined;
+    if (!account) {
+      return { success: false, error: "Unauthorized" };
+    }
+    return { success: true, data: toUser(account) };
   },
 };

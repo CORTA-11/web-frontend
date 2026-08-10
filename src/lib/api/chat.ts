@@ -1,55 +1,20 @@
-import { apiFetch, type ApiResponse } from "@/lib/api/client";
+import type { ApiResponse } from "@/lib/api/client";
+import { getAccessToken } from "@/lib/api/token";
+import { channelIdFor, mockMessages } from "@/lib/mock/chat";
+import { mockDelay } from "@/lib/mock/delay";
+import {
+  loadMockSessionUserId,
+  userIdFromMockToken,
+} from "@/lib/mock/session";
+import { findAccountById } from "@/lib/mock/users";
+import type { ChatMessage } from "@/lib/types/chat";
 
-export type ChatSender = {
-  id: number;
-  name: string;
-  avatarUrl?: string;
-};
+export type { ChatMessage, ChatSender } from "@/lib/types/chat";
 
-export type ChatMessage = {
-  id: string;
-  channelId: string;
-  sender: ChatSender;
-  replyToId?: string;
-  message: string;
-  createdAt: string;
-  deletedAt?: string;
-};
-
-type BackendSender = {
-  id: number;
-  name: string;
-  avatar_url?: string;
-};
-
-type BackendMessage = {
-  id: string;
-  channel_id: string;
-  sender: BackendSender;
-  reply_to_id?: string;
-  message: string;
-  created_at: string;
-  deleted_at?: string;
-};
-
-type BackendList = {
-  messages: BackendMessage[];
-};
-
-function mapMessage(msg: BackendMessage): ChatMessage {
-  return {
-    id: msg.id,
-    channelId: msg.channel_id,
-    sender: {
-      id: msg.sender.id,
-      name: msg.sender.name,
-      avatarUrl: msg.sender.avatar_url,
-    },
-    replyToId: msg.reply_to_id,
-    message: msg.message,
-    createdAt: msg.created_at,
-    deletedAt: msg.deleted_at,
-  };
+function currentAccount() {
+  const userId =
+    userIdFromMockToken(getAccessToken()) ?? loadMockSessionUserId();
+  return userId ? findAccountById(userId) : undefined;
 }
 
 export const chatApi = {
@@ -57,49 +22,67 @@ export const chatApi = {
     teamPublicId: string,
     opts?: { limit?: number; before?: string }
   ): Promise<ApiResponse<ChatMessage[]>> => {
-    const params = new URLSearchParams();
-    if (opts?.limit) params.set("limit", String(opts.limit));
-    if (opts?.before) params.set("before", opts.before);
-    const qs = params.toString();
-    const path = `/teams/${teamPublicId}/chat/messages${qs ? `?${qs}` : ""}`;
-    const result = await apiFetch<BackendList>(path);
-    if (!result.success) return result;
-    return { success: true, data: result.data.messages.map(mapMessage) };
+    await mockDelay();
+    const channelId = channelIdFor(teamPublicId);
+    let list = mockMessages
+      .filter((m) => m.channelId === channelId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+    if (opts?.before) {
+      const pivot = list.find((m) => m.id === opts.before);
+      if (pivot) {
+        list = list.filter((m) => m.createdAt < pivot.createdAt);
+      }
+    }
+
+    const limit = opts?.limit ?? 50;
+    const slice = list.slice(-limit);
+    return { success: true, data: slice.map((m) => ({ ...m })) };
   },
 
   send: async (
     teamPublicId: string,
     input: { message: string; replyToId?: string }
   ): Promise<ApiResponse<ChatMessage>> => {
-    const result = await apiFetch<BackendMessage>(
-      `/teams/${teamPublicId}/chat/messages`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          message: input.message,
-          reply_to_id: input.replyToId,
-        }),
-      }
-    );
-    if (!result.success) return result;
-    return { success: true, data: mapMessage(result.data) };
+    await mockDelay();
+    const account = currentAccount();
+    if (!account) return { success: false, error: "Unauthorized" };
+    const text = input.message.trim();
+    if (!text) return { success: false, error: "Message is required." };
+
+    const msg: ChatMessage = {
+      id: crypto.randomUUID(),
+      channelId: channelIdFor(teamPublicId),
+      sender: {
+        id: Number(account.id),
+        name: account.name,
+        avatarUrl: account.avatarUrl || undefined,
+      },
+      replyToId: input.replyToId,
+      message: text,
+      createdAt: new Date().toISOString(),
+    };
+    mockMessages.push(msg);
+    return { success: true, data: { ...msg } };
   },
 
   remove: async (
     teamPublicId: string,
     messageId: string
   ): Promise<ApiResponse<{ id: string; deletedAt?: string }>> => {
-    const result = await apiFetch<{
-      id: string;
-      channel_id: string;
-      deleted_at?: string;
-    }>(`/teams/${teamPublicId}/chat/messages/${messageId}`, {
-      method: "DELETE",
-    });
-    if (!result.success) return result;
-    return {
-      success: true,
-      data: { id: result.data.id, deletedAt: result.data.deleted_at },
+    await mockDelay(150);
+    const channelId = channelIdFor(teamPublicId);
+    const idx = mockMessages.findIndex(
+      (m) => m.id === messageId && m.channelId === channelId
+    );
+    if (idx < 0) return { success: false, error: "Message not found." };
+
+    const deletedAt = new Date().toISOString();
+    mockMessages[idx] = {
+      ...mockMessages[idx],
+      message: "",
+      deletedAt,
     };
+    return { success: true, data: { id: messageId, deletedAt } };
   },
 };

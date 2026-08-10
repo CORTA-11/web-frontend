@@ -1,177 +1,158 @@
-import { apiFetch, type ApiResponse } from "@/lib/api/client";
+import type { ApiResponse } from "@/lib/api/client";
+import { getAccessToken } from "@/lib/api/token";
+import { mockDelay } from "@/lib/mock/delay";
+import {
+  loadMockSessionUserId,
+  userIdFromMockToken,
+} from "@/lib/mock/session";
+import {
+  membersFor,
+  mockTeams,
+  orgUsersFor,
+  teamWithRole,
+  type MockTeamRecord,
+} from "@/lib/mock/teams";
+import { findAccountById } from "@/lib/mock/users";
+import type { OrgUser, Team, TeamMember } from "@/lib/types/team";
 
-export type Team = {
-  id: string;
-  publicId: string;
-  orgId: string;
-  name: string;
-  description?: string;
-  myRole?: "TEAM_LEADER" | "CONTRIBUTOR" | string | null;
-  createdAt: string;
-};
+export type { OrgUser, Team, TeamMember };
 
-export type TeamMember = {
-  userId: number;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-  role: "TEAM_LEADER" | "CONTRIBUTOR" | string;
-  joinedAt: string;
-};
-
-export type OrgUser = {
-  id: number;
-  email: string;
-  name: string;
-  orgRole: string;
-  avatarUrl?: string;
-};
-
-type BackendTeam = {
-  id: string;
-  public_id: string;
-  org_id: number;
-  name: string;
-  description?: string;
-  my_role?: string | null;
-  created_at: string;
-};
-
-type BackendMember = {
-  user_id: number;
-  name: string;
-  email: string;
-  avatar_url?: string;
-  role: string;
-  joined_at: string;
-};
-
-type BackendOrgUser = {
-  id: number;
-  email: string;
-  name: string;
-  org_role: string;
-  avatar_url?: string;
-};
-
-function mapTeam(team: BackendTeam): Team {
-  return {
-    id: team.public_id,
-    publicId: team.public_id,
-    orgId: String(team.org_id),
-    name: team.name,
-    description: team.description,
-    myRole: team.my_role ?? null,
-    createdAt: team.created_at,
-  };
+function currentUserId(): string | null {
+  return userIdFromMockToken(getAccessToken()) ?? loadMockSessionUserId();
 }
 
-function mapMember(m: BackendMember): TeamMember {
-  return {
-    userId: m.user_id,
-    name: m.name,
-    email: m.email,
-    avatarUrl: m.avatar_url,
-    role: m.role,
-    joinedAt: m.joined_at,
-  };
-}
-
-function mapOrgUser(u: BackendOrgUser): OrgUser {
-  return {
-    id: u.id,
-    email: u.email,
-    name: u.name,
-    orgRole: u.org_role,
-    avatarUrl: u.avatar_url,
-  };
+function findTeam(teamPublicId: string): MockTeamRecord | undefined {
+  return mockTeams.find((t) => t.publicId === teamPublicId);
 }
 
 export const teamsApi = {
   list: async (orgId: string): Promise<ApiResponse<Team[]>> => {
-    const result = await apiFetch<BackendTeam[]>(`/orgs/${orgId}/teams`);
-    if (!result.success) return result;
-    return { success: true, data: result.data.map(mapTeam) };
+    await mockDelay();
+    const userId = currentUserId();
+    const account = userId ? findAccountById(userId) : undefined;
+    const inOrg = mockTeams.filter((t) => t.orgId === orgId);
+
+    if (account?.role === "admin") {
+      return {
+        success: true,
+        data: inOrg.map((t) => teamWithRole(t, userId)),
+      };
+    }
+
+    return {
+      success: true,
+      data: inOrg
+        .filter((t) => userId && t.memberUserIds.includes(userId))
+        .map((t) => teamWithRole(t, userId)),
+    };
   },
 
   get: async (teamPublicId: string): Promise<ApiResponse<Team>> => {
-    const result = await apiFetch<BackendTeam>(`/teams/${teamPublicId}`);
-    if (!result.success) return result;
-    return { success: true, data: mapTeam(result.data) };
+    await mockDelay();
+    const team = findTeam(teamPublicId);
+    if (!team) return { success: false, error: "Team not found." };
+    return { success: true, data: teamWithRole(team, currentUserId()) };
   },
 
   create: async (
     orgId: string,
     input: { name: string; description?: string; leaderUserId?: number }
   ): Promise<ApiResponse<Team>> => {
-    const result = await apiFetch<BackendTeam>(`/orgs/${orgId}/teams`, {
-      method: "POST",
-      body: JSON.stringify({
-        name: input.name,
-        description: input.description,
-        leader_user_id: input.leaderUserId,
-      }),
-    });
-    if (!result.success) return result;
-    return { success: true, data: mapTeam(result.data) };
+    await mockDelay();
+    const name = input.name.trim();
+    if (!name) return { success: false, error: "Team name is required." };
+
+    const leaderId = input.leaderUserId
+      ? String(input.leaderUserId)
+      : null;
+    const publicId = `team-${crypto.randomUUID().slice(0, 8)}`;
+    const record: MockTeamRecord = {
+      id: publicId,
+      publicId,
+      orgId,
+      name,
+      description: input.description,
+      myRole: null,
+      createdAt: new Date().toISOString(),
+      memberUserIds: leaderId ? [leaderId] : [],
+      leaderUserId: leaderId,
+    };
+    mockTeams.push(record);
+    return { success: true, data: teamWithRole(record, currentUserId()) };
   },
 
   listMembers: async (
     teamPublicId: string
   ): Promise<ApiResponse<TeamMember[]>> => {
-    const result = await apiFetch<BackendMember[]>(
-      `/teams/${teamPublicId}/members`
-    );
-    if (!result.success) return result;
-    return { success: true, data: result.data.map(mapMember) };
+    await mockDelay();
+    const team = findTeam(teamPublicId);
+    if (!team) return { success: false, error: "Team not found." };
+    return { success: true, data: membersFor(team) };
   },
 
   addMember: async (
     teamPublicId: string,
     userId: number
   ): Promise<ApiResponse<TeamMember>> => {
-    const result = await apiFetch<BackendMember>(
-      `/teams/${teamPublicId}/members`,
-      {
-        method: "POST",
-        body: JSON.stringify({ user_id: userId }),
-      }
-    );
-    if (!result.success) return result;
-    return { success: true, data: mapMember(result.data) };
+    await mockDelay();
+    const team = findTeam(teamPublicId);
+    if (!team) return { success: false, error: "Team not found." };
+    const id = String(userId);
+    if (!team.memberUserIds.includes(id)) {
+      team.memberUserIds = [...team.memberUserIds, id];
+    }
+    const member = membersFor(team).find((m) => m.userId === userId);
+    if (!member) return { success: false, error: "User not found." };
+    return { success: true, data: member };
   },
 
   removeMember: async (
     teamPublicId: string,
     userId: number
   ): Promise<ApiResponse<null>> => {
-    return apiFetch<null>(`/teams/${teamPublicId}/members/${userId}`, {
-      method: "DELETE",
-    });
+    await mockDelay(150);
+    const team = findTeam(teamPublicId);
+    if (!team) return { success: false, error: "Team not found." };
+    const id = String(userId);
+    if (team.leaderUserId === id) {
+      return { success: false, error: "Cannot remove the team leader." };
+    }
+    team.memberUserIds = team.memberUserIds.filter((m) => m !== id);
+    return { success: true, data: null };
   },
 
   assignLeader: async (
     teamPublicId: string,
     userId: number
   ): Promise<ApiResponse<TeamMember>> => {
-    const result = await apiFetch<BackendMember>(
-      `/teams/${teamPublicId}/leader`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ user_id: userId }),
-      }
-    );
-    if (!result.success) return result;
-    return { success: true, data: mapMember(result.data) };
+    await mockDelay();
+    const team = findTeam(teamPublicId);
+    if (!team) return { success: false, error: "Team not found." };
+    const id = String(userId);
+    if (!team.memberUserIds.includes(id)) {
+      team.memberUserIds = [...team.memberUserIds, id];
+    }
+    team.leaderUserId = id;
+    const member = membersFor(team).find((m) => m.userId === userId);
+    if (!member) return { success: false, error: "User not found." };
+    return { success: true, data: member };
   },
 
   leave: async (teamPublicId: string): Promise<ApiResponse<null>> => {
-    return apiFetch<null>(`/teams/${teamPublicId}/leave`, { method: "POST" });
+    await mockDelay(150);
+    const team = findTeam(teamPublicId);
+    if (!team) return { success: false, error: "Team not found." };
+    const userId = currentUserId();
+    if (!userId) return { success: false, error: "Unauthorized" };
+    if (team.leaderUserId === userId) {
+      return { success: false, error: "Team leader cannot leave the team." };
+    }
+    team.memberUserIds = team.memberUserIds.filter((m) => m !== userId);
+    return { success: true, data: null };
   },
 
   listOrgUsers: async (orgId: string): Promise<ApiResponse<OrgUser[]>> => {
-    const result = await apiFetch<BackendOrgUser[]>(`/orgs/${orgId}/users`);
-    if (!result.success) return result;
-    return { success: true, data: result.data.map(mapOrgUser) };
+    await mockDelay();
+    return { success: true, data: orgUsersFor(orgId) };
   },
 };
