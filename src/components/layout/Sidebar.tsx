@@ -2,21 +2,51 @@
 
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { LayoutDashboard, Cpu, Settings } from "lucide-react";
+import { LayoutDashboard, Cpu, MessageSquare, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 
 export function Sidebar() {
   const pathname = usePathname();
   const params = useParams<{ orgId: string }>();
   const orgId = params.orgId;
+  const isAdmin = useAuthStore((s) => s.user?.role === "admin");
+  const onTeamChat = pathname.includes("/teams/") && pathname.endsWith("/chat");
+  const onMembers =
+    pathname.includes("/teams/") && pathname.endsWith("/members");
 
-  const navItems = [
+  const navItems: Array<{
+    href: string;
+    label: string;
+    icon: typeof LayoutDashboard;
+    exact: boolean;
+    forceActive?: boolean;
+  }> = [
     {
       href: `/orgs/${orgId}`,
       label: "Dashboard",
       icon: LayoutDashboard,
       exact: true,
     },
+    ...(isAdmin
+      ? [
+          {
+            href: `/orgs/${orgId}`,
+            label: "Teams",
+            icon: Users,
+            exact: false,
+            forceActive: onMembers,
+          },
+        ]
+      : [
+          {
+            href: `/orgs/${orgId}`,
+            label: "Team chat",
+            icon: MessageSquare,
+            exact: false,
+            forceActive: onTeamChat,
+          },
+        ]),
     {
       href: `/orgs/${orgId}/resources`,
       label: "Resources",
@@ -35,14 +65,14 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 p-3">
-        {navItems.map(({ href, label, icon: Icon, exact }) => {
-          const active = exact
-            ? pathname === href
-            : pathname.startsWith(href);
+        {navItems.map(({ href, label, icon: Icon, exact, forceActive }) => {
+          const active =
+            forceActive ??
+            (exact ? pathname === href : pathname.startsWith(href));
 
           return (
             <Link
-              key={href}
+              key={`${label}-${href}`}
               href={href}
               className={cn(
                 "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
