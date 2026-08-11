@@ -24,7 +24,7 @@ export default function OrgLayout({
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col md:ml-60">
           <Header />
-          <main ref={mainRef} className="flex min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-8">
+          <main ref={mainRef} className="flex min-h-0 flex-1 overflow-y-auto px-4 pt-20 pb-6 md:px-8">
             {children}
           </main>
         </div>

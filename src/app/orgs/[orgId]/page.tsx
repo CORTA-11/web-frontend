@@ -84,6 +84,65 @@ export default function OrgDashboardPage() {
         </p>
       </div>
 
+      {!isAdmin && (
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                Member lab
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                Your assigned labs
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm text-slate-600 dark:text-slate-400">
+              Access your teams, review lab details, and jump into chat, docs, or boards with a single click.
+            </p>
+          </div>
+
+          {loading ? (
+            <p className="mt-6 text-sm text-zinc-500">Loading your labs…</p>
+          ) : teams.length === 0 ? (
+            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300">
+              You are not assigned to any lab yet. Ask your administrator to add you to a team so collaboration tools become available.
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {teams.map((team) => (
+                <div key={team.publicId} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{team.name}</p>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        {team.description ?? "Research lab workspace"}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      {team.myRole === "TEAM_LEADER" ? "Leader" : "Member"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link href={`/orgs/${orgId}/teams/${team.publicId}/chat`} className={cn(buttonVariants({ size: "sm" }))}>
+                      <MessageSquare className="size-4" />
+                      Chat
+                    </Link>
+                    <Link href={`/orgs/${orgId}/teams/${team.publicId}/docs`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                      <BookOpen className="size-4" />
+                      Docs
+                    </Link>
+                    <Link href={`/orgs/${orgId}/teams/${team.publicId}/board`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                      <BookOpen className="size-4" />
+                      Board
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="space-y-4">
         <h2 className="text-lg font-medium tracking-tight">
           {isAdmin ? "Organization teams" : "Your teams"}
