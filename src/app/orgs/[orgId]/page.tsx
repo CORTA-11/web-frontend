@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { MessageSquare, Users } from "lucide-react";
+import { BookOpen, MessageSquare, Users } from "lucide-react";
 import { teamsApi, type OrgUser, type Team } from "@/lib/api/teams";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -135,14 +135,32 @@ export default function OrgDashboardPage() {
                       <Users className="size-4" />
                       {isAdmin ? "Manage" : "Members"}
                     </Link>
-                    {!isAdmin && inTeam && (
-                      <Link
-                        href={`/orgs/${orgId}/teams/${team.publicId}/chat`}
-                        className={cn(buttonVariants({ size: "sm" }))}
-                      >
-                        <MessageSquare className="size-4" />
-                        Chat
-                      </Link>
+                    {inTeam && (
+                      <>
+                        <Link
+                          href={`/orgs/${orgId}/teams/${team.publicId}/board`}
+                          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                        >
+                          <BookOpen className="size-4" />
+                          Board
+                        </Link>
+                        <Link
+                          href={`/orgs/${orgId}/teams/${team.publicId}/docs`}
+                          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                        >
+                          <BookOpen className="size-4" />
+                          Docs
+                        </Link>
+                        {!isAdmin && (
+                          <Link
+                            href={`/orgs/${orgId}/teams/${team.publicId}/chat`}
+                            className={cn(buttonVariants({ size: "sm" }))}
+                          >
+                            <MessageSquare className="size-4" />
+                            Chat
+                          </Link>
+                        )}
+                      </>
                     )}
                   </div>
                 </li>

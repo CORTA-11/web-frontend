@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { LayoutDashboard, Cpu, MessageSquare, Settings, Users } from "lucide-react";
+import { BookOpen, LayoutDashboard, Cpu, MessageSquare, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -14,6 +14,9 @@ export function Sidebar() {
   const onTeamChat = pathname.includes("/teams/") && pathname.endsWith("/chat");
   const onMembers =
     pathname.includes("/teams/") && pathname.endsWith("/members");
+  const onBoard = pathname.includes("/teams/") && pathname.endsWith("/board");
+  const onDocs = pathname.includes("/teams/") && pathname.endsWith("/docs");
+  const onTeamsDirectory = pathname === `/orgs/${orgId}/teams`;
 
   const navItems: Array<{
     href: string;
@@ -31,11 +34,11 @@ export function Sidebar() {
     ...(isAdmin
       ? [
           {
-            href: `/orgs/${orgId}`,
+            href: `/orgs/${orgId}/teams`,
             label: "Teams",
             icon: Users,
-            exact: false,
-            forceActive: onMembers,
+            exact: true,
+            forceActive: onTeamsDirectory || onMembers || onBoard || onDocs,
           },
         ]
       : [
@@ -56,8 +59,8 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-zinc-200 bg-white md:flex dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex h-14 items-center gap-2.5 border-b border-zinc-200 px-5 dark:border-zinc-800">
+    <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-40 md:flex md:w-60 md:flex-col md:border-r md:border-zinc-200 md:bg-white md:shadow-lg dark:md:border-slate-800 dark:md:bg-slate-950">
+      <div className="flex h-14 items-center gap-2.5 border-b border-zinc-200 px-5 dark:border-slate-800">
         <div className="flex size-7 items-center justify-center rounded-lg bg-zinc-900 text-xs font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
           C
         </div>
@@ -77,8 +80,8 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 active
-                  ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
-                  : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-50"
+                  ? "bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 text-white shadow-lg dark:from-slate-700 dark:via-slate-900 dark:to-slate-700"
+                  : "text-zinc-500 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-slate-800 dark:hover:text-white"
               )}
             >
               <Icon className="size-4 shrink-0" />
