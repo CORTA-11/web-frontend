@@ -78,10 +78,7 @@ export default function OrgTeamsPage() {
       <div className="rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-violet-50 to-sky-50 p-5 shadow-sm dark:border-fuchsia-900/40 dark:from-fuchsia-950/50 dark:via-violet-950/50 dark:to-sky-950/50">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-fuchsia-700 shadow-sm dark:bg-zinc-900/70 dark:text-fuchsia-300">
-              <Sparkles className="size-3.5" />
-              Team hub
-            </div>
+     
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Teams</h1>
               <p className="text-sm text-zinc-600 dark:text-zinc-300">
@@ -89,9 +86,7 @@ export default function OrgTeamsPage() {
               </p>
             </div>
           </div>
-          <Link href={`/orgs/${orgId}`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-            Back to overview
-          </Link>
+         
         </div>
       </div>
 
