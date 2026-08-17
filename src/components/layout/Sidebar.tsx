@@ -64,9 +64,7 @@ export function Sidebar() {
   return (
     <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-40 md:flex md:w-60 md:flex-col md:border-r md:border-zinc-200 md:bg-white md:shadow-lg dark:md:border-slate-800 dark:md:bg-slate-950">
       <div className="flex h-14 items-center gap-2.5 border-b border-zinc-200 px-5 dark:border-slate-800">
-        <div className="flex size-7 items-center justify-center rounded-lg bg-zinc-900 text-xs font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-          C
-        </div>
+
         <span className="text-sm font-semibold tracking-tight">CORTA</span>
       </div>
 

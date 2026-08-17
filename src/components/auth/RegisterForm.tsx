@@ -1,18 +1,10 @@
 "use client";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore, type RegisterMode } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +19,6 @@ export function RegisterForm() {
     e.preventDefault();
     setError(null);
     setPending(true);
-
     const form = new FormData(e.currentTarget);
     const name = String(form.get("name") ?? "");
     const email = String(form.get("email") ?? "");
@@ -44,27 +35,21 @@ export function RegisterForm() {
       orgPublicId: mode === "join_org" ? orgPublicId : undefined,
     });
     setPending(false);
-
     if (!result.success) {
       setError(result.error);
       return;
     }
-
     router.push(`/orgs/${result.data.user.orgId}`);
   }
 
   return (
     <Card>
       <CardHeader className="items-center text-center">
-        <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-zinc-900 text-sm font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-          C
-        </div>
         <CardTitle className="text-xl">Create your account</CardTitle>
         <CardDescription>
           Start a new organization or join one you already belong to.
         </CardDescription>
       </CardHeader>
-
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div

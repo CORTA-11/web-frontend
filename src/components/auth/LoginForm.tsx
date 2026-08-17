@@ -44,9 +44,7 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader className="items-center text-center">
-        <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-zinc-900 text-sm font-bold text-white dark:bg-zinc-100 dark:text-zinc-900">
-          C
-        </div>
+   
         <CardTitle className="text-xl">Sign in to CORTA</CardTitle>
         <CardDescription>Enter your credentials to continue.</CardDescription>
       </CardHeader>

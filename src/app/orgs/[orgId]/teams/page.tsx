@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { BookOpen, MessageSquare, Sparkles, Users } from "lucide-react";
+import { BookOpen, MessageSquare, Users } from "lucide-react";
 import { teamsApi, type OrgUser, type Team } from "@/lib/api/teams";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button, buttonVariants } from "@/components/ui/button";
