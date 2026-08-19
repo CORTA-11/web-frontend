@@ -54,15 +54,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   bootstrap: async () => {
     if (get().isReady) return;
 
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      set({
-        user: refreshed.user,
-        accessToken: refreshed.accessToken,
-      });
+    try {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        set({
+          user: refreshed.user,
+          accessToken: refreshed.accessToken,
+        });
+      }
+    } finally {
+      set({ isReady: true });
     }
-
-    set({ isReady: true });
   },
 
   login: async (email, password) => {

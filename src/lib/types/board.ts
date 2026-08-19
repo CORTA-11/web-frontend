@@ -1,38 +1,21 @@
-export type TaskPriority = "low" | "medium" | "high";
-
-export type BoardColumn = {
-  id: string;
-  title: string;
-  taskIds: string[];
-};
+export type TaskStatus = "todo" | "in_progress" | "done";
 
 export type BoardTask = {
-  id: string;
-  columnId: string;
-  title: string;
+  id: number;
+  team_id: number;
   description: string;
-  assigneeId: string | null;
-  priority: TaskPriority;
-  dueDate: string | null;
-  tags: string[];
-  createdAt: string;
+  status: TaskStatus;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Board = {
-  columns: BoardColumn[];
   tasks: BoardTask[];
 };
 
 export type CreateTaskInput = {
-  columnId: string;
-  title: string;
-  description?: string;
-  assigneeId?: string | null;
-  priority?: TaskPriority;
-  dueDate?: string | null;
-  tags?: string[];
+  description: string;
+  status?: TaskStatus;
 };
 
-export type UpdateTaskInput = Partial<
-  Omit<BoardTask, "id" | "createdAt">
-> & { position?: number };
+export type UpdateTaskInput = Partial<CreateTaskInput>;

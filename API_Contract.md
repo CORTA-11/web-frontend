@@ -155,3 +155,6 @@ ResourceRequest = {
 DocSummary = { id, team_public_id, title, updated_at, updated_by }
 Doc = { ...DocSummary, content } // rich-text JSON / HTML string for now
 ```
+NEXT_PUBLIC_API_ORG_ID=30ee7153-9b48-4560-8cbf-972587a60fda
+NEXT_PUBLIC_API_TEAM_SLUG=platform-engineering
+API_PROXY_TARGET=http://localhost:8080

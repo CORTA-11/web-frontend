@@ -4,6 +4,7 @@ const apiProxyTarget =
   process.env.API_PROXY_TARGET?.replace(/\/$/, "") || "http://localhost:8080";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["10.10.65.239", "172.31.32.1"],
   async rewrites() {
     return [
       {

@@ -1,98 +1,157 @@
 import type { ApiResponse } from "@/lib/api/client";
-import { mockColumns, mockTasks } from "@/lib/mock/board";
-import { mockDelay } from "@/lib/mock/delay";
 import type {
   Board,
   BoardTask,
   CreateTaskInput,
+  TaskStatus,
   UpdateTaskInput,
 } from "@/lib/types/board";
 
-// In-memory copy so create/move feel stateful during UI work.
-let columns = mockColumns.map((c) => ({ ...c, taskIds: [...c.taskIds] }));
-let tasks = mockTasks.map((t) => ({ ...t }));
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api").replace(/\/$/, "");
+
+function taskUrl(teamSlug: string, taskId?: number) {
+  const suffix = taskId === undefined ? "" : `/${taskId}`;
+  return `${API_BASE}/${encodeURIComponent(teamSlug)}/tasks${suffix}`;
+}
+
+async function requestJson<T>(
+  url: string,
+  init: RequestInit,
+  orgId: string
+): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    credentials: "include",
+    headers: {
+      ...(init.headers ?? {}),
+      "X-Org-ID": orgId,
+    },
+  });
+
+  if (response.status === 204) {
+    return null as T;
+  }
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(text || `Request failed with status ${response.status}`);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return null as T;
+  }
+
+  return (await response.json()) as T;
+}
+
+function normalizeStatus(status?: TaskStatus): TaskStatus {
+  return status ?? "todo";
+}
+
+export type { BoardTask, CreateTaskInput, TaskStatus, UpdateTaskInput };
 
 export const boardApi = {
-  getBoard: async (_teamPublicId: string): Promise<ApiResponse<Board>> => {
-    await mockDelay();
-    return {
-      success: true,
-      data: {
-        columns: columns.map((c) => ({ ...c, taskIds: [...c.taskIds] })),
-        tasks: tasks.map((t) => ({ ...t })),
-      },
-    };
+  getBoard: async (
+    teamSlug: string,
+    orgId: string
+  ): Promise<ApiResponse<Board>> => {
+    try {
+      const tasks = await requestJson<BoardTask[]>(taskUrl(teamSlug), {
+        method: "GET",
+      }, orgId);
+      return { success: true, data: { tasks: tasks ?? [] } };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch tasks from the API.",
+      };
+    }
   },
 
   createTask: async (
-    _teamPublicId: string,
+    teamSlug: string,
+    orgId: string,
     input: CreateTaskInput
   ): Promise<ApiResponse<BoardTask>> => {
-    await mockDelay();
-    const task: BoardTask = {
-      id: crypto.randomUUID(),
-      columnId: input.columnId,
-      title: input.title.trim(),
-      description: input.description?.trim() ?? "",
-      assigneeId: input.assigneeId ?? null,
-      priority: input.priority ?? "medium",
-      dueDate: input.dueDate ?? null,
-      tags: input.tags ?? [],
-      createdAt: new Date().toISOString(),
-    };
-    tasks = [...tasks, task];
-    columns = columns.map((c) =>
-      c.id === task.columnId
-        ? { ...c, taskIds: [...c.taskIds, task.id] }
-        : c
-    );
-    return { success: true, data: task };
+    try {
+      const task = await requestJson<BoardTask>(
+        taskUrl(teamSlug),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            description: input.description.trim(),
+            status: normalizeStatus(input.status),
+          }),
+        },
+        orgId
+      );
+      return { success: true, data: task };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to create task.",
+      };
+    }
   },
 
   updateTask: async (
-    _teamPublicId: string,
-    taskId: string,
+    teamSlug: string,
+    orgId: string,
+    taskId: number,
     input: UpdateTaskInput
   ): Promise<ApiResponse<BoardTask>> => {
-    await mockDelay(150);
-    const existing = tasks.find((t) => t.id === taskId);
-    if (!existing) {
-      return { success: false, error: "Task not found." };
+    try {
+      const nextPayload = {
+        ...(input.description !== undefined ? { description: input.description.trim() } : {}),
+        ...(input.status !== undefined ? { status: normalizeStatus(input.status) } : {}),
+      };
+
+      const task = await requestJson<BoardTask>(
+        taskUrl(teamSlug, taskId),
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(nextPayload),
+        },
+        orgId
+      );
+
+      return { success: true, data: task };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to update task.",
+      };
     }
-
-    const next: BoardTask = {
-      ...existing,
-      ...input,
-      id: existing.id,
-      createdAt: existing.createdAt,
-    };
-
-    if (input.columnId && input.columnId !== existing.columnId) {
-      columns = columns.map((c) => {
-        if (c.id === existing.columnId) {
-          return { ...c, taskIds: c.taskIds.filter((id) => id !== taskId) };
-        }
-        if (c.id === input.columnId) {
-          return { ...c, taskIds: [...c.taskIds, taskId] };
-        }
-        return c;
-      });
-    }
-
-    tasks = tasks.map((t) => (t.id === taskId ? next : t));
-    return { success: true, data: next };
   },
 
   removeTask: async (
-    _teamPublicId: string,
-    taskId: string
+    teamSlug: string,
+    orgId: string,
+    taskId: number
   ): Promise<ApiResponse<null>> => {
-    await mockDelay(150);
-    tasks = tasks.filter((t) => t.id !== taskId);
-    columns = columns.map((c) => ({
-      ...c,
-      taskIds: c.taskIds.filter((id) => id !== taskId),
-    }));
-    return { success: true, data: null };
+    try {
+      await requestJson<null>(taskUrl(teamSlug, taskId), {
+        method: "DELETE",
+      }, orgId);
+      return { success: true, data: null };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to delete task.",
+      };
+    }
   },
 };
