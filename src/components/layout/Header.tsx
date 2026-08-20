@@ -1,26 +1,39 @@
-import { Bell, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+"use client";
+
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { MenuIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
+import { useOrgSettings } from "@/features/settings/queries";
 
 export function Header() {
+  const { orgId } = useParams<{ orgId: string }>();
+  const org = useOrgSettings(orgId);
+  const [open, setOpen] = useState(false);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between gap-4 border-b border-zinc-200 bg-white/95 px-6 backdrop-blur dark:border-zinc-800 dark:bg-slate-900/95 md:left-60 md:right-0">
-      <div className="relative w-full max-w-sm">
-        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-zinc-400" />
-        <Input
-          type="search"
-          placeholder="Search…"
-          className="pl-8"
-          aria-label="Search"
-        />
+    <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4 sm:px-6">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger
+          render={<Button variant="ghost" size="icon-sm" aria-label="Open navigation" className="lg:hidden" />}
+        >
+          <MenuIcon />
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 bg-sidebar p-0">
+          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <Sidebar onNavigate={() => setOpen(false)} />
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex min-w-0 items-baseline gap-2">
+        <span className="truncate text-sm font-medium">{org.data?.name ?? "Organisation"}</span>
+        {org.data && <span className="data-mono hidden text-muted-foreground sm:inline">{org.data.public_id}</span>}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="Notifications">
-          <Bell />
-        </Button>
-
+      <div className="ml-auto flex items-center gap-1">
         <ProfileMenu />
       </div>
     </header>

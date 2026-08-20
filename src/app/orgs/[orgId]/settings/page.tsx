@@ -1,86 +1,93 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
-import { Bell, ShieldCheck, Sparkles, Users } from "lucide-react";
-import { useAuthStore } from "@/stores/auth-store";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Field } from "@/components/common/Field";
+import { PageHeader } from "@/components/common/PageHeader";
+import { QueryBoundary } from "@/components/common/QueryBoundary";
+import { AiSettingsForm } from "@/features/settings/components/AiSettingsForm";
+import { RegistrationFieldsEditor } from "@/features/settings/components/RegistrationFieldsEditor";
+import { useOrgSettings, useUpdateOrgSettings } from "@/features/settings/queries";
+import { useSession } from "@/features/auth/session";
+import { can } from "@/lib/rbac";
 
-export default function OrgSettingsPage() {
-  const params = useParams<{ orgId: string }>();
-  const user = useAuthStore((s) => s.user);
-
-  const preferences = [
-    { label: "Notifications", value: "Enabled", icon: Bell },
-    { label: "Team access", value: "Managed", icon: Users },
-    { label: "Approvals", value: "Mock workflow", icon: ShieldCheck },
-  ];
+function OrgProfile({ orgId, name, publicId }: { orgId: string; name: string; publicId: string }) {
+  const [value, setValue] = useState(name);
+  const update = useUpdateOrgSettings(orgId);
 
   return (
-    <div className="mx-auto min-h-full flex min-h-0 flex-1 flex-col gap-6 max-w-5xl">
-      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-lime-50 to-cyan-50 p-5 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/50 dark:via-lime-950/50 dark:to-cyan-950/50">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700 shadow-sm dark:bg-zinc-900/70 dark:text-emerald-300">
-              <Sparkles className="size-3.5" />
-              Workspace settings
-            </div>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Organization settings</h1>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                Review your workspace details and preferred collaboration behaviors.
+    <form
+      className="flex max-w-lg flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        update.mutate({ name: value });
+      }}
+    >
+      <Field label="Organisation name" htmlFor="org-name">
+        <Input id="org-name" value={value} onChange={(event) => setValue(event.target.value)} />
+      </Field>
+      <Field
+        label="Join ID"
+        htmlFor="org-public-id"
+        hint="People enter this when registering to join your organisation."
+      >
+        <Input id="org-public-id" readOnly value={publicId} className="font-mono" />
+      </Field>
+      <div>
+        <Button type="submit" size="sm" disabled={value.trim() === name || update.isPending}>
+          Save
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export default function SettingsPage() {
+  const { orgId } = useParams<{ orgId: string }>();
+  const { user } = useSession();
+  const settings = useOrgSettings(orgId);
+
+  if (!can(user && { orgRole: user.org_role }, "org:manage")) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Only an organisation admin can change these settings.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <PageHeader eyebrow="Organisation" title="Settings" />
+      <QueryBoundary query={settings}>
+        {(data) => (
+          <Tabs defaultValue="profile">
+            <TabsList>
+              <TabsTrigger value="profile">Organisation</TabsTrigger>
+              <TabsTrigger value="registration">Registration</TabsTrigger>
+              <TabsTrigger value="ai">AI</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="profile" className="pt-4">
+              <OrgProfile orgId={orgId} name={data.name} publicId={data.public_id} />
+            </TabsContent>
+
+            <TabsContent value="registration" className="flex flex-col gap-3 pt-4">
+              <p className="max-w-prose text-xs text-muted-foreground">
+                Fields added here appear on the registration form for anyone joining with your
+                organisation ID.
               </p>
-            </div>
-          </div>
-        </div>
-      </div>
+              <RegistrationFieldsEditor orgId={orgId} fields={data.registration_fields} />
+            </TabsContent>
 
-      <div className="flex min-h-0 flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="w-full lg:w-[56%]">
-          <Card className="border-emerald-100 bg-emerald-50/50 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-            <CardHeader>
-              <CardTitle>Workspace overview</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              <div className="rounded-xl border border-white/70 bg-white/80 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
-                <p className="text-xs uppercase tracking-wide text-zinc-400">Organization</p>
-                <p className="mt-2 font-semibold">Aratuwa Labs</p>
-                <p className="text-sm text-zinc-500">Public ID: {params.orgId}</p>
-              </div>
-              <div className="rounded-xl border border-white/70 bg-white/80 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
-                <p className="text-xs uppercase tracking-wide text-zinc-400">Current role</p>
-                <p className="mt-2 font-semibold">{user?.role === "admin" ? "Admin" : "Member"}</p>
-                <p className="text-sm text-zinc-500">{user?.email}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="w-full lg:w-[44%]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Preferences</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-            {preferences.map(({ label, value, icon: Icon }) => (
-              <div key={label} className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/70 px-3 py-3 dark:border-zinc-800 dark:bg-zinc-900/60">
-                <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-white p-2 shadow-sm dark:bg-zinc-950">
-                    <Icon className="size-4 text-emerald-600" />
-                  </div>
-                  <span className="text-sm font-medium">{label}</span>
-                </div>
-                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{value}</span>
-              </div>
-            ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            <TabsContent value="ai" className="pt-4">
+              <AiSettingsForm orgId={orgId} ai={data.ai} />
+            </TabsContent>
+          </Tabs>
+        )}
+      </QueryBoundary>
     </div>
   );
 }

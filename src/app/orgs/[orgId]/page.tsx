@@ -1,176 +1,99 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
-import { BookOpen, MessageSquare, Users } from "lucide-react";
-import { teamsApi, type OrgUser, type Team } from "@/lib/api/teams";
-import { useAuthStore } from "@/stores/auth-store";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { useQueries } from "@tanstack/react-query";
+import { addDays, isAfter, isBefore } from "date-fns";
+import { PageHeader } from "@/components/common/PageHeader";
+import { Stat } from "@/features/overview/components/Stat";
+import { AssignedTasks, type TeamTask } from "@/features/overview/components/AssignedTasks";
+import { UpcomingBookings } from "@/features/overview/components/UpcomingBookings";
+import { boardApi } from "@/features/board/api";
+import { useBookings, useResourceRequests, useResources } from "@/features/resources/queries";
+import { useTeams } from "@/features/teams/queries";
+import { useSession } from "@/features/auth/session";
+import { qk } from "@/lib/query-keys";
+import { can } from "@/lib/rbac";
 
-export default function OrgDashboardPage() {
-  const params = useParams<{ orgId: string }>();
-  const { orgId } = params;
-  const user = useAuthStore((s) => s.user);
-  const isAdmin = user?.role === "admin";
+const WINDOW_DAYS = 7;
 
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [leaderUserId, setLeaderUserId] = useState("");
-  const [creating, setCreating] = useState(false);
+export default function OrgOverviewPage() {
+  const { orgId } = useParams<{ orgId: string }>();
+  const { user } = useSession();
+  const teams = useTeams(orgId);
+  const bookings = useBookings(orgId);
+  const resources = useResources(orgId);
+  const requests = useResourceRequests(orgId);
 
-  const leaderCandidates = orgUsers.filter((u) => u.orgRole !== "ORG_ADMIN");
+  const myTeams = teams.data?.filter((team) => team.my_role) ?? [];
+  const isAdmin = can(user && { orgRole: user.org_role }, "org:manage");
 
-  const load = async () => {
-    setLoading(true);
-    const teamsRes = await teamsApi.list(orgId);
-    if (!teamsRes.success) {
-      setError(teamsRes.error);
-      setLoading(false);
-      return;
-    }
-    setTeams(teamsRes.data);
+  const boards = useQueries({
+    queries: myTeams.map((team) => ({
+      queryKey: qk.board(team.public_id),
+      queryFn: () => boardApi.get(team.public_id, orgId),
+    })),
+  });
 
-    if (isAdmin) {
-      const usersRes = await teamsApi.listOrgUsers(orgId);
-      if (usersRes.success) {
-        setOrgUsers(usersRes.data);
-        const candidates = usersRes.data.filter((u) => u.orgRole !== "ORG_ADMIN");
-        if (candidates[0]) setLeaderUserId(String(candidates[0].id));
-      }
-    }
-    setLoading(false);
-  };
+  const assigned: TeamTask[] = boards.flatMap((board, index) => {
+    const team = myTeams[index];
+    if (!board.data || !team) return [];
+    return board.data.tasks
+      .filter((task) => task.assignee_id === user?.id && task.column_id !== "done")
+      .map((task) => ({
+        ...task,
+        teamName: team.name,
+        teamId: team.public_id,
+        columnTitle: board.data.columns.find((column) => column.id === task.column_id)?.title ?? "",
+      }));
+  });
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgId, isAdmin]);
+  assigned.sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"));
 
-  const onCreate = async (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = name.trim();
-    if (!trimmed || creating) return;
-    setCreating(true);
-    const result = await teamsApi.create(orgId, {
-      name: trimmed,
-      leaderUserId: leaderUserId ? Number(leaderUserId) : undefined,
-    });
-    setCreating(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
-    }
-    setName("");
-    load();
-  };
+  const horizon = addDays(new Date(), WINDOW_DAYS);
+  const mine = new Set(myTeams.map((team) => team.public_id));
+  const upcoming = (bookings.data ?? [])
+    .filter((booking) => mine.has(booking.team_public_id))
+    .filter((booking) => isAfter(new Date(booking.end_time), new Date()))
+    .filter((booking) => isBefore(new Date(booking.start_time), horizon))
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+  const pending = requests.data?.filter((request) => request.status === "pending").length ?? 0;
+  const overdue = assigned.filter((task) => task.due_date && new Date(task.due_date) < new Date()).length;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-zinc-500">
-          {isAdmin
-            ? "Manage teams, assign leaders, and allocate members."
-            : "Select a team you belong to in order to collaborate."}
-        </p>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        eyebrow="Overview"
+        title={`Good to see you, ${user?.name.split(" ")[0] ?? ""}`.trim()}
+        meta="What is on your plate across the teams you belong to."
+      />
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat label="Your teams" value={myTeams.length} />
+        <Stat
+          label="Assigned to you"
+          value={assigned.length}
+          hint={overdue ? `${overdue} past due` : "none past due"}
+        />
+        <Stat label="Bookings this week" value={upcoming.length} />
+        {isAdmin && (
+          <Stat
+            label="Awaiting approval"
+            value={pending}
+            hint={pending ? "resource requests" : "nothing to review"}
+          />
+        )}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-
-      <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="text-lg font-medium">Teams</h2>
-        {loading ? (
-          <p className="text-sm text-zinc-500">Loading teams…</p>
-        ) : teams.length === 0 ? (
-          <p className="text-sm text-zinc-500">No teams found.</p>
-        ) : (
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-            {teams.map((team) => {
-              const inTeam = Boolean(team.myRole);
-              return (
-                <li key={team.publicId} className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="font-medium">{team.name}</p>
-                    <p className="text-xs text-zinc-500">
-                      {isAdmin
-                        ? "Administrator view"
-                        : team.myRole === "TEAM_LEADER"
-                        ? "You are team leader"
-                        : team.myRole === "CONTRIBUTOR"
-                        ? "Member"
-                        : "Not a member"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/orgs/${orgId}/teams/${team.publicId}/members`}
-                      className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-                    >
-                      <Users className="size-4" />
-                      Members
-                    </Link>
-                    {inTeam && (
-                      <>
-                        <Link
-                          href={`/orgs/${orgId}/teams/${team.publicId}/board`}
-                          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-                        >
-                          <BookOpen className="size-4" />
-                          Board
-                        </Link>
-                        <Link
-                          href={`/orgs/${orgId}/teams/${team.publicId}/chat`}
-                          className={cn(buttonVariants({ size: "sm" }))}
-                        >
-                          <MessageSquare className="size-4" />
-                          Chat
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+      <section className="flex flex-col gap-2">
+        <h2 className="label-eyebrow">Assigned to you</h2>
+        <AssignedTasks orgId={orgId} tasks={assigned.slice(0, 8)} />
       </section>
 
-      {isAdmin && (
-        <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="text-lg font-medium">Create Team</h2>
-          <form onSubmit={onCreate} className="flex gap-2">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Team name"
-              disabled={creating}
-              className="flex-1"
-            />
-            <select
-              className="rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-sm dark:border-zinc-800"
-              value={leaderUserId}
-              onChange={(e) => setLeaderUserId(e.target.value)}
-              disabled={creating || leaderCandidates.length === 0}
-            >
-              <option value="">Assign leader…</option>
-              {leaderCandidates.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-            <Button type="submit" disabled={creating || !name.trim() || !leaderUserId}>
-              Create
-            </Button>
-          </form>
-        </section>
-      )}
+      <section className="flex flex-col gap-2">
+        <h2 className="label-eyebrow">Next {WINDOW_DAYS} days</h2>
+        <UpcomingBookings bookings={upcoming.slice(0, 6)} resources={resources.data ?? []} />
+      </section>
     </div>
   );
 }

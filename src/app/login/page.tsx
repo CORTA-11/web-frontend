@@ -1,5 +1,15 @@
-import { LoginForm } from "@/components/auth/LoginForm";
+"use client";
+
+import { AuthShell } from "@/features/auth/components/AuthShell";
+import { LoginForm } from "@/features/auth/components/LoginForm";
+import { GuestOnly } from "@/features/auth/components/SessionGate";
 
 export default function LoginPage() {
-  return <LoginForm />;
+  return (
+    <GuestOnly>
+      <AuthShell>
+        <LoginForm />
+      </AuthShell>
+    </GuestOnly>
+  );
 }

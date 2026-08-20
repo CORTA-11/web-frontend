@@ -1,111 +1,78 @@
 "use client";
 
-import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
-import { BookOpen, LayoutDashboard, Cpu, MessageSquare, Settings, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth-store";
+import { useParams } from "next/navigation";
+import {
+  BoxesIcon, CalendarClockIcon, FilesIcon, FileTextIcon, LayoutGridIcon,
+  MessagesSquareIcon, SettingsIcon, UsersIcon, UsersRoundIcon,
+} from "lucide-react";
+import { NavItem } from "@/components/layout/NavItem";
+import { Wordmark } from "@/components/layout/Wordmark";
+import { useTeams } from "@/features/teams/queries";
+import { useSession } from "@/features/auth/session";
+import { can } from "@/lib/rbac";
 
-export function Sidebar() {
-  const pathname = usePathname();
-  const params = useParams<{ orgId: string }>();
-  const orgId = params.orgId;
-  const isAdmin = useAuthStore((s) => s.user?.role === "admin");
-  const onTeamChat = pathname.includes("/teams/") && pathname.endsWith("/chat");
-  const onTeamChatSection =
-    pathname === `/orgs/${orgId}/teams` || onTeamChat;
-  const onMembers =
-    pathname.includes("/teams/") && pathname.endsWith("/members");
-  const onBoard = pathname.includes("/teams/") && pathname.endsWith("/board");
-  const onDocs = pathname.includes("/teams/") && pathname.endsWith("/docs");
-  const onTeamsDirectory = pathname === `/orgs/${orgId}/teams`;
-  const onSettings = pathname === `/orgs/${orgId}/settings`;
+const TEAM_SECTIONS = [
+  { slug: "board", label: "Board", icon: LayoutGridIcon },
+  { slug: "chat", label: "Chat", icon: MessagesSquareIcon },
+  { slug: "docs", label: "Documents", icon: FileTextIcon },
+  { slug: "files", label: "Files", icon: FilesIcon },
+  { slug: "members", label: "Members", icon: UsersRoundIcon },
+];
 
-  const navItems: Array<{
-    href: string;
-    label: string;
-    icon: typeof LayoutDashboard;
-    exact: boolean;
-    forceActive?: boolean;
-  }> = [
-    {
-      href: `/orgs/${orgId}`,
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      exact: true,
-    },
-    ...(isAdmin
-      ? [
-          {
-            href: `/orgs/${orgId}/teams`,
-            label: "Teams",
-            icon: Users,
-            exact: true,
-            forceActive: onTeamsDirectory || onMembers || onBoard || onDocs,
-          },
-        ]
-      : [
-          {
-            href: `/orgs/${orgId}/teams`,
-            label: "Team chat",
-            icon: MessageSquare,
-            exact: false,
-            forceActive: onTeamChatSection,
-          },
-        ]),
-    {
-      href: `/orgs/${orgId}/resources`,
-      label: "Resources",
-      icon: Cpu,
-      exact: false,
-    },
-  ];
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const { orgId, teamId } = useParams<{ orgId: string; teamId?: string }>();
+  const { user } = useSession();
+  const teams = useTeams(orgId);
+  const isAdmin = can(user && { orgRole: user.org_role }, "org:manage");
+  // Only teams you belong to are navigable; admins manage the rest from Teams.
+  const myTeams = teams.data?.filter((team) => team.my_role) ?? [];
+  const base = `/orgs/${orgId}`;
 
   return (
-    <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-40 md:flex md:w-60 md:flex-col md:border-r md:border-zinc-200 md:bg-white md:shadow-lg dark:md:border-slate-800 dark:md:bg-slate-950">
-      <div className="flex h-14 items-center gap-2.5 border-b border-zinc-200 px-5 dark:border-slate-800">
-
-        <span className="text-sm font-semibold tracking-tight">CORTA</span>
+    <nav
+      className="flex h-full flex-col gap-6 overflow-y-auto py-4"
+      onClick={onNavigate}
+      aria-label="Main"
+    >
+      <div className="px-4">
+        <Wordmark />
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 p-3">
-        {navItems.map(({ href, label, icon: Icon, exact, forceActive }) => {
-          const active =
-            forceActive ??
-            (exact ? pathname === href : pathname.startsWith(href));
+      <section className="flex flex-col gap-0.5">
+        <p className="label-eyebrow px-4 pb-1">Organisation</p>
+        <NavItem href={base} label="Overview" icon={BoxesIcon} exact />
+        <NavItem href={`${base}/teams`} label="Teams" icon={UsersRoundIcon} exact />
+        <NavItem href={`${base}/resources`} label="Resources" icon={CalendarClockIcon} />
+        {isAdmin && <NavItem href={`${base}/users`} label="People" icon={UsersIcon} />}
+        {isAdmin && <NavItem href={`${base}/settings`} label="Settings" icon={SettingsIcon} />}
+      </section>
 
-          return (
-            <Link
-              key={`${label}-${href}`}
-              href={href}
-              className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 text-white shadow-lg dark:from-slate-700 dark:via-slate-900 dark:to-slate-700"
-                  : "text-zinc-500 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-slate-800 dark:hover:text-white"
-              )}
-            >
-              <Icon className="size-4 shrink-0" />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
-        <Link
-          href={`/orgs/${orgId}/settings`}
-          className={cn(
-            "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-            onSettings
-              ? "bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 text-white shadow-lg dark:from-slate-700 dark:via-slate-900 dark:to-slate-700"
-              : "text-zinc-500 hover:bg-zinc-50 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-50"
-          )}
-        >
-          <Settings className="size-4 shrink-0" />
-          Settings
-        </Link>
-      </div>
-    </aside>
+      <section className="flex flex-col gap-0.5">
+        <p className="label-eyebrow px-4 pb-1">Teams</p>
+        {teams.data && !myTeams.length && (
+          <p className="px-4 text-xs text-muted-foreground">You are not in a team yet.</p>
+        )}
+        {myTeams.map((team) => (
+          <div key={team.public_id} className="flex flex-col gap-0.5">
+            <NavItem
+              href={`${base}/teams/${team.public_id}/board`}
+              match={`${base}/teams/${team.public_id}`}
+              label={team.name}
+              trailing={team.member_count || undefined}
+            />
+            {teamId === team.public_id &&
+              TEAM_SECTIONS.map((section) => (
+                <NavItem
+                  key={section.slug}
+                  href={`${base}/teams/${team.public_id}/${section.slug}`}
+                  label={section.label}
+                  icon={section.icon}
+                  indent
+                />
+              ))}
+          </div>
+        ))}
+      </section>
+    </nav>
   );
 }

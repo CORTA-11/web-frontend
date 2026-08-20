@@ -1,125 +1,199 @@
 # CORTA API Contract
 
-Wire format for `core-api` (JSON over HTTPS). Base path: `/api`.
+Wire format the web frontend codes against. JSON over HTTPS, base path `/api`
+(Next.js rewrites it to core-api — see `next.config.ts`).
 
-**Frontend status:** all modules currently use in-memory mocks under `src/lib/mock/` + `src/lib/api/*` (no live core-api calls). Dummy logins: `admin@aratuwa.edu` / `leader@aratuwa.edu` / `member@aratuwa.edu`, password `password123`. Join-org public id: `aratuwa`.
+Auth: `Authorization: Bearer <access_token>` on protected routes. The refresh
+token is an httpOnly cookie only, so every call uses `credentials: "include"`.
+Errors return a plain-text body with the HTTP status, not JSON.
 
-Auth: `Authorization: Bearer <access_token>` on protected routes. Refresh token is httpOnly cookie only (`credentials: "include"`). Errors return plain text body + HTTP status (not JSON).
+**Implementation status.** Anything not marked *live* is answered by the
+in-browser mock server in `src/mocks/`. Switch a module over with
+`NEXT_PUBLIC_LIVE_MODULES`. The gaps in core-api are tracked in `PLAN.md` §10.
 
-Frontend client wraps success as `{ success: true, data }` and failure as `{ success: false, error }`.
+The TypeScript mirror of everything below is `src/lib/types.ts`.
 
 ---
 
-## Auth (mocked)
+## Access model
 
-### `POST /auth/register`
-```json
-// request
-{ "mode": "create_org"|"join_org", "name": "", "email": "", "password": "",
-  "org_name": "", "org_public_id": "" }
-// response 200
-{ "access_token": "", "user": { "id": 1, "org_id": 1, "email": "", "name": "",
-  "org_role": "ORG_ADMIN"|"ORG_MEMBER", "avatar_url": "" } }
-```
+Three tiers, each strictly bounded:
+
+| Tier | Governs | Cannot read |
+|---|---|---|
+| `SUPER_ADMIN` (platform) | organisations: approve, reject, suspend, reinstate | anything inside a tenant |
+| `ORG_ADMIN` | teams, resources, people, org settings | any team's board, chat, documents or files |
+| `TEAM_LEADER` / `TEAM_MEMBER` | their own team's content | other teams |
+
+Team content endpoints (`/teams/{teamId}/board|chat|docs|files`) must return
+**403** to anyone who is not a member of that team, whatever their org or
+platform role. The roster (`/teams/{teamId}/members`) is the one exception: org
+admins may read and change it, because they assign team leaders.
+
+---
+
+## Auth
 
 ### `POST /auth/login`
 ```json
 { "email": "", "password": "" }
-// → same AuthResponse as register
+// → 200 AuthResponse | 401 text
 ```
 
-### `POST /auth/refresh` → AuthResponse  
-### `POST /auth/logout` → 204  
+### `POST /auth/register`
+```json
+{ "mode": "create_org"|"join_org", "name": "", "email": "", "password": "",
+  "org_name": "", "org_public_id": "", "fields": { "student_id": "" } }
+// → 200 AuthResponse | 404 unknown org | 409 email taken / org not active
+```
+`create_org` registers a new tenant with `status: "pending"`; it stays unusable
+until a platform operator approves it. `join_org` only accepts an **active** org.
+
+### `POST /auth/refresh` → AuthResponse · `POST /auth/logout` → 204
 ### `GET /me` → AuthUser
+### `GET /orgs/lookup/{publicId}` → `{ name, public_id, registration_fields }`
+Public: the registration form uses it to discover an org's extra fields.
+
+```ts
+AuthResponse = { access_token: string, user: AuthUser }
+AuthUser = { id, org_id, email, name, org_role: "ORG_ADMIN"|"ORG_MEMBER",
+             platform_role: "SUPER_ADMIN"|null, avatar_url? }
+```
+
+**Live today:** `POST /users/login` returning `{ token, user }`. Adapted in
+`src/features/auth/api.ts`. There is no refresh endpoint yet.
 
 ---
 
-## Teams (mocked)
+## Platform (`SUPER_ADMIN` only)
+
+### `GET /platform/orgs` → `Organization[]`
+### `PATCH /platform/orgs/{orgId}` → Organization
+```json
+{ "status": "pending"|"active"|"suspended"|"rejected" }
+```
+
+```ts
+Organization = {
+  id, name, public_id, status, owner_name, owner_email,
+  user_count, team_count, requested_at, decided_at?
+}
+```
+No route on this tier may expose team, chat, document or file data.
+
+---
+
+## Teams
 
 ### `GET /orgs/{orgId}/teams` → `Team[]`
-### `POST /orgs/{orgId}/teams`
-```json
-{ "name": "", "description": "", "leader_user_id": 2 }
-```
-### `GET /teams/{teamPublicId}` → Team  
-### `GET /teams/{teamPublicId}/members` → `TeamMember[]`  
-### `POST /teams/{teamPublicId}/members` `{ "user_id": 3 }`  
-### `DELETE /teams/{teamPublicId}/members/{userId}`  
-### `PUT /teams/{teamPublicId}/leader` `{ "user_id": 2 }`  
-### `POST /teams/{teamPublicId}/leave`  
+Org admins see every team in the org; everyone else sees only their own. `my_role`
+is `undefined` for non-members, and the UI uses that to withhold a way in.
+
+### `POST /orgs/{orgId}/teams` `{ name, description?, leader_user_id }` (ORG_ADMIN)
+### `GET /teams/{teamId}` → Team
+### `PATCH /teams/{teamId}` `{ name?, description? }` (TEAM_LEADER)
+### `DELETE /teams/{teamId}` → 204 (ORG_ADMIN)
+### `GET /teams/{teamId}/members` → `TeamMember[]` (members + ORG_ADMIN)
+### `POST /teams/{teamId}/members` `{ user_id }` (TEAM_LEADER)
+### `DELETE /teams/{teamId}/members/{userId}` → 204 (TEAM_LEADER)
+### `PUT /teams/{teamId}/leader` `{ user_id }` → `TeamMember[]` (ORG_ADMIN)
+### `POST /teams/{teamId}/leave` → 204 — 409 for a leader (SRS 3.1.2.7)
 ### `GET /orgs/{orgId}/users` → `OrgUser[]`
 
 ```ts
-Team = { id, public_id, org_id, name, description?, my_role?, created_at }
+Team = { id, public_id, org_id, name, description?, my_role?, member_count, created_at }
 TeamMember = { user_id, name, email, avatar_url?, role, joined_at }
 OrgUser = { id, email, name, org_role, avatar_url? }
 ```
 
----
-
-## Chat (mocked)
-
-### `GET /teams/{teamPublicId}/chat/messages?limit=&before=`
-```json
-{ "messages": [ChatMessage] }
-```
-### `POST /teams/{teamPublicId}/chat/messages`
-```json
-{ "message": "", "reply_to_id": null }
-```
-### `DELETE /teams/{teamPublicId}/chat/messages/{messageId}`
-```json
-{ "id": "", "channel_id": "", "deleted_at": "" }
-```
-
-```ts
-ChatMessage = {
-  id, channel_id,
-  sender: { id, name, avatar_url? },
-  reply_to_id?, message, created_at, deleted_at?
-}
-```
+**Live today:** `GET/POST /teams` scoped by an `X-Org-ID` header, returning
+`{ id, name, slug }`. No membership, update or delete routes.
 
 ---
 
-## Board / Kanban (planned — mock in `src/lib/mock` + `src/lib/api/board.ts`)
+## Board — members only
 
-### `GET /teams/{teamPublicId}/board`
-```json
-{ "columns": [Column], "tasks": [Task] }
-```
-### `POST /teams/{teamPublicId}/board/tasks`
-```json
-{ "column_id": "", "title": "", "description": "", "assignee_id": null,
-  "priority": "low"|"medium"|"high", "due_date": null, "tags": [] }
-```
-### `PATCH /teams/{teamPublicId}/board/tasks/{taskId}`
-```json
-{ "column_id": "", "title": "", "description": "", "assignee_id": null,
-  "priority": "low"|"medium"|"high", "due_date": null, "tags": [], "position": 0 }
-```
-### `DELETE /teams/{teamPublicId}/board/tasks/{taskId}` → 204
+### `GET /teams/{teamId}/board` → `{ columns, tasks }`
+### `POST /teams/{teamId}/board/tasks` → Task
+### `PATCH /teams/{teamId}/board/tasks/{taskId}` → Task
+Accepts any Task field plus `position`, the index within `column_id`. Drag and
+drop sends `{ column_id, position }`.
+### `DELETE /teams/{teamId}/board/tasks/{taskId}` → 204
 
 ```ts
 Column = { id, title, task_ids: string[] }
-Task = {
-  id, column_id, title, description, assignee_id,
-  priority: "low"|"medium"|"high", due_date, tags: string[], created_at
-}
+Task = { id, column_id, title, description, assignee_id, priority: "low"|"medium"|"high",
+         start_date, due_date, tags: string[], created_at }
 ```
+
+**Live today:** `GET/POST /{teamSlug}/tasks` with `X-Org-ID`, where a task is only
+`{ id, team_id, description, created_at }`. No status, assignee, priority or
+dates, and no update or delete — so live mode is read-plus-create and the UI
+reports the gap rather than pretending.
 
 ---
 
-## Resources (planned — mock in `src/lib/mock` + `src/lib/api/resources.ts`)
+## Chat — members only
+
+### `GET /teams/{teamId}/chat/messages?limit=&before=` → `{ messages }`
+### `POST /teams/{teamId}/chat/messages` `{ message, reply_to_id?, mentions? }`
+### `DELETE /teams/{teamId}/chat/messages/{messageId}`
+Own message, or any message if the caller is the team leader; returns
+`{ id, channel_id, deleted_at }` (soft delete).
+
+```ts
+ChatMessage = { id, channel_id, sender: { id, name, avatar_url? },
+                reply_to_id?, mentions?: number[], message, created_at, deleted_at? }
+```
+
+Realtime: `socket-server` at `ws://…/ws?token=&team_id=` is expected to push
+`{ type: "message.created"|"message.deleted", data: ChatMessage }`. The client
+subscribes only when `NEXT_PUBLIC_WS_BASE_URL` is set; core-api does not publish
+to Redis yet.
+
+---
+
+## Documents — members only
+
+### `GET /teams/{teamId}/docs` → `DocSummary[]`
+### `POST /teams/{teamId}/docs` `{ title }` → Doc
+### `GET /teams/{teamId}/docs/{docId}` → Doc
+### `PATCH /teams/{teamId}/docs/{docId}` `{ title?, content? }` → Doc
+### `DELETE /teams/{teamId}/docs/{docId}` → 204 (TEAM_LEADER)
+
+```ts
+DocSummary = { id, team_public_id, title, updated_at, updated_by }
+Doc = DocSummary & { content }  // HTML from the rich-text editor
+```
+The editor autosaves `content` and polls the document every 20s. Character-level
+co-editing needs Yjs document rooms on socket-server — see `PLAN.md` §10.
+
+---
+
+## Files — members only
+
+### `GET /teams/{teamId}/files` → `StoredFile[]`
+### `POST /teams/{teamId}/files/upload` — `multipart/form-data`, field `file`
+### `GET /teams/{teamId}/files/download/{fileId}` → the bytes
+### `DELETE /teams/{teamId}/files/{fileId}` → 204 — uploader or team leader
+
+```ts
+StoredFile = { id, name, size, content_type, uploaded_by, uploaded_by_name, uploaded_at }
+```
+
+**Live today:** `GET /{teamSlug}/files`, `POST /{teamSlug}/files/upload`,
+`GET /{teamSlug}/files/download/{filename}` with `X-Org-ID`. No delete, and no
+uploader attribution.
+
+---
+
+## Resources
 
 ### `GET /orgs/{orgId}/resources` → `Resource[]`
 ### `POST /orgs/{orgId}/resources` (ORG_ADMIN)
-```json
-{ "name": "", "type": "gpu"|"sensor"|"room"|"workstation",
-  "location": "", "enabled": true }
-```
 ### `PATCH /orgs/{orgId}/resources/{resourceId}` (ORG_ADMIN)
-### `DELETE /orgs/{orgId}/resources/{resourceId}` (ORG_ADMIN) → 204
+### `DELETE /orgs/{orgId}/resources/{resourceId}` → 204 (ORG_ADMIN)
+### `GET /orgs/{orgId}/bookings` → `Booking[]`
 ### `POST /orgs/{orgId}/resources/{resourceId}/requests` (TEAM_LEADER)
 ```json
 { "team_public_id": "", "start_time": "", "end_time": "", "purpose": "" }
@@ -129,32 +203,50 @@ Task = {
 ```json
 { "status": "approved"|"rejected" }
 ```
+Approving creates the Booking and **must** return 409 if the slot overlaps an
+existing one. The client-side check is advisory only (SRS 2.4).
 
 ```ts
-Resource = {
-  id, org_id, name, type, location, enabled, bookings: Booking[]
-}
-Booking = { id, resource_id, user_id, team_public_id?, start_time, end_time, purpose }
-ResourceRequest = {
-  id, resource_id, team_public_id, requested_by, start_time, end_time,
-  purpose, status: "pending"|"approved"|"rejected", created_at
-}
+Resource = { id, org_id, name, code, kind: "gpu"|"instrument"|"room"|"workstation",
+             location, enabled, availability: AvailabilityWindow[] }
+AvailabilityWindow = { weekday: 0-6, start: "08:00", end: "22:00" }
+Booking = { id, resource_id, team_public_id, team_name, requested_by_name,
+            start_time, end_time, purpose }
+ResourceRequest = { id, resource_id, resource_name, team_public_id, team_name,
+                    requested_by, requested_by_name, start_time, end_time, purpose,
+                    status: "pending"|"approved"|"rejected", created_at, decided_at? }
 ```
 
 ---
 
-## Collaborative docs (planned — mock in `src/lib/mock` + `src/lib/api/documents.ts`)
+## Settings and notifications
 
-### `GET /teams/{teamPublicId}/docs` → `DocSummary[]`
-### `POST /teams/{teamPublicId}/docs` `{ "title": "" }`
-### `GET /teams/{teamPublicId}/docs/{docId}` → Doc
-### `PATCH /teams/{teamPublicId}/docs/{docId}` `{ "title": "", "content": "" }`
-### `DELETE /teams/{teamPublicId}/docs/{docId}` (TEAM_LEADER) → 204
+### `GET /orgs/{orgId}/settings` → OrgSettings
+### `PATCH /orgs/{orgId}/settings` (ORG_ADMIN)
+### `GET /notification-prefs` → NotificationPrefs
+### `PUT /notification-prefs` → NotificationPrefs
 
 ```ts
-DocSummary = { id, team_public_id, title, updated_at, updated_by }
-Doc = { ...DocSummary, content } // rich-text JSON / HTML string for now
+OrgSettings = { org_id, name, public_id, status, registration_fields, ai }
+RegistrationField = { key, label, type: "text"|"email"|"number"|"select", required, options? }
+AiSettings = { enabled, provider: "builtin"|"custom", model, available_models, custom_endpoint? }
+NotificationPrefs = { mode: "all"|"mentions"|"off", email_enabled, email_address }
 ```
-NEXT_PUBLIC_API_ORG_ID=30ee7153-9b48-4560-8cbf-972587a60fda
-NEXT_PUBLIC_API_TEAM_SLUG=platform-engineering
-API_PROXY_TARGET=http://localhost:8080
+
+---
+
+## AI (context service) — members only
+
+### `POST /teams/{teamId}/ai/chat-summary` `{ from?, to? }` → AiSummary
+### `POST /teams/{teamId}/ai/transcript-summary` `{ transcript, question? }` → AiSummary
+### `POST /teams/{teamId}/ai/extract-tasks` `{ transcript? } | { from, to }` → `{ tasks }`
+
+All three return 403 when the org has AI disabled. Extraction is offered to team
+leaders only (SRS 3.1.9.3); the suggestions stay editable until someone accepts
+them onto the board.
+
+```ts
+AiSummary = { id, headline, bullets: string[], decisions: string[],
+              model, generated_at, source_count }
+ExtractedTask = { title, description, assignee_id, priority, start_date, due_date, evidence }
+```
