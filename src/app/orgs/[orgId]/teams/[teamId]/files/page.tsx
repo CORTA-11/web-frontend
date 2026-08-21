@@ -22,7 +22,11 @@ export default function FilesPage() {
       <PageHeader
         eyebrow={team.data?.name ?? "Team"}
         title="Files"
-        meta={files.data ? `${files.data.length} files · ${fileSize(used)} used` : undefined}
+        meta={
+          files.data
+            ? `${files.data.length} files · ${fileSize(used)} used · AES-256-GCM in this browser`
+            : undefined
+        }
       />
       <TeamMembersOnly teamId={teamId}>
         <UploadZone teamId={teamId} orgId={orgId}>

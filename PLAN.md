@@ -4,7 +4,7 @@ Scope: `web-frontend/` only. `core-api`, `socket-server` and `mobile-app` were n
 touched. Where the web app needs something the backend does not have, it is
 listed in [§8 Backend asks](#8-backend-asks) rather than worked around.
 
-**Status: all phases built.** 29 Playwright specs pass, `npm run build` and
+**Status: all phases built.** 31 Playwright specs pass, `npm run build` and
 `tsc --noEmit` are clean.
 
 ---
@@ -26,7 +26,7 @@ src/
   app/                    # routes only — params in, one feature component out
   features/<module>/      # api.ts · queries.ts · components/  (one vertical each)
   components/ui|layout|common/
-  lib/                    # http · types · rbac · format · env · query-keys
+  lib/                    # http · types · rbac · format · env · query-keys · crypto · keystore
   mocks/                  # MSW: db · seed · handlers · guards
 ```
 
@@ -124,7 +124,8 @@ Not on web, per SRS 3.1.10: push notifications, private sticky notes, quick capt
 | 5 Resources | Admin CRUD with weekly availability windows, multi-resource calendar, slot requests with clash warning, approval queue with server-side conflict rejection |
 | 6 Docs & files | TipTap editor with autosave and periodic pull, rename, leader-only delete; upload/download/delete with drag-and-drop |
 | 7 AI | Chat summary over a date range, transcript summary with follow-up question, task extraction into an editable review table |
-| 8 Console & polish | Org settings, people, notifications, org overview, platform console, privacy gates, 29 Playwright specs |
+| 8 Console & polish | Org settings, people, notifications, org overview, platform console, privacy gates, 31 Playwright specs |
+| 9 File encryption | AES-256-GCM envelope in `lib/crypto.ts`, browser-held key in `lib/keystore.ts`; files are sealed before upload and opened after download |
 
 **Size:** ~7,400 lines under `src/`, of which ~1,100 is the mock server that
 deletes itself as the backend lands. That is above the 5,000-line target set
@@ -155,11 +156,16 @@ Nothing here is worked around; the affected module stays mocked until it lands.
 9. **Membership checks on every team-content route.** The frontend enforces the
    privacy model, but the server is the authority — an org admin calling
    `GET /teams/{id}/chat/messages` directly must get a 403.
-10. **SRS 3.5.3.3 says all encryption and decryption happen on the client.** No
-    key management, key exchange or envelope format exists anywhere in the repo,
-    and it cannot be added by the frontend alone. This needs a team decision
-    before any module claims end-to-end encryption; until then the app is
-    TLS-in-transit only, and no screen says otherwise.
+10. **SRS 3.5.3.3 says all encryption and decryption happen on the client.**
+    Files now are: `lib/crypto.ts` seals them with AES-256-GCM before upload and
+    opens them after download, so core-api only ever sees ciphertext and a
+    `application/vnd.corta.encrypted` content type. What is still missing is key
+    management (SRS 3.5.3.4) — every browser seeds the *same fixed development
+    key* from `lib/keystore.ts`, because generation, wrapping, per-team exchange
+    and rotation need a decision across frontend, core-api and mobile. Until
+    that lands this is encryption at rest on the server, not end-to-end
+    encryption, and the Files screen says only "AES-256-GCM in this browser".
+    Board, chat and document content is still stored in the clear.
 
 ## 9. Known limits
 

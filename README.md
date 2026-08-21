@@ -50,9 +50,24 @@ npx playwright install chromium   # first run only
 npx playwright test
 ```
 
-29 specs covering sign-in, teams and membership rules, the Kanban board
-(including keyboard drag), chat, resource approval, documents, file upload, the
-platform console, and the privacy boundaries between the three tiers.
+31 specs covering sign-in, teams and membership rules, the Kanban board
+(including keyboard drag), chat, resource approval, documents, file upload and
+the encrypt/decrypt round trip, the platform console, and the privacy boundaries
+between the three tiers.
+
+## File encryption
+
+File contents are encrypted in the browser with AES-256-GCM before upload and
+decrypted after download (`lib/crypto.ts`), so the server stores ciphertext and
+sees `application/vnd.corta.encrypted` as the content type. The key is held in
+the browser (`localStorage`, key `corta.file-key`) by `lib/keystore.ts`.
+
+It is a **fixed development key**, the same in every browser: key generation,
+exchange and rotation are still open (`PLAN.md` §8.10). Clearing the key from
+storage restores the same fixed key, so nothing becomes unreadable — but that
+also means this is not yet end-to-end encryption. Files uploaded before this
+existed, and any written by another client in the clear, still download fine:
+the envelope is detected, not assumed.
 
 ## Scripts
 

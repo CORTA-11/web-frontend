@@ -1,3 +1,4 @@
+import { fileCrypto } from "@/lib/crypto";
 import { isLive } from "@/lib/env";
 import { API_BASE } from "@/lib/env";
 import { api, ApiError } from "@/lib/http";
@@ -26,9 +27,10 @@ export const filesApi = {
       ? api<LiveFile[]>(livePath(teamId), { headers: orgHeader(orgId) }).then((files) => files.map(fromLive))
       : api<StoredFile[]>(`/teams/${teamId}/files`),
 
-  upload: (teamId: string, orgId: string, file: File) => {
+  /** Sealed before it is attached, so plaintext never reaches the network. */
+  upload: async (teamId: string, orgId: string, file: File) => {
     const form = new FormData();
-    form.append("file", file);
+    form.append("file", await fileCrypto.encrypt(file));
     return isLive("files")
       ? api<LiveFile>(livePath(teamId, "/upload"), { method: "POST", headers: orgHeader(orgId), body: form }).then(fromLive)
       : api<StoredFile>(`/teams/${teamId}/files/upload`, { method: "POST", body: form });
@@ -39,7 +41,10 @@ export const filesApi = {
       ? Promise.reject(new ApiError(501, "core-api cannot delete files yet — see PLAN.md §10"))
       : api<void>(`/teams/${teamId}/files/${fileId}`, { method: "DELETE" }),
 
-  /** Streams through fetch so the bearer token travels with the request. */
+  /**
+   * Streams through fetch so the bearer token travels with the request — and so
+   * the bytes are unsealed in the page, never handed to the browser encrypted.
+   */
   download: async (teamId: string, orgId: string, file: StoredFile) => {
     const path = isLive("files")
       ? livePath(teamId, `/download/${encodeURIComponent(file.name)}`)
@@ -53,11 +58,12 @@ export const filesApi = {
     });
     if (!response.ok) throw new ApiError(response.status, "Could not download that file");
 
-    const url = URL.createObjectURL(await response.blob());
+    const url = URL.createObjectURL(await fileCrypto.decrypt(await response.blob()));
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = file.name;
     anchor.click();
-    URL.revokeObjectURL(url);
+    // Revoked a tick later: Chromium reads the blob after the click returns.
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   },
 };

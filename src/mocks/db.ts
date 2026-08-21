@@ -14,6 +14,8 @@ export const db = {
   requests: structuredClone(seed.requests),
   docs: structuredClone(seed.docs),
   files: structuredClone(seed.files),
+  /** Uploaded bytes, keyed by file id — ciphertext, exactly as the browser sent it. */
+  fileBlobs: {} as Record<string, ArrayBuffer>,
   settings: structuredClone(seed.settings),
   notifications: {
     mode: "all",

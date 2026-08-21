@@ -1,10 +1,11 @@
 "use client";
 
-import { DownloadIcon, Trash2Icon } from "lucide-react";
+import { DownloadIcon, LockIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/EmptyState";
 import { useDeleteFile, useDownloadFile } from "@/features/files/queries";
+import { fileCrypto } from "@/lib/crypto";
 import { dateTime, fileSize } from "@/lib/format";
 import type { StoredFile } from "@/lib/types";
 
@@ -38,7 +39,17 @@ export function FileTable({ teamId, orgId, files, currentUserId, canDeleteAny }:
       <TableBody>
         {files.map((file) => (
           <TableRow key={file.id}>
-            <TableCell className="font-mono text-xs">{file.name}</TableCell>
+            <TableCell className="font-mono text-xs">
+              <span className="inline-flex items-center gap-1.5">
+                {file.content_type === fileCrypto.mime && (
+                  <>
+                    <LockIcon className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                    <span className="sr-only">Encrypted, </span>
+                  </>
+                )}
+                {file.name}
+              </span>
+            </TableCell>
             <TableCell className="hidden sm:table-cell text-muted-foreground" data-numeric>
               {fileSize(file.size)}
             </TableCell>

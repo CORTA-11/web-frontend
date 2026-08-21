@@ -21,7 +21,7 @@ web-frontend/
 │   │   ├── ui/               # shadcn primitives — generated, never hand-edited
 │   │   ├── layout/           # AppShell, Sidebar, Header, ProfileMenu
 │   │   └── common/           # QueryBoundary, PageHeader, EmptyState, Field
-│   ├── lib/                  # http, types, rbac, format, env, query-keys
+│   ├── lib/                  # http, types, rbac, format, env, query-keys, crypto
 │   └── mocks/                # MSW server: db, seed, handlers, guards
 ├── tests/                    # Playwright specs
 └── next.config.ts            # /api → core-api proxy
@@ -53,6 +53,12 @@ a module is one person's diff.
   (SRS 3.5.4.2, 3.1.8.2). Enforced in `src/mocks/guard.ts` on the server side and
   by `TeamMembersOnly` / `OrgGate` in the UI.
 - `lib/rbac.ts` holds every permission rule, one line per SRS clause it enforces.
+- **File bytes are sealed in the browser.** `lib/crypto.ts` owns the AES-256-GCM
+  envelope and is the only place that calls `crypto.subtle`; `lib/keystore.ts`
+  owns the key, which is the one secret kept in `localStorage`. Uploads encrypt
+  and downloads decrypt in `features/files/api.ts` — never bypass it with a raw
+  `fetch`. The key is a fixed development key today (PLAN.md §8.10), so no
+  screen claims end-to-end encryption.
 
 ## 4. File length & quality rules
 

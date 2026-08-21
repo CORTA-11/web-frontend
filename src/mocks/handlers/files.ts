@@ -29,13 +29,17 @@ export const fileHandlers = [
       uploaded_at: now(),
     };
     shelfOf(String(params.teamId)).unshift(entry);
+    // Kept verbatim so a download round-trips the real ciphertext, not a stand-in.
+    db.fileBlobs[entry.id] = await upload.arrayBuffer();
     return HttpResponse.json(entry, { status: 201 });
   }),
 
   teamRoute.get("/api/teams/:teamId/files/download/:fileId", ({ params }) => {
     const entry = shelfOf(String(params.teamId)).find((f) => f.id === params.fileId);
     if (!entry) return new HttpResponse("File not found", { status: 404 });
-    return new HttpResponse(`Placeholder contents for ${entry.name}`, {
+    // Seeded files were never uploaded through the browser, so they have no
+    // bytes and no envelope — the client hands those back undecrypted.
+    return new HttpResponse(db.fileBlobs[entry.id] ?? `Placeholder contents for ${entry.name}`, {
       headers: {
         "Content-Type": entry.content_type,
         "Content-Disposition": `attachment; filename=${entry.name}`,
@@ -54,6 +58,7 @@ export const fileHandlers = [
       return new HttpResponse("You can only delete files you uploaded", { status: 403 });
     }
     db.files[teamId] = shelf.filter((f) => f.id !== entry.id);
+    delete db.fileBlobs[entry.id];
     return new HttpResponse(null, { status: 204 });
   }),
 ];

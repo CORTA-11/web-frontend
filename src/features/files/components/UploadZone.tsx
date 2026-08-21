@@ -42,9 +42,11 @@ export function UploadZone({
       <div className="flex items-center gap-2">
         <Button size="sm" variant="outline" disabled={upload.isPending} onClick={() => input.current?.click()}>
           <UploadIcon />
-          {upload.isPending ? "Uploading…" : "Upload files"}
+          {upload.isPending ? "Encrypting…" : "Upload files"}
         </Button>
-        <span className="text-xs text-muted-foreground">or drop them anywhere below</span>
+        <span className="text-xs text-muted-foreground">
+          or drop them anywhere below — encrypted here before they leave the page
+        </span>
         <input
           ref={input}
           type="file"
