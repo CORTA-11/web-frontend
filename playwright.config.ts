@@ -9,6 +9,10 @@ export default defineConfig({
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:3000',
+    // Contract tests own API interception through page.route(). A service
+    // worker would claim those requests first and let unmatched calls escape
+    // through Next's rewrite to a backend that CI does not start.
+    serviceWorkers: 'block',
     trace: 'on-first-retry',
   },
   projects: [
@@ -19,6 +23,9 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
+    env: {
+      NEXT_PUBLIC_MOCKS: 'off',
+    },
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
   },
