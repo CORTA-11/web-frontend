@@ -4,11 +4,22 @@
  * handlers both import from here, so they cannot drift apart.
  */
 
-export type OrgRole = "ORG_ADMIN" | "ORG_MEMBER";
+export type OrgRole = "ORG_ADMIN" | "ORG_MEMBER" | "owner" | "administrator" | "member";
 /** Operator of the whole deployment, above any single tenant. */
 export type PlatformRole = "SUPER_ADMIN";
 export type OrgStatus = "pending" | "active" | "suspended" | "rejected";
-export type TeamRole = "TEAM_LEADER" | "TEAM_MEMBER";
+export type TeamRole = "TEAM_LEADER" | "TEAM_MEMBER" | "team_admin" | "research_lead" | "researcher" | "contributor" | "viewer";
+
+export type OrganizationMember = {
+  user_id: string;
+  display_name: string;
+  email: string;
+  role: "owner" | "administrator" | "member";
+  joined_at: string;
+};
+
+export type OrganizationInvitation = { id: string; created_at: string; expires_at: string };
+export type InvitationPreview = { organization_id: string; organization_name: string; expires_at: string };
 export type Priority = "low" | "medium" | "high";
 
 export type User = {

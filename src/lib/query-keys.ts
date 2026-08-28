@@ -2,6 +2,7 @@
 export const qk = {
   session: ["session"] as const,
   orgUsers: (orgId: string) => ["orgs", orgId, "users"] as const,
+  orgInvitations: (orgId: string) => ["orgs", orgId, "invitations"] as const,
   orgSettings: (orgId: string) => ["orgs", orgId, "settings"] as const,
   teams: (orgId: string) => ["orgs", orgId, "teams"] as const,
   resources: (orgId: string) => ["orgs", orgId, "resources"] as const,

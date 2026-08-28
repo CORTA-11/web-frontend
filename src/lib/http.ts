@@ -1,5 +1,6 @@
 import { API_BASE } from "@/lib/env";
 import { getAccessToken } from "@/lib/token";
+import { getCsrfToken, setCsrfToken } from "@/lib/csrf";
 
 export class ApiError extends Error {
   constructor(
@@ -21,6 +22,8 @@ type Options = Omit<RequestInit, "body"> & { json?: unknown; body?: BodyInit };
 export async function api<T>(path: string, options: Options = {}): Promise<T> {
   const { json, headers, ...rest } = options;
   const token = getAccessToken();
+	const method = (rest.method ?? "GET").toUpperCase();
+	const csrf = getCsrfToken();
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...rest,
@@ -28,6 +31,7 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
     headers: {
       ...(json !== undefined && { "Content-Type": "application/json" }),
       ...(token && { Authorization: `Bearer ${token}` }),
+	  ...(csrf && !["GET", "HEAD", "OPTIONS"].includes(method) && { "X-CSRF-Token": csrf }),
       ...headers,
     },
     ...(json !== undefined && { body: JSON.stringify(json) }),
@@ -39,9 +43,14 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
   }
 
   if (response.status === 204) return undefined as T;
-  return response.headers.get("content-type")?.includes("json")
-    ? response.json()
-    : ((await response.text()) as T);
+  if (response.headers.get("content-type")?.includes("json")) {
+    const value: unknown = await response.json();
+    if (value && typeof value === "object" && "csrf_token" in value && typeof value.csrf_token === "string") {
+      setCsrfToken(value.csrf_token);
+    }
+    return value as T;
+  }
+  return (await response.text()) as T;
 }
 
 export const errorMessage = (error: unknown) =>

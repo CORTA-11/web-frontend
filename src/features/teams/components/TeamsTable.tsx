@@ -11,9 +11,12 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { StatusDot } from "@/components/common/StatusDot";
 import { useDeleteTeam } from "@/features/teams/queries";
 import { day } from "@/lib/format";
-import type { Team } from "@/lib/types";
+import type { Team, TeamRole } from "@/lib/types";
 
-const ROLE_LABEL = { TEAM_LEADER: "Leader", TEAM_MEMBER: "Member" };
+const ROLE_LABEL: Record<TeamRole, string> = {
+  TEAM_LEADER: "Team leader", TEAM_MEMBER: "Member", team_admin: "Team leader",
+  research_lead: "Research lead", researcher: "Researcher", contributor: "Contributor", viewer: "Viewer",
+};
 
 export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: Team[]; canDelete: boolean }) {
   const remove = useDeleteTeam(orgId);
@@ -56,7 +59,7 @@ export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: 
             </TableCell>
             <TableCell className="hidden sm:table-cell">
               {team.my_role ? (
-                <StatusDot tone={team.my_role === "TEAM_LEADER" ? "info" : "muted"}>
+                <StatusDot tone={team.my_role === "TEAM_LEADER" || team.my_role === "team_admin" ? "info" : "muted"}>
                   {ROLE_LABEL[team.my_role]}
                 </StatusDot>
               ) : (
