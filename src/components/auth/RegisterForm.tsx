@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ type FieldErrors = Partial<Record<"display_name" | "email" | "password" | "passw
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const register = useAuthStore((state) => state.register);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export function RegisterForm() {
       if (Object.keys(nextErrors).length === 0) setError(problem.detail);
       return;
     }
-    router.push("/orgs");
+    router.push(searchParams.get("next") === "/invite" ? "/invite" : "/orgs");
   }
 
   return (
@@ -61,7 +62,7 @@ export function RegisterForm() {
           <Field id="password_confirmation" label="Confirm password" type="password" autoComplete="new-password" error={fieldErrors.password_confirmation} disabled={pending} />
           {error ? <p role="alert" className="text-sm text-rose-600">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={pending}>{pending ? "Creating account…" : "Create account"}</Button>
-          <p className="text-center text-sm text-zinc-600">Already have an account? <Link href="/login" className="font-medium underline">Sign in</Link></p>
+          <p className="text-center text-sm text-zinc-600">Already have an account? <Link href={searchParams.get("next") === "/invite" ? "/login?next=/invite" : "/login"} className="font-medium underline">Sign in</Link></p>
         </form>
       </CardContent>
     </Card>

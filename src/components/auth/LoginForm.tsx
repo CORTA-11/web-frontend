@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { useAuthStore } from "@/stores/auth-store";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const login = useAuthStore((s) => s.login);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -36,7 +37,7 @@ export function LoginForm() {
       setError(result);
       return;
     }
-    router.push("/orgs");
+    router.push(searchParams.get("next") === "/invite" ? "/invite" : "/orgs");
   }
 
   return (
@@ -85,7 +86,7 @@ export function LoginForm() {
             {pending ? "Signing in…" : "Sign in"}
           </Button>
           <p className="text-center text-sm text-zinc-600">
-            New to CORTA? <Link href="/register" className="font-medium underline">Create account</Link>
+            New to CORTA? <Link href={searchParams.get("next") === "/invite" ? "/register?next=/invite" : "/register"} className="font-medium underline">Create account</Link>
           </p>
         </form>
       </CardContent>
