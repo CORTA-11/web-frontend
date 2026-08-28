@@ -8,15 +8,14 @@ import { useAuthStore } from "@/stores/auth-store";
 export function AuthRedirect({ children }: { children: React.ReactNode }) {
   const isReady = useAuthBootstrap();
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
-  const isAuthed = Boolean(accessToken && user);
+  const isAuthed = Boolean(user);
 
   useEffect(() => {
-    if (isReady && isAuthed && user) {
-      router.replace(`/orgs/${user.orgId}`);
+    if (isReady && isAuthed) {
+      router.replace("/orgs");
     }
-  }, [isReady, isAuthed, user, router]);
+  }, [isReady, isAuthed, router]);
 
   if (!isReady || isAuthed) {
     return (

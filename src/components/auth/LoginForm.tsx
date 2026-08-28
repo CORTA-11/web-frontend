@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -33,12 +31,11 @@ export function LoginForm() {
     const result = await login(email, password);
     setPending(false);
 
-    if (!result.success) {
-      setError(result.error);
+    if (result) {
+      setError(result);
       return;
     }
-
-    router.push(`/orgs/${result.data.user.orgId}`);
+    router.push("/orgs");
   }
 
   return (
@@ -89,17 +86,6 @@ export function LoginForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="justify-center">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-50"
-          >
-            Register
-          </Link>
-        </p>
-      </CardFooter>
     </Card>
   );
 }

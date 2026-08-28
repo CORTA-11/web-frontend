@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
       {
         // Browser calls /api/* on the Next origin; Next proxies to core-api.
         source: "/api/:path*",
-        destination: `${apiProxyTarget}/:path*`,
+        destination: `${apiProxyTarget}/api/:path*`,
       },
     ];
   },

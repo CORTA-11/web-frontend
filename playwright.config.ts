@@ -8,22 +8,18 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
   projects: [
     {
       name: 'chromium',
-      use: { 
-        ...devices['Desktop Chrome'],
-        // Point directly to the Arch Linux executable instead of using 'channel'
-        executablePath: '/usr/bin/chromium',
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
-    
-    /* Commented out because system Firefox lacks the required Juggler patches */
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
   ],
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+  },
 });

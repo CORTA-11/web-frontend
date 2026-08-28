@@ -8,16 +8,15 @@ import { useAuthStore } from "@/stores/auth-store";
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const isReady = useAuthBootstrap();
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    if (isReady && (!accessToken || !user)) {
+    if (isReady && !user) {
       router.replace("/login");
     }
-  }, [isReady, accessToken, user, router]);
+  }, [isReady, user, router]);
 
-  if (!isReady || !accessToken || !user) {
+  if (!isReady || !user) {
     return (
       <div className="flex min-h-full items-center justify-center text-sm text-zinc-500">
         Loading…

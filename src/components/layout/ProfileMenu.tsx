@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/auth-store";
 
 function initials(name: string) {
@@ -53,17 +53,14 @@ export function ProfileMenu() {
         aria-expanded={open}
       >
         <Avatar size="sm">
-          {user.avatarUrl ? (
-            <AvatarImage src={user.avatarUrl} alt={user.name} />
-          ) : null}
-          <AvatarFallback>{initials(user.name) || "U"}</AvatarFallback>
+          <AvatarFallback>{initials(user.display_name) || "U"}</AvatarFallback>
         </Avatar>
       </button>
 
       {open ? (
         <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
           <div className="border-b border-zinc-100 px-2 py-2 dark:border-zinc-800">
-            <p className="truncate text-sm font-medium">{user.name}</p>
+            <p className="truncate text-sm font-medium">{user.display_name}</p>
             <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
               {user.email}
             </p>
