@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -83,6 +84,9 @@ export function LoginForm() {
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Signing in…" : "Sign in"}
           </Button>
+          <p className="text-center text-sm text-zinc-600">
+            New to CORTA? <Link href="/register" className="font-medium underline">Create account</Link>
+          </p>
         </form>
       </CardContent>
 
