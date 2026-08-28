@@ -1,0 +1,48 @@
+/* Reading layout for document content — narrow measure, quiet rules. */
+.doc-body {
+  max-width: 68ch;
+  color: var(--foreground);
+}
+.doc-body > * + * {
+  margin-top: 0.75rem;
+}
+.doc-body h2 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+}
+.doc-body h3 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+  margin-top: 1.25rem;
+}
+.doc-body ul,
+.doc-body ol {
+  padding-left: 1.25rem;
+}
+.doc-body ul { list-style: disc; }
+.doc-body ol { list-style: decimal; }
+.doc-body li::marker { color: var(--muted-foreground); }
+.doc-body li + li { margin-top: 0.25rem; }
+.doc-body blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 0.75rem;
+  color: var(--muted-foreground);
+}
+.doc-body code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: var(--muted);
+  padding: 0.05rem 0.25rem;
+  border-radius: 2px;
+}
+.doc-body p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

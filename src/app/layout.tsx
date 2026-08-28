@@ -1,25 +1,32 @@
 import type { Metadata } from "next";
-
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Providers } from "@/app/providers";
 import "./globals.css";
 
+const sans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
-
+const mono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "CORTA",
-  description: "Privacy-preserving collaborative research platform.",
+  description: "Privacy-preserving collaborative resource and task orchestrator.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en">
-      <body className="min-h-full bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-        {children}
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+      <body>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

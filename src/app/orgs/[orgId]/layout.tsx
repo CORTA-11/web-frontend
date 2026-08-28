@@ -1,34 +1,22 @@
-"use client";
+import type { ReactNode } from "react";
+import { AppShell } from "@/components/layout/AppShell";
+import { OrgGate } from "@/features/auth/components/OrgGate";
+import { RequireSession } from "@/features/auth/components/SessionGate";
 
-import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
-import { AuthGuard } from "@/components/auth/AuthGuard";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
-
-export default function OrgLayout({
+export default async function OrgLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const pathname = usePathname();
-  const mainRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [pathname]);
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ orgId: string }>;
+}) {
+  const { orgId } = await params;
 
   return (
-    <AuthGuard>
-      <div className="flex min-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col md:ml-60">
-          <Header />
-          <main ref={mainRef} className="flex min-h-0 flex-1 overflow-y-auto px-4 pt-20 pb-6 md:px-8">
-            {children}
-          </main>
-        </div>
-      </div>
-    </AuthGuard>
+    <RequireSession>
+      <OrgGate orgId={orgId}>
+        <AppShell>{children}</AppShell>
+      </OrgGate>
+    </RequireSession>
   );
 }
