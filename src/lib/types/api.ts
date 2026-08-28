@@ -28,6 +28,7 @@ export type Organization = {
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
+  my_role: "owner" | "administrator" | "member";
 };
 
 export type Team = {

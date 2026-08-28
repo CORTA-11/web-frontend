@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { membershipsApi } from "@/features/memberships/api";
-import { errorMessage } from "@/lib/http";
+import { problemMessage } from "@/lib/api/client";
 
 const storageKey = "organization-invitation-token";
 
@@ -30,7 +30,7 @@ export function InvitationDecision() {
     <h1 className="text-lg font-semibold">Join {preview.data.organization_name}</h1>
     <p>This invitation expires {new Date(preview.data.expires_at).toLocaleString()}. Sign in or register with the invited email before accepting.</p>
     <div className="flex gap-2"><Button onClick={() => accept.mutate()}>Accept</Button><Button variant="outline" onClick={() => decline.mutate()}>Decline</Button></div>
-    {(accept.isError || decline.isError) && <p role="alert" className="text-danger">{errorMessage(accept.error ?? decline.error)}</p>}
+    {(accept.isError || decline.isError) && <p role="alert" className="text-danger">{problemMessage(accept.error ?? decline.error)}</p>}
     <p className="text-sm"><Link className="underline" href="/login?next=/invite">Sign in</Link> or <Link className="underline" href="/register?next=/invite">register</Link></p>
   </div>;
 }

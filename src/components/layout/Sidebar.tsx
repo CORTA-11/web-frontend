@@ -1,16 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { Building2, LayoutDashboard, Users } from "lucide-react";
-import { useSession } from "@/features/auth/session";
+import { organizationsApi } from "@/lib/api/organizations";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { orgId } = useParams<{ orgId: string }>();
-  const { user } = useSession();
-  const canManagePeople = user && ["ORG_ADMIN", "owner", "administrator"].includes(user.org_role);
+  const [role, setRole] = useState<"owner" | "administrator" | "member" | null>(null);
+  useEffect(() => {
+    let current = true;
+    void organizationsApi.get(orgId).then((organization) => {
+      if (current) setRole(organization.my_role);
+    }).catch(() => { if (current) setRole(null); });
+    return () => { current = false; };
+  }, [orgId]);
+  const canManagePeople = role === "owner" || role === "administrator";
   const organizationRoot = `/orgs/${orgId}`;
   const items = [
     { href: "/orgs", label: "Organizations", icon: Building2, active: pathname === "/orgs" },
