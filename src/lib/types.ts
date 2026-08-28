@@ -35,8 +35,6 @@ export type Organization = {
   decided_at?: string | null;
 };
 
-export type AuthResponse = { access_token: string; user: User };
-
 export type OrgUser = {
   id: number;
   email: string;

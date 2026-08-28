@@ -1,36 +1,57 @@
 import { isLive } from "@/lib/env";
 import { api } from "@/lib/http";
-import type { OrgUser, Team, TeamMember } from "@/lib/types";
-
-const orgHeader = (orgId: string) => ({ "X-Org-ID": orgId });
+import type { OrgUser, Team, TeamMember, TeamRole } from "@/lib/types";
 
 /**
- * core-api scopes teams by an X-Org-ID header and returns { id, name, slug }
- * with no membership data. Mapping it to the contract shape happens here and
- * nowhere else.
+ * core-api v1 scopes teams under /orgs/{org_id}/teams and identifies them by
+ * UUID. In live mode Team.public_id is set to the backend team UUID, so the
+ * sub-routes (board/tasks) resolve without a slug→UUID lookup. The backend
+ * returns no description or per-team member counts, so those stay blank/zero.
+ *
+ * Only listing, creation, member-list and add-member exist on the backend;
+ * remove/leader/leave/org-users have no routes, and member rows carry no name
+ * or email, so the roster shows blank identities until the backend grows them.
  */
-type LiveTeam = { id: number; name: string; slug: string; created_at: string };
+
+type LiveTeam = { id: string; name: string; slug: string; created_at: string; my_role: string };
+
+const roleOf = (role: string): TeamRole | undefined => (role === "team_admin" ? "TEAM_LEADER" : "TEAM_MEMBER");
 
 const fromLive = (orgId: string) => (team: LiveTeam): Team => ({
-  id: team.id,
-  public_id: team.slug,
+  id: 0,
+  public_id: team.id,
   org_id: orgId,
   name: team.name,
   member_count: 0,
   created_at: team.created_at,
+  my_role: team.my_role ? roleOf(team.my_role) : undefined,
 });
 
 export type CreateTeam = { name: string; description?: string; leader_user_id: number };
 
+/** backend team-member list: user UUID + role only — no name/email yet. */
+type LiveMember = { user_id: string; role: string; joined_at: string };
+
+/** Stable numeric key from a UUID so the roster table keeps a usable id. */
+const numericKey = (uuid: string) => Number(`0x${uuid.replace(/-/g, "").slice(0, 15)}`);
+
+const memberFromLive = (entry: LiveMember): TeamMember => ({
+  user_id: numericKey(entry.user_id),
+  name: "",
+  email: "",
+  role: roleOf(entry.role) ?? "TEAM_MEMBER",
+  joined_at: entry.joined_at,
+});
+
 export const teamsApi = {
   list: (orgId: string) =>
     isLive("teams")
-      ? api<LiveTeam[]>("/teams", { headers: orgHeader(orgId) }).then((teams) => teams.map(fromLive(orgId)))
+      ? api<{ items: LiveTeam[] }>(`/v1/orgs/${orgId}/teams`).then((page) => page.items.map(fromLive(orgId)))
       : api<Team[]>(`/orgs/${orgId}/teams`),
 
   create: (orgId: string, body: CreateTeam) =>
     isLive("teams")
-      ? api<LiveTeam>("/teams", { method: "POST", headers: orgHeader(orgId), json: { name: body.name } }).then(fromLive(orgId))
+      ? api<LiveTeam>(`/v1/orgs/${orgId}/teams`, { method: "POST", json: { name: body.name } }).then(fromLive(orgId))
       : api<Team>(`/orgs/${orgId}/teams`, { method: "POST", json: body }),
 
   get: (teamId: string) => api<Team>(`/teams/${teamId}`),
@@ -40,10 +61,19 @@ export const teamsApi = {
 
   remove: (teamId: string) => api<void>(`/teams/${teamId}`, { method: "DELETE" }),
 
-  members: (teamId: string) => api<TeamMember[]>(`/teams/${teamId}/members`),
+  members: (teamId: string, orgId: string) =>
+    isLive("teams")
+      ? api<{ items: LiveMember[] }>(`/v1/orgs/${orgId}/teams/${teamId}/members`).then((page) =>
+          page.items.map(memberFromLive)
+        )
+      : api<TeamMember[]>(`/teams/${teamId}/members`),
 
-  addMember: (teamId: string, userId: number) =>
-    api<TeamMember>(`/teams/${teamId}/members`, { method: "POST", json: { user_id: userId } }),
+  addMember: (teamId: string, orgId: string, email: string) =>
+    isLive("teams")
+      ? api<LiveMember>(`/v1/orgs/${orgId}/teams/${teamId}/members`, { method: "POST", json: { email } }).then(
+          memberFromLive
+        )
+      : api<TeamMember>(`/teams/${teamId}/members`, { method: "POST", json: { user_id: 0 } }),
 
   removeMember: (teamId: string, userId: number) =>
     api<void>(`/teams/${teamId}/members/${userId}`, { method: "DELETE" }),

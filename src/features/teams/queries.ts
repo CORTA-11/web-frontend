@@ -13,8 +13,8 @@ export const useTeams = (orgId: string) =>
 export const useTeam = (teamId: string) =>
   useQuery({ queryKey: qk.team(teamId), queryFn: () => teamsApi.get(teamId) });
 
-export const useMembers = (teamId: string) =>
-  useQuery({ queryKey: qk.members(teamId), queryFn: () => teamsApi.members(teamId) });
+export const useMembers = (teamId: string, orgId: string) =>
+  useQuery({ queryKey: qk.members(teamId), queryFn: () => teamsApi.members(teamId, orgId) });
 
 export const useOrgUsers = (orgId: string) =>
   useQuery({ queryKey: qk.orgUsers(orgId), queryFn: () => teamsApi.orgUsers(orgId) });
@@ -74,8 +74,12 @@ function useRosterMutation<TArgs>(
   });
 }
 
-export const useAddMember = (teamId: string) =>
-  useRosterMutation(teamId, (userId: number) => teamsApi.addMember(teamId, userId), "Member added");
+export const useAddMember = (teamId: string, orgId: string) =>
+  useRosterMutation(
+    teamId,
+    (email: string) => teamsApi.addMember(teamId, orgId, email),
+    "Member added"
+  );
 
 export const useRemoveMember = (teamId: string) =>
   useRosterMutation(teamId, (userId: number) => teamsApi.removeMember(teamId, userId), "Member removed");

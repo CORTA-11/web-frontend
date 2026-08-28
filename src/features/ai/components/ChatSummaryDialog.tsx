@@ -22,7 +22,7 @@ const asDate = (date: Date) => date.toISOString().slice(0, 10);
 export function ChatSummaryDialog({ teamId, actor }: { teamId: string; actor: Actor | null }) {
   const { orgId } = useParams<{ orgId: string }>();
   const org = useOrgSettings(orgId);
-  const members = useMembers(teamId);
+  const members = useMembers(teamId, orgId);
   const summarise = useChatSummary(teamId);
   const extract = useExtractTasks(teamId);
   const [open, setOpen] = useState(false);

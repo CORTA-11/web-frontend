@@ -14,14 +14,14 @@ export function AuthShell({ children }: { children: ReactNode }) {
     <div className="grid min-h-svh lg:grid-cols-[minmax(0,22rem)_1fr]">
       <aside className="hidden flex-col justify-between border-r border-sidebar-border bg-sidebar p-8 lg:flex">
         <Wordmark />
-        <dl className="flex flex-col gap-3">
+        {/* <dl className="flex flex-col gap-3">
           {INSTANCE.map(([term, value]) => (
             <div key={term} className="flex flex-col gap-0.5">
               <dt className="label-eyebrow">{term}</dt>
               <dd className="data-mono text-sidebar-foreground">{value}</dd>
             </div>
           ))}
-        </dl>
+        </dl> */}
         <p className="max-w-[26ch] text-xs text-muted-foreground">
           Collaborative resource and task orchestration for research teams.
         </p>

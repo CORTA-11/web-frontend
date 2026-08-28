@@ -14,7 +14,7 @@ import { can } from "@/lib/rbac";
 export default function MembersPage() {
   const { orgId, teamId } = useParams<{ orgId: string; teamId: string }>();
   const { team, actor, user } = useTeamContext(teamId);
-  const members = useMembers(teamId);
+  const members = useMembers(teamId, orgId);
   const leave = useLeaveTeam(teamId);
 
   return (

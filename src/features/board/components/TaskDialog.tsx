@@ -39,8 +39,8 @@ type Props = {
 
 export function TaskDialog({ teamId, orgId, columns, members, task, defaultColumn, onClose }: Props) {
   const create = useCreateTask(teamId, orgId);
-  const update = useUpdateTask(teamId);
-  const remove = useDeleteTask(teamId);
+  const update = useUpdateTask(teamId, orgId);
+  const remove = useDeleteTask(teamId, orgId);
 
   const { register, handleSubmit } = useForm<Values>({
     values: {

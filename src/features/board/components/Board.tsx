@@ -22,8 +22,8 @@ type Editing = { task: Task | null; column: string };
 
 export function Board({ teamId, orgId }: { teamId: string; orgId: string }) {
   const board = useBoard(teamId, orgId);
-  const members = useMembers(teamId);
-  const move = useMoveTask(teamId);
+  const members = useMembers(teamId, orgId);
+  const move = useMoveTask(teamId, orgId);
   const { user } = useSession();
   const [assignee, setAssignee] = useState<number | null>(null);
   const [dragging, setDragging] = useState<Task | null>(null);

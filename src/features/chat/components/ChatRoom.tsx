@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import { differenceInMinutes, isSameDay } from "date-fns";
 import { QueryBoundary } from "@/components/common/QueryBoundary";
 import { Composer } from "@/features/chat/components/Composer";
@@ -21,8 +22,9 @@ const grouped = (message: ChatMessage, previous?: ChatMessage) =>
   );
 
 export function ChatRoom({ teamId }: { teamId: string }) {
+  const { orgId } = useParams<{ orgId: string }>();
   const history = useChatHistory(teamId);
-  const members = useMembers(teamId);
+  const members = useMembers(teamId, orgId);
   const { actor, user } = useTeamContext(teamId);
   const send = useSendMessage(teamId);
   const remove = useDeleteMessage(teamId);

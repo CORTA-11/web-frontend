@@ -13,9 +13,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        // Browser calls /api/* on the Next origin; Next proxies to core-api.
+        // Browser calls /api/* on the Next origin; Next proxies to core-api,
+        // preserving the /api prefix because core-api mounts under /api/v1.
         source: "/api/:path*",
-        destination: `${apiProxyTarget}/:path*`,
+        destination: `${apiProxyTarget}/api/:path*`,
       },
     ];
   },

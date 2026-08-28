@@ -2,7 +2,6 @@ import { fileCrypto } from "@/lib/crypto";
 import { isLive } from "@/lib/env";
 import { API_BASE } from "@/lib/env";
 import { api, ApiError } from "@/lib/http";
-import { getAccessToken } from "@/lib/token";
 import type { StoredFile } from "@/lib/types";
 
 /** core-api serves files under /{teamSlug}/files and keys downloads by filename. */
@@ -51,10 +50,7 @@ export const filesApi = {
       : `/teams/${teamId}/files/download/${file.id}`;
     const response = await fetch(`${API_BASE}${path}`, {
       credentials: "include",
-      headers: {
-        ...(isLive("files") ? orgHeader(orgId) : {}),
-        ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-      },
+      headers: isLive("files") ? orgHeader(orgId) : {},
     });
     if (!response.ok) throw new ApiError(response.status, "Could not download that file");
 

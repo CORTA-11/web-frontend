@@ -17,7 +17,7 @@ export function AddMemberForm({
 }) {
   const [selected, setSelected] = useState("");
   const users = useOrgUsers(orgId);
-  const add = useAddMember(teamId);
+  const add = useAddMember(teamId, orgId);
 
   const roster = new Set(members.map((m) => m.user_id));
   const candidates = users.data?.filter((user) => !roster.has(user.id)) ?? [];
@@ -31,8 +31,9 @@ export function AddMemberForm({
       className="flex flex-wrap items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!selected) return;
-        add.mutate(Number(selected), { onSuccess: () => setSelected("") });
+        const user = candidates.find((entry) => entry.id === Number(selected));
+        if (!selected || !user) return;
+        add.mutate(user.email, { onSuccess: () => setSelected("") });
       }}
     >
       <label htmlFor="add-member" className="label-eyebrow">

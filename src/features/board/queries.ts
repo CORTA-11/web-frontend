@@ -27,11 +27,11 @@ export function useCreateTask(teamId: string, orgId: string) {
   });
 }
 
-export function useUpdateTask(teamId: string) {
+export function useUpdateTask(teamId: string, orgId: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ taskId, patch }: { taskId: string; patch: TaskMove }) =>
-      boardApi.update(teamId, taskId, patch),
+      boardApi.update(teamId, orgId, taskId, patch),
     onSuccess: () => client.invalidateQueries({ queryKey: qk.board(teamId) }),
     onError: notifyError,
   });
@@ -43,10 +43,10 @@ export function useUpdateTask(teamId: string) {
  */
 type MoveInput = { taskId: string; patch: TaskMove; tasks: Task[] };
 
-export function useMoveTask(teamId: string) {
+export function useMoveTask(teamId: string, orgId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ taskId, patch }: MoveInput) => boardApi.update(teamId, taskId, patch),
+    mutationFn: ({ taskId, patch }: MoveInput) => boardApi.update(teamId, orgId, taskId, patch),
     onMutate: async ({ tasks }: MoveInput) => {
       await client.cancelQueries({ queryKey: qk.board(teamId) });
       const previous = client.getQueryData<Board>(qk.board(teamId));
@@ -61,10 +61,10 @@ export function useMoveTask(teamId: string) {
   });
 }
 
-export function useDeleteTask(teamId: string) {
+export function useDeleteTask(teamId: string, orgId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (taskId: string) => boardApi.remove(teamId, taskId),
+    mutationFn: (taskId: string) => boardApi.remove(teamId, orgId, taskId),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: qk.board(teamId) });
       toast.success("Task deleted");

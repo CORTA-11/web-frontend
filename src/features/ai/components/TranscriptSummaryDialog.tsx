@@ -20,7 +20,7 @@ import { can, type Actor } from "@/lib/rbac";
 export function TranscriptSummaryDialog({ teamId, actor }: { teamId: string; actor: Actor | null }) {
   const { orgId } = useParams<{ orgId: string }>();
   const org = useOrgSettings(orgId);
-  const members = useMembers(teamId);
+  const members = useMembers(teamId, orgId);
   const summarise = useTranscriptSummary(teamId);
   const extract = useExtractTasks(teamId);
   const [open, setOpen] = useState(false);
