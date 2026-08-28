@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { authApi, type RegisterInput } from "@/features/auth/api";
 import { qk } from "@/lib/query-keys";
 import { setCSRFToken } from "@/lib/token";
-import type { User } from "@/lib/types";
+import type { OrgRole, User } from "@/lib/types";
 
 /** Where a signed-in account belongs: operators to the console, everyone else to their org. */
 export const homeFor = (user: User) =>
-  user.platform_role === "SUPER_ADMIN" ? "/admin" : `/orgs/${user.org_id}`;
+  user.platform_role === "SUPER_ADMIN" ? "/admin" : "/orgs";
 
 /**
  * The session is a query, not a store: the CSRF token stays in memory and the
@@ -67,3 +67,24 @@ export function useLogout() {
     },
   });
 }
+
+export function useUserOrgs() {
+  const { user } = useSession();
+  return useQuery({
+    queryKey: ["user-orgs", user?.id],
+    queryFn: () => authApi.organizations(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!user,
+  });
+}
+
+export function useSwitchOrg() {
+  const client = useQueryClient();
+  return (orgId: string, role: OrgRole) => {
+    client.setQueryData<User>(qk.session, (prev) => {
+      if (!prev) return prev;
+      return { ...prev, org_id: orgId, org_role: role };
+    });
+  };
+}
+

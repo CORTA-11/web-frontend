@@ -211,3 +211,11 @@ export type ExtractedTask = {
   due_date: string | null;
   evidence: string;
 };
+
+export type UserOrganization = {
+  id: string;
+  name: string;
+  lifecycle_state: "pending" | "active" | "suspended" | "rejected" | "deleting" | "deleted";
+  my_role: string;
+};
+

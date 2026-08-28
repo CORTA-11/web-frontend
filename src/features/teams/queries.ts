@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useParams } from "next/navigation";
 import { teamsApi, type CreateTeam } from "@/features/teams/api";
 import { qk } from "@/lib/query-keys";
 import { notifyError } from "@/lib/query";
@@ -10,8 +11,8 @@ import { useSession } from "@/features/auth/session";
 export const useTeams = (orgId: string) =>
   useQuery({ queryKey: qk.teams(orgId), queryFn: () => teamsApi.list(orgId) });
 
-export const useTeam = (teamId: string) =>
-  useQuery({ queryKey: qk.team(teamId), queryFn: () => teamsApi.get(teamId) });
+export const useTeam = (teamId: string, orgId?: string) =>
+  useQuery({ queryKey: qk.team(teamId), queryFn: () => teamsApi.get(teamId, orgId) });
 
 export const useMembers = (teamId: string, orgId: string) =>
   useQuery({ queryKey: qk.members(teamId), queryFn: () => teamsApi.members(teamId, orgId) });
@@ -22,7 +23,7 @@ export const useOrgUsers = (orgId: string) =>
 export function useCreateTeam(orgId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateTeam) => teamsApi.create(orgId, body),
+    mutationFn: (body: CreateTeam & { leaderEmail?: string }) => teamsApi.create(orgId, body),
     onSuccess: (team) => {
       client.invalidateQueries({ queryKey: qk.teams(orgId) });
       toast.success(`${team.name} created`);
@@ -92,8 +93,9 @@ export const useLeaveTeam = (teamId: string) =>
 
 /** Team plus the caller's effective roles — the input every team page needs. */
 export function useTeamContext(teamId: string) {
+  const { orgId } = useParams<{ orgId: string }>();
   const { user } = useSession();
-  const team = useTeam(teamId);
+  const team = useTeam(teamId, orgId);
   return {
     user,
     team,

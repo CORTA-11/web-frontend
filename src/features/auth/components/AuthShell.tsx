@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { Wordmark } from "@/components/layout/Wordmark";
 
-const INSTANCE = [
-  ["instance", process.env.NEXT_PUBLIC_INSTANCE_HOST ?? "localhost:3000"],
-  ["build", "0.1.0 · self-hosted"],
-  ["transport", "TLS 1.3"],
-  ["session", "access token, in memory"],
-];
+// const _INSTANCE = [
+//   ["instance", process.env.NEXT_PUBLIC_INSTANCE_HOST ?? "localhost:3000"],
+//   ["build", "0.1.0 · self-hosted"],
+//   ["transport", "TLS 1.3"],
+//   ["session", "access token, in memory"],
+// ];
 
 /** Auth pages are a working panel, not a marketing hero. */
 export function AuthShell({ children }: { children: ReactNode }) {

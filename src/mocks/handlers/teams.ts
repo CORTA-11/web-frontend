@@ -135,4 +135,18 @@ export const teamHandlers = [
       db.people.map(({ id, email, name, org_role }) => ({ id, email, name, org_role }))
     )
   ),
+
+  http.get("/api/v1/orgs/:orgId/members", ({ params }) => {
+    const orgId = params.orgId as string;
+    const members = db.people
+      .filter((p) => p.org_id === orgId)
+      .map((p) => ({
+        user_id: `00000000-0000-0000-0000-${p.id.toString().padStart(12, "0")}`,
+        display_name: p.name,
+        email: p.email,
+        role: p.org_role === "ORG_ADMIN" ? "administrator" : "member",
+        joined_at: new Date().toISOString(),
+      }));
+    return HttpResponse.json({ items: members });
+  }),
 ];

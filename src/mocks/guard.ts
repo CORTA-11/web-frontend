@@ -1,5 +1,6 @@
 import { http, HttpResponse, type HttpResponseResolver } from "msw";
 import { actorFrom, teamRoleOf } from "@/mocks/session";
+import { isLive } from "@/lib/env";
 
 type Verb = "get" | "post" | "patch" | "put" | "delete";
 
@@ -7,6 +8,9 @@ const guarded =
   (allowOrgAdmin: boolean) =>
   (resolver: HttpResponseResolver): HttpResponseResolver =>
   (info) => {
+    if (isLive("teams")) {
+      return resolver(info);
+    }
     const actor = actorFrom(info.request);
     if (!actor) return new HttpResponse("Unauthorized", { status: 401 });
     const role = teamRoleOf(String(info.params.teamId), actor.id);

@@ -3,7 +3,8 @@
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldAlertIcon } from "lucide-react";
-import { useSession } from "@/features/auth/session";
+import { useSession, useSwitchOrg, useUserOrgs } from "@/features/auth/session";
+import { orgRoleOf } from "@/features/auth/api";
 import { useOrgSettings } from "@/features/settings/queries";
 
 const Notice = ({ title, body }: { title: string; body: string }) => (
@@ -19,11 +20,13 @@ const Notice = ({ title, body }: { title: string; body: string }) => (
 );
 
 /**
- * Tenant isolation at the routing edge: an account only reaches its own
- * organisation (SRS 3.5.4.1), and only once the platform has approved it.
+ * Tenant isolation at the routing edge: an account only reaches an organisation
+ * they have membership in, and only once the platform has approved it.
  */
 export function OrgGate({ orgId, children }: { orgId: string; children: ReactNode }) {
   const { user } = useSession();
+  const { data: orgsPage, isPending } = useUserOrgs();
+  const switchOrg = useSwitchOrg();
   const settings = useOrgSettings(orgId);
   const router = useRouter();
 
@@ -33,12 +36,33 @@ export function OrgGate({ orgId, children }: { orgId: string; children: ReactNod
 
   if (!user || user.platform_role === "SUPER_ADMIN") return null;
 
-  if (user.org_id !== orgId) {
+  if (isPending) {
+    return (
+      <div className="flex h-svh items-center justify-center text-xs text-muted-foreground">
+        Checking organisation access…
+      </div>
+    );
+  }
+
+  const userOrgs = orgsPage?.items ?? [];
+  const targetOrg = userOrgs.find((o) => o.id === orgId);
+
+  if (!targetOrg) {
     return (
       <Notice
         title="This is not your organisation"
-        body="Accounts can only reach the organisation they were registered in."
+        body="Accounts can only reach the organisation they are a member of."
       />
+    );
+  }
+
+  if (user.org_id !== orgId) {
+    const role = orgRoleOf(targetOrg.my_role);
+    switchOrg(orgId, role);
+    return (
+      <div className="flex h-svh items-center justify-center text-xs text-muted-foreground">
+        Switching organisation…
+      </div>
     );
   }
 

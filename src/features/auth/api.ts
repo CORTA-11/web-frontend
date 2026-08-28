@@ -1,6 +1,6 @@
 import { api } from "@/lib/http";
 import { setCSRFToken } from "@/lib/token";
-import type { OrgRole, User } from "@/lib/types";
+import type { OrgRole, User, UserOrganization } from "@/lib/types";
 
 export type RegisterInput = {
   mode: "create_org" | "join_org";
@@ -41,7 +41,7 @@ type OrgRow = {
 };
 type OrgPage = { items: OrgRow[]; next_cursor: string | null; previous_cursor: string | null };
 
-const orgRoleOf = (role: string): OrgRole => (role === "owner" || role === "administrator" ? "ORG_ADMIN" : "ORG_MEMBER");
+export const orgRoleOf = (role: string): OrgRole => (role === "owner" || role === "administrator" ? "ORG_ADMIN" : "ORG_MEMBER");
 
 /** Stable numeric id from a UUID so the contract's number-typed User holds. */
 const numericKey = (uuid: string) => Number(`0x${uuid.replace(/-/g, "").slice(0, 15)}`);
@@ -88,6 +88,9 @@ export const authApi = {
     (await sessionFrom(await api<AuthPayload>("/v1/auth/session"))).user,
 
   logout: () => api<void>("/v1/auth/session", { method: "DELETE" }),
+
+  organizations: async (): Promise<{ items: UserOrganization[] }> =>
+    api<{ items: UserOrganization[] }>("/v1/orgs", { method: "GET" }),
 };
 
 /** Re-fetches only the caller's org context after an organisation becomes active. */

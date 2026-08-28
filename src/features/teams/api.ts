@@ -1,5 +1,6 @@
 import { isLive } from "@/lib/env";
 import { api } from "@/lib/http";
+import { orgRoleOf } from "@/features/auth/api";
 import type { OrgUser, Team, TeamMember, TeamRole } from "@/lib/types";
 
 /**
@@ -32,6 +33,8 @@ export type CreateTeam = { name: string; description?: string; leader_user_id: n
 /** backend team-member list: user UUID + role only — no name/email yet. */
 type LiveMember = { user_id: string; role: string; joined_at: string };
 
+type LiveOrgMember = { user_id: string; display_name: string; email: string; role: string; joined_at: string };
+
 /** Stable numeric key from a UUID so the roster table keeps a usable id. */
 const numericKey = (uuid: string) => Number(`0x${uuid.replace(/-/g, "").slice(0, 15)}`);
 
@@ -49,12 +52,22 @@ export const teamsApi = {
       ? api<{ items: LiveTeam[] }>(`/v1/orgs/${orgId}/teams`).then((page) => page.items.map(fromLive(orgId)))
       : api<Team[]>(`/orgs/${orgId}/teams`),
 
-  create: (orgId: string, body: CreateTeam) =>
+  create: (orgId: string, body: CreateTeam & { leaderEmail?: string }) =>
     isLive("teams")
-      ? api<LiveTeam>(`/v1/orgs/${orgId}/teams`, { method: "POST", json: { name: body.name } }).then(fromLive(orgId))
+      ? api<LiveTeam>(`/v1/orgs/${orgId}/teams`, {
+          method: "POST",
+          json: { name: body.name, leader_email: body.leaderEmail },
+        }).then(fromLive(orgId))
       : api<Team>(`/orgs/${orgId}/teams`, { method: "POST", json: body }),
 
-  get: (teamId: string) => api<Team>(`/teams/${teamId}`),
+  get: (teamId: string, orgId?: string) =>
+    isLive("teams") && orgId
+      ? teamsApi.list(orgId).then((teams) => {
+          const team = teams.find((t) => t.public_id === teamId);
+          if (!team) throw new Error("Team not found");
+          return team;
+        })
+      : api<Team>(`/teams/${teamId}`),
 
   update: (teamId: string, body: { name?: string; description?: string }) =>
     api<Team>(`/teams/${teamId}`, { method: "PATCH", json: body }),
@@ -83,5 +96,15 @@ export const teamsApi = {
 
   leave: (teamId: string) => api<void>(`/teams/${teamId}/leave`, { method: "POST" }),
 
-  orgUsers: (orgId: string) => api<OrgUser[]>(`/orgs/${orgId}/users`),
+  orgUsers: (orgId: string) =>
+    isLive("teams")
+      ? api<{ items: LiveOrgMember[] }>(`/v1/orgs/${orgId}/members`).then((page) =>
+          page.items.map((entry) => ({
+            id: numericKey(entry.user_id),
+            name: entry.display_name,
+            email: entry.email,
+            org_role: orgRoleOf(entry.role),
+          }))
+        )
+      : api<OrgUser[]>(`/orgs/${orgId}/users`),
 };

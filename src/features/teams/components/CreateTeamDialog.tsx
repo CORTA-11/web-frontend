@@ -18,7 +18,7 @@ import { useCreateTeam, useOrgUsers } from "@/features/teams/queries";
 const schema = z.object({
   name: z.string().min(2, "Give the team a name"),
   description: z.string().optional(),
-  leader_user_id: z.coerce.number().int().positive("Pick a team leader"),
+  leader_user_id: z.coerce.number().positive("Pick a team leader"),
 });
 
 export function CreateTeamDialog({ orgId }: { orgId: string }) {
@@ -40,7 +40,11 @@ export function CreateTeamDialog({ orgId }: { orgId: string }) {
         <form
           className="flex flex-col gap-4"
           onSubmit={handleSubmit(async (values) => {
-            await create.mutateAsync(values);
+            const selectedUser = users.data?.find((u) => u.id === Number(values.leader_user_id));
+            await create.mutateAsync({
+              ...values,
+              leaderEmail: selectedUser?.email,
+            });
             reset();
             setOpen(false);
           })}

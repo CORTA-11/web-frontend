@@ -88,4 +88,38 @@ export const authHandlers = [
       ? HttpResponse.json(publicUser(person))
       : new HttpResponse("Unauthorized", { status: 401 });
   }),
+
+  http.get("/api/v1/orgs", ({ request }) => {
+    const actor = actorFrom(request);
+    if (!actor) return new HttpResponse("Unauthorized", { status: 401 });
+
+    const userOrgs = [];
+    const primaryOrg = db.organizations.find((o) => o.id === actor.org_id);
+    if (primaryOrg) {
+      userOrgs.push({
+        id: primaryOrg.id,
+        name: primaryOrg.name,
+        lifecycle_state: primaryOrg.status,
+        my_role: actor.org_role === "ORG_ADMIN" ? "administrator" : "member",
+      });
+    }
+
+    if (actor.email === "admin@aratuwa.edu" || actor.email === "member@aratuwa.edu") {
+      const additionalOrg = db.organizations.find((o) => o.id === "6a2f4d19-7c05-4b83-a94d-2e1b8f70c645");
+      if (additionalOrg) {
+        userOrgs.push({
+          id: additionalOrg.id,
+          name: additionalOrg.name,
+          lifecycle_state: additionalOrg.status,
+          my_role: "member",
+        });
+      }
+    }
+
+    return HttpResponse.json({
+      items: userOrgs,
+      next_cursor: null,
+      previous_cursor: null,
+    });
+  }),
 ];
