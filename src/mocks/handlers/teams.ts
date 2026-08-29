@@ -82,9 +82,16 @@ export const teamHandlers = [
 
   rosterRoute.post("/api/teams/:teamId/members", async ({ request, params }) => {
     const teamId = String(params.teamId);
-    const { user_id } = (await request.json()) as { user_id: number };
-    const person = db.people.find((p) => p.id === Number(user_id));
-    if (!person) return new HttpResponse("Unknown user", { status: 400 });
+    const actor = actorFrom(request);
+    if (!actor || teamRoleOf(teamId, actor.id) !== "TEAM_LEADER") {
+      return new HttpResponse("Only the team leader can add members", { status: 403 });
+    }
+    const team = findTeam(teamId);
+    const { email } = (await request.json()) as { email: string };
+    const person = db.people.find(
+      (candidate) => candidate.org_id === team?.org_id && candidate.email.toLowerCase() === email.trim().toLowerCase()
+    );
+    if (!person) return new HttpResponse("No organisation member has that email", { status: 404 });
     if (teamRoleOf(teamId, person.id)) return new HttpResponse("Already a member", { status: 409 });
 
     const entry: TeamMember = {

@@ -33,8 +33,8 @@ export default function MembersPage() {
         }
       />
 
-      {can(actor, "team:manage_members") && members.data && (
-        <AddMemberForm orgId={orgId} teamId={teamId} members={members.data} />
+      {can(actor, "team:manage_members") && (
+        <AddMemberForm orgId={orgId} teamId={teamId} />
       )}
 
       <QueryBoundary query={members}>

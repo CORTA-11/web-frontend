@@ -94,7 +94,10 @@ is `undefined` for non-members, and the UI uses that to withhold a way in.
 ### `PATCH /teams/{teamId}` `{ name?, description? }` (TEAM_LEADER)
 ### `DELETE /teams/{teamId}` → 204 (ORG_ADMIN)
 ### `GET /teams/{teamId}/members` → `TeamMember[]` (members + ORG_ADMIN)
-### `POST /teams/{teamId}/members` `{ user_id }` (TEAM_LEADER)
+### `POST /teams/{teamId}/members` `{ email }` (TEAM_LEADER)
+
+The email must belong to an existing member of the team's organisation.
+
 ### `DELETE /teams/{teamId}/members/{userId}` → 204 (TEAM_LEADER)
 ### `PUT /teams/{teamId}/leader` `{ user_id }` → `TeamMember[]` (ORG_ADMIN)
 ### `POST /teams/{teamId}/leave` → 204 — 409 for a leader (SRS 3.1.2.7)

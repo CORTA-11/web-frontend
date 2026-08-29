@@ -86,7 +86,7 @@ export const teamsApi = {
       ? api<LiveMember>(`/v1/orgs/${orgId}/teams/${teamId}/members`, { method: "POST", json: { email } }).then(
           memberFromLive
         )
-      : api<TeamMember>(`/teams/${teamId}/members`, { method: "POST", json: { user_id: 0 } }),
+      : api<TeamMember>(`/teams/${teamId}/members`, { method: "POST", json: { email } }),
 
   removeMember: (teamId: string, userId: number) =>
     api<void>(`/teams/${teamId}/members/${userId}`, { method: "DELETE" }),
