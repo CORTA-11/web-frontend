@@ -31,8 +31,8 @@ function isSealed(bytes: Uint8Array): boolean {
   return bytes.length > TYPE_AT + bytes[MAGIC.length] + IV_BYTES;
 }
 
-async function encrypt(file: File): Promise<File> {
-  const key = await fileKey();
+async function encrypt(file: File, key?: CryptoKey): Promise<{ file: File; iv: Uint8Array }> {
+  const encKey = key ?? (await fileKey());
   const type = utf8.encode(file.type || FALLBACK_TYPE).slice(0, 255);
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
 
@@ -44,21 +44,24 @@ async function encrypt(file: File): Promise<File> {
 
   const sealed = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv, additionalData: header },
-    key,
+    encKey,
     await file.arrayBuffer()
   );
 
-  return new File([header, sealed], file.name, { type: ENCRYPTED_MIME });
+  return {
+    file: new File([header, sealed], file.name, { type: ENCRYPTED_MIME }),
+    iv,
+  };
 }
 
 /** Unsealed bytes, with the content type the envelope recorded at upload. */
-async function decrypt(payload: Blob): Promise<Blob> {
+async function decrypt(payload: Blob, key?: CryptoKey): Promise<Blob> {
   const bytes = new Uint8Array(await payload.arrayBuffer());
   // Files that predate encryption — or that another client wrote in the clear —
   // come back untouched rather than failing to open.
   if (!isSealed(bytes)) return payload;
 
-  const key = await fileKey();
+  const decKey = key ?? (await fileKey());
   const typeLength = bytes[MAGIC.length];
   const bodyAt = TYPE_AT + typeLength + IV_BYTES;
   const header = bytes.subarray(0, bodyAt);
@@ -66,7 +69,7 @@ async function decrypt(payload: Blob): Promise<Blob> {
   try {
     const plain = await crypto.subtle.decrypt(
       { name: "AES-GCM", iv: bytes.subarray(TYPE_AT + typeLength, bodyAt), additionalData: header },
-      key,
+      decKey,
       bytes.subarray(bodyAt)
     );
     return new Blob([plain], { type: text.decode(bytes.subarray(TYPE_AT, TYPE_AT + typeLength)) });

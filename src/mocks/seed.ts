@@ -19,16 +19,15 @@ const at = (base: Date, hour: number, minute = 0) =>
 const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
 const weekday = (offset: number) => addDays(monday, offset);
 
-/** Password for every seeded account: password123 */
 export const people: (User & { password: string })[] = [
-  { id: 1, org_id: ORG_ID, name: "Nilupa Rathnayake", email: "admin@aratuwa.edu", org_role: "ORG_ADMIN", password: "password123" },
-  { id: 2, org_id: ORG_ID, name: "Teshan Kannangara", email: "leader@aratuwa.edu", org_role: "ORG_MEMBER", password: "password123" },
-  { id: 3, org_id: ORG_ID, name: "Sangeeth Kariyapperuma", email: "member@aratuwa.edu", org_role: "ORG_MEMBER", password: "password123" },
-  { id: 4, org_id: ORG_ID, name: "Kamsan Suntharalingam", email: "kamsan@aratuwa.edu", org_role: "ORG_MEMBER", password: "password123" },
-  { id: 5, org_id: ORG_ID, name: "Dilini Perera", email: "dilini@aratuwa.edu", org_role: "ORG_MEMBER", password: "password123" },
-  { id: 6, org_id: ORG_ID, name: "Ravindu Jayasuriya", email: "ravindu@aratuwa.edu", org_role: "ORG_MEMBER", password: "password123" },
-  { id: 7, org_id: ORG_ID, name: "Ayesha Fernando", email: "ayesha@aratuwa.edu", org_role: "ORG_MEMBER", password: "password123" },
-  { id: 99, org_id: "", name: "Platform Operations", email: "platform@corta.dev", org_role: "ORG_MEMBER", platform_role: "SUPER_ADMIN", password: "password123" },
+  { id: 1, org_id: ORG_ID, name: "Nilupa Rathnayake", email: "admin@aratuwa.edu", org_role: "ORG_ADMIN", password: "synodus-demo-password" },
+  { id: 2, org_id: ORG_ID, name: "Teshan Kannangara", email: "leader@aratuwa.edu", org_role: "ORG_MEMBER", password: "synodus-demo-password" },
+  { id: 3, org_id: ORG_ID, name: "Sangeeth Kariyapperuma", email: "member@aratuwa.edu", org_role: "ORG_MEMBER", password: "synodus-demo-password" },
+  { id: 4, org_id: ORG_ID, name: "Kamsan Suntharalingam", email: "kamsan@aratuwa.edu", org_role: "ORG_MEMBER", password: "synodus-demo-password" },
+  { id: 5, org_id: ORG_ID, name: "Dilini Perera", email: "dilini@aratuwa.edu", org_role: "ORG_MEMBER", password: "synodus-demo-password" },
+  { id: 6, org_id: ORG_ID, name: "Ravindu Jayasuriya", email: "ravindu@aratuwa.edu", org_role: "ORG_MEMBER", password: "synodus-demo-password" },
+  { id: 7, org_id: ORG_ID, name: "Ayesha Fernando", email: "ayesha@aratuwa.edu", org_role: "ORG_MEMBER", password: "synodus-demo-password" },
+  { id: 99, org_id: "", name: "Platform Operations", email: "platform@corta.dev", org_role: "ORG_MEMBER", platform_role: "SUPER_ADMIN", password: "synodus-demo-password" },
 ];
 
 /**

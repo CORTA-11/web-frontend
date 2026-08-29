@@ -19,7 +19,7 @@ type Props = {
 
 export function FileTable({ teamId, orgId, files, currentUserId, canDeleteAny }: Props) {
   const download = useDownloadFile(teamId, orgId);
-  const remove = useDeleteFile(teamId);
+  const remove = useDeleteFile(teamId, orgId);
 
   if (!files.length) {
     return <EmptyState title="No files yet" hint="Drop files onto this page or use Upload." />;

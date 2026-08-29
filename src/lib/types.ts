@@ -13,6 +13,7 @@ export type Priority = "low" | "medium" | "high";
 
 export type User = {
   id: number;
+  public_id?: string;
   org_id: string;
   email: string;
   name: string;

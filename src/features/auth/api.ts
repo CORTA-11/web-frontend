@@ -56,6 +56,7 @@ async function enrich(user: SessionUser): Promise<User> {
   const org = page.items.find((entry) => entry.lifecycle_state === "active") ?? page.items[0];
   return {
     id: numericKey(user.id),
+    public_id: user.id,
     org_id: org?.id ?? "",
     name: user.display_name,
     email: user.email,
