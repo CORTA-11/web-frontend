@@ -23,14 +23,19 @@ const COLUMN_BY_STATUS: Record<Status, string> = {
   done: "done",
 };
 
-const STATE_BY_COLUMN = { backlog: "todo", in_progress: "in_progress", review: "in_progress", done: "done" } as const;
+const STATE_BY_COLUMN = { backlog: "todo", in_progress: "in_progress", done: "done" } as const;
 
 type LiveTask = { id: string; description: string; status: string; assignee_id: string | null; created_at: string };
 
-const COLUMNS: Column[] = [
+/**
+ * Live mode exposes only the three statuses core-api v1 can store. Review is a
+ * frontend idea the backend cannot represent; offering the column and then
+ * silently collapsing it into in_progress on read would read as a drag that
+ * fails, so the gap is surfaced by omitting it (API_Contract.md board section).
+ */
+const LIVE_COLUMNS: Column[] = [
   { id: "backlog", title: "Backlog", task_ids: [] },
   { id: "in_progress", title: "In progress", task_ids: [] },
-  { id: "review", title: "Review", task_ids: [] },
   { id: "done", title: "Done", task_ids: [] },
 ];
 
@@ -68,7 +73,11 @@ const resolveAssignee = (assignee: number | null | undefined, members: TeamMembe
  */
 const liveBody = (patch: TaskMove, current?: Task, members: TeamMember[] = []) => {
   const body: { description: string; status: string; assignee_id?: string | null } = {
-    description: patch.title ?? patch.description ?? current?.description ?? "",
+    // A pure column move carries no text, so echo the task's own text back —
+    // in live mode that lives in title (fromLive maps backend description into
+    // it) and the backend PATCH rejects an empty description.
+    description:
+      patch.title ?? patch.description ?? current?.title ?? current?.description ?? "",
     status: patch.column_id
       ? STATE_BY_COLUMN[patch.column_id as keyof typeof STATE_BY_COLUMN] ?? "todo"
       : "todo",
@@ -84,7 +93,7 @@ export const boardApi = {
     const page = await api<{ items: LiveTask[] }>(`/v1/orgs/${orgId}/teams/${teamId}/tasks`);
     const tasks = page.items.map(fromLive);
     return {
-      columns: COLUMNS.map((column) => ({
+      columns: LIVE_COLUMNS.map((column) => ({
         ...column,
         task_ids: tasks.filter((task) => task.column_id === column.id).map((task) => task.id),
       })),
