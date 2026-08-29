@@ -58,7 +58,7 @@ export default function OrgOverviewPage() {
   const horizon = addDays(new Date(), WINDOW_DAYS);
   const mine = new Set(myTeams.map((team) => team.public_id));
   const upcoming = (bookings.data ?? [])
-    .filter((booking) => mine.has(booking.team_public_id))
+    .filter((booking) => booking.team_public_id !== null && mine.has(booking.team_public_id))
     .filter((booking) => isAfter(new Date(booking.end_time), new Date()))
     .filter((booking) => isBefore(new Date(booking.start_time), horizon))
     .sort((a, b) => a.start_time.localeCompare(b.start_time));

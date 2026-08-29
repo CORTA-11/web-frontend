@@ -141,11 +141,11 @@ export const resources: Resource[] = [
 ];
 
 export const bookings: Booking[] = [
-  { id: "bk-1", resource_id: "r-1", team_public_id: TEAM_IDS.imaging, team_name: "Neural Imaging", requested_by_name: "Teshan Kannangara", start_time: at(weekday(1), 20), end_time: at(weekday(2), 6), purpose: "Segmentation batch 04" },
-  { id: "bk-2", resource_id: "r-3", team_public_id: TEAM_IDS.imaging, team_name: "Neural Imaging", requested_by_name: "Ravindu Jayasuriya", start_time: at(weekday(2), 9), end_time: at(weekday(2), 12, 30), purpose: "Calibration after objective swap" },
-  { id: "bk-3", resource_id: "r-4", team_public_id: TEAM_IDS.protein, team_name: "Protein Dynamics", requested_by_name: "Dilini Perera", start_time: at(weekday(3), 8), end_time: at(weekday(3), 11), purpose: "Grid preparation" },
-  { id: "bk-4", resource_id: "r-1", team_public_id: TEAM_IDS.protein, team_name: "Protein Dynamics", requested_by_name: "Dilini Perera", start_time: at(weekday(3), 14), end_time: at(weekday(3), 19), purpose: "MD trajectory 3" },
-  { id: "bk-5", resource_id: "r-2", team_public_id: TEAM_IDS.platform, team_name: "Platform Engineering", requested_by_name: "Kamsan Suntharalingam", start_time: at(weekday(4), 10), end_time: at(weekday(4), 16), purpose: "Storage migration rehearsal" },
+  { id: "bk-1", resource_id: "r-1", details_visible: true, team_public_id: TEAM_IDS.imaging, team_name: "Neural Imaging", requested_by_name: "Teshan Kannangara", start_time: at(weekday(1), 20), end_time: at(weekday(1), 22), purpose: "Segmentation batch 04" },
+  { id: "bk-2", resource_id: "r-3", details_visible: true, team_public_id: TEAM_IDS.imaging, team_name: "Neural Imaging", requested_by_name: "Ravindu Jayasuriya", start_time: at(weekday(2), 9), end_time: at(weekday(2), 12, 30), purpose: "Calibration after objective swap" },
+  { id: "bk-3", resource_id: "r-4", details_visible: true, team_public_id: TEAM_IDS.protein, team_name: "Protein Dynamics", requested_by_name: "Dilini Perera", start_time: at(weekday(3), 8), end_time: at(weekday(3), 11), purpose: "Grid preparation" },
+  { id: "bk-4", resource_id: "r-1", details_visible: true, team_public_id: TEAM_IDS.protein, team_name: "Protein Dynamics", requested_by_name: "Dilini Perera", start_time: at(weekday(3), 14), end_time: at(weekday(3), 19), purpose: "MD trajectory 3" },
+  { id: "bk-5", resource_id: "r-2", details_visible: true, team_public_id: TEAM_IDS.platform, team_name: "Platform Engineering", requested_by_name: "Kamsan Suntharalingam", start_time: at(weekday(4), 10), end_time: at(weekday(4), 16), purpose: "Storage migration rehearsal" },
 ];
 
 export const requests: ResourceRequest[] = [

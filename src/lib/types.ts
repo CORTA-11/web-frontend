@@ -114,12 +114,14 @@ export type Resource = {
 export type Booking = {
   id: string;
   resource_id: string;
-  team_public_id: string;
-  team_name: string;
-  requested_by_name: string;
+  resource_name?: string;
+  details_visible: boolean;
+  team_public_id: string | null;
+  team_name: string | null;
+  requested_by_name: string | null;
   start_time: string;
   end_time: string;
-  purpose: string;
+  purpose: string | null;
 };
 
 export type RequestStatus = "pending" | "approved" | "rejected";
@@ -130,7 +132,7 @@ export type ResourceRequest = {
   resource_name: string;
   team_public_id: string;
   team_name: string;
-  requested_by: number;
+  requested_by: string | number;
   requested_by_name: string;
   start_time: string;
   end_time: string;
@@ -218,4 +220,3 @@ export type UserOrganization = {
   lifecycle_state: "pending" | "active" | "suspended" | "rejected" | "deleting" | "deleted";
   my_role: string;
 };
-

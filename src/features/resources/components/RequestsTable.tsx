@@ -14,6 +14,7 @@ const TONE: Record<RequestStatus, Tone> = {
   approved: "ok",
   rejected: "danger",
 };
+const STATUS_LABEL: Record<RequestStatus, string> = { pending: "Pending", approved: "Approved", rejected: "Declined" };
 
 export function RequestsTable({
   orgId, requests, canDecide,
@@ -71,7 +72,7 @@ export function RequestsTable({
               {relative(request.created_at)}
             </TableCell>
             <TableCell>
-              <StatusDot tone={TONE[request.status]}>{request.status}</StatusDot>
+              <StatusDot tone={TONE[request.status]}>{STATUS_LABEL[request.status]}</StatusDot>
             </TableCell>
             {canDecide && (
               <TableCell>

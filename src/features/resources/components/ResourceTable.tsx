@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusDot } from "@/components/common/StatusDot";
-import { summariseAvailability } from "@/features/resources/availability";
+import { localTimeZone, summariseAvailability, summariseAvailabilityLocal } from "@/features/resources/availability";
 import { useDeleteResource, useUpdateResource } from "@/features/resources/queries";
 import type { Resource } from "@/lib/types";
 
@@ -50,7 +50,10 @@ export function ResourceTable({ orgId, resources, canManage, canRequest, onEdit,
               {resource.location || "—"}
             </TableCell>
             <TableCell className="hidden lg:table-cell text-muted-foreground" data-numeric>
-              {summariseAvailability(resource.availability)}
+              <div className="flex flex-col">
+                <span>{summariseAvailabilityLocal(resource.availability)}</span>
+                <span className="text-xs">{summariseAvailability(resource.availability)} UTC · {localTimeZone()}</span>
+              </div>
             </TableCell>
             <TableCell>
               <StatusDot tone={resource.enabled ? "ok" : "muted"}>

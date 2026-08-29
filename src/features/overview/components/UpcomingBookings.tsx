@@ -22,7 +22,7 @@ export function UpcomingBookings({
           <li key={booking.id} className="flex items-baseline gap-3 border-l-2 border-primary/50 bg-card px-3 py-2">
             <span className="min-w-0 flex-1 truncate text-sm">{resource?.name ?? "Resource"}</span>
             <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-              {booking.team_name} · {booking.purpose}
+              {booking.details_visible ? `${booking.team_name} · ${booking.purpose}` : "Reserved"}
             </span>
             <span className="data-mono shrink-0 text-muted-foreground">
               {slot(booking.start_time, booking.end_time)} · {duration(booking.start_time, booking.end_time)}

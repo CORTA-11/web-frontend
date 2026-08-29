@@ -38,7 +38,7 @@ export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
     () =>
       bookings.map((booking) => ({
         id: booking.id,
-        title: `${booking.team_name} · ${booking.purpose}`,
+        title: booking.details_visible ? `${booking.team_name} · ${booking.purpose}` : "Reserved",
         start: new Date(booking.start_time),
         end: new Date(booking.end_time),
         resourceId: booking.resource_id,

@@ -10,7 +10,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/common/Field";
-import { findClash } from "@/features/resources/availability";
+import {
+  findClash, fitsAvailability, localTimeZone, summariseAvailability, summariseAvailabilityLocal,
+} from "@/features/resources/availability";
 import { useRequestResource } from "@/features/resources/queries";
 import { slot } from "@/lib/format";
 import type { Booking, Resource, Team } from "@/lib/types";
@@ -36,10 +38,15 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
     purpose: "",
   });
 
-  const startIso = new Date(form.start).toISOString();
-  const endIso = new Date(form.end).toISOString();
-  const clash = form.start && form.end ? findClash(bookings, resource.id, startIso, endIso) : undefined;
-  const invalid = startIso >= endIso;
+  const start = new Date(form.start);
+  const end = new Date(form.end);
+  const validDates = Number.isFinite(start.getTime()) && Number.isFinite(end.getTime());
+  const startIso = validDates ? start.toISOString() : "";
+  const endIso = validDates ? end.toISOString() : "";
+  const clash = validDates ? findClash(bookings, resource.id, startIso, endIso) : undefined;
+  const invalid = !validDates || start >= end || start < new Date();
+  const outsideAvailability = validDates && !invalid && !fitsAvailability(resource.availability, start, end);
+  const cannotSubmit = invalid || outsideAvailability || Boolean(clash) || !form.team_public_id || !form.purpose.trim();
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -66,6 +73,13 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
               An organisation admin approves the slot before it is booked.
             </DialogDescription>
           </DialogHeader>
+
+          <div className="border-l-2 border-primary/40 pl-2.5 text-xs text-muted-foreground">
+            <p>
+              Available in {localTimeZone()}: {summariseAvailabilityLocal(resource.availability, validDates ? start : new Date())}
+            </p>
+            <p className="data-mono">UTC schedule: {summariseAvailability(resource.availability)}</p>
+          </div>
 
           <Field label="Team" htmlFor="request-team">
             <select
@@ -101,6 +115,17 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
             </Field>
           </div>
 
+          {validDates && (
+            <p className="data-mono text-xs text-muted-foreground">
+              UTC: {startIso.replace("T", " ").slice(0, 16)}–{endIso.replace("T", " ").slice(0, 16)}
+            </p>
+          )}
+          {outsideAvailability && (
+            <p className="text-xs text-danger">
+              Choose a slot entirely within the local availability shown above.
+            </p>
+          )}
+
           <Field label="Purpose" htmlFor="request-purpose">
             <Textarea
               id="request-purpose"
@@ -115,15 +140,14 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
             <p className="flex items-start gap-2 border-l-2 border-warn bg-warn/5 py-1.5 pl-2.5 text-xs">
               <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0 text-warn" />
               <span>
-                {clash.team_name} already holds {slot(clash.start_time, clash.end_time)}. An admin will
-                have to reject one of the two.
+                This resource is already reserved for {slot(clash.start_time, clash.end_time)}.
               </span>
             </p>
           )}
 
           <DialogFooter>
             <Button type="button" variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
-            <Button type="submit" size="sm" disabled={invalid || request.isPending}>
+            <Button type="submit" size="sm" disabled={cannotSubmit || request.isPending}>
               Send request
             </Button>
           </DialogFooter>

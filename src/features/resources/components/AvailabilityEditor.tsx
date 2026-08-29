@@ -2,6 +2,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { localTimeZone, summariseAvailabilityLocal } from "@/features/resources/availability";
 import type { AvailabilityWindow } from "@/lib/types";
 
 const WEEKDAYS = [
@@ -28,7 +29,7 @@ export function AvailabilityEditor({ value, onChange }: Props) {
 
   return (
     <fieldset className="flex flex-col gap-1.5">
-      <legend className="label-eyebrow pb-1">Available windows</legend>
+      <legend className="label-eyebrow pb-1">Available windows (UTC)</legend>
       {WEEKDAYS.map((weekday) => {
         const entry = windowFor(weekday.value);
         return (
@@ -61,6 +62,11 @@ export function AvailabilityEditor({ value, onChange }: Props) {
           </div>
         );
       })}
+      {value.length > 0 && (
+        <p className="pt-1 text-xs text-muted-foreground">
+          In {localTimeZone()}: {summariseAvailabilityLocal(value)}
+        </p>
+      )}
     </fieldset>
   );
 }

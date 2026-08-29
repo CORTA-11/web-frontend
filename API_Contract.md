@@ -189,29 +189,35 @@ uploader attribution.
 
 ## Resources
 
-### `GET /orgs/{orgId}/resources` → `Resource[]`
-### `POST /orgs/{orgId}/resources` (ORG_ADMIN)
-### `PATCH /orgs/{orgId}/resources/{resourceId}` (ORG_ADMIN)
-### `DELETE /orgs/{orgId}/resources/{resourceId}` → 204 (ORG_ADMIN)
-### `GET /orgs/{orgId}/bookings` → `Booking[]`
-### `POST /orgs/{orgId}/resources/{resourceId}/requests` (TEAM_LEADER)
+These routes are live at `/api/v1`. List responses use `{ "items": [...] }`;
+the frontend adapter unwraps them.
+
+### `GET /orgs/{orgId}/resources` → `{ items: Resource[] }`
+### `POST /orgs/{orgId}/resources` (ORG_ADMIN or owner)
+### `PATCH /orgs/{orgId}/resources/{resourceId}` (ORG_ADMIN or owner)
+### `DELETE /orgs/{orgId}/resources/{resourceId}` → 204 (ORG_ADMIN or owner)
+### `GET /orgs/{orgId}/bookings` → `{ items: Booking[] }`
+### `POST /orgs/{orgId}/resources/{resourceId}/requests` (the team's TEAM_LEADER)
 ```json
 { "team_public_id": "", "start_time": "", "end_time": "", "purpose": "" }
 ```
-### `GET /orgs/{orgId}/resource-requests` → `ResourceRequest[]`
-### `PATCH /orgs/{orgId}/resource-requests/{requestId}` (ORG_ADMIN)
+### `GET /orgs/{orgId}/resource-requests` → `{ items: ResourceRequest[] }`
+### `PATCH /orgs/{orgId}/resource-requests/{requestId}` (ORG_ADMIN or owner)
 ```json
 { "status": "approved"|"rejected" }
 ```
-Approving creates the Booking and **must** return 409 if the slot overlaps an
-existing one. The client-side check is advisory only (SRS 2.4).
+Only approval creates a booking. Approval returns 409 when the resource is
+disabled, the UTC availability has changed, or an approved interval overlaps.
+Resources with request history cannot be deleted. Other-team bookings expose
+only resource/time plus `details_visible: false`; all detail fields are null.
 
 ```ts
 Resource = { id, org_id, name, code, kind: "gpu"|"instrument"|"room"|"workstation",
              location, enabled, availability: AvailabilityWindow[] }
 AvailabilityWindow = { weekday: 0-6, start: "08:00", end: "22:00" }
-Booking = { id, resource_id, team_public_id, team_name, requested_by_name,
-            start_time, end_time, purpose }
+Booking = { id, resource_id, resource_name, start_time, end_time, details_visible,
+            team_public_id: string|null, team_name: string|null,
+            requested_by_name: string|null, purpose: string|null }
 ResourceRequest = { id, resource_id, resource_name, team_public_id, team_name,
                     requested_by, requested_by_name, start_time, end_time, purpose,
                     status: "pending"|"approved"|"rejected", created_at, decided_at? }
