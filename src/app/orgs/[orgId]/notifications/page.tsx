@@ -92,7 +92,7 @@ export default function NotificationsPage() {
       <PageHeader
         eyebrow="Account"
         title="Notifications"
-        meta="Push notifications are delivered by the CORTA mobile app; email works anywhere."
+        meta="Push notifications are delivered by the Synodus mobile app; email works anywhere."
       />
       <QueryBoundary query={prefs} rows={3}>
         {(data) => <PrefsForm prefs={data} email={user?.email ?? ""} />}

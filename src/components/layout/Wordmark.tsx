@@ -10,7 +10,7 @@ export function Wordmark({ className }: { className?: string }) {
         <rect x="0" y="7" width="5" height="5" className="fill-current opacity-25" />
         <rect x="7" y="7" width="5" height="5" className="fill-current opacity-25" />
       </svg>
-      <span className="font-mono text-sm font-medium tracking-[0.18em] uppercase">Corta</span>
+      <span className="font-mono text-sm font-medium tracking-[0.18em] uppercase">Synodus</span>
     </span>
   );
 }

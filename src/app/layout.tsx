@@ -18,7 +18,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CORTA",
+  title: "Synodus",
   description: "Privacy-preserving collaborative resource and task orchestrator.",
 };
 
