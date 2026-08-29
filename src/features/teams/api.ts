@@ -10,8 +10,7 @@ import type { OrgUser, Team, TeamMember, TeamRole } from "@/lib/types";
  * returns no description or per-team member counts, so those stay blank/zero.
  *
  * Only listing, creation, member-list and add-member exist on the backend;
- * remove/leader/leave/org-users have no routes, and member rows carry no name
- * or email, so the roster shows blank identities until the backend grows them.
+ * remove/leader/leave have no live routes yet.
  */
 
 type LiveTeam = { id: string; name: string; slug: string; created_at: string; my_role: string };
@@ -30,8 +29,7 @@ const fromLive = (orgId: string) => (team: LiveTeam): Team => ({
 
 export type CreateTeam = { name: string; description?: string; leader_user_id: number };
 
-/** backend team-member list: user UUID + role only — no name/email yet. */
-type LiveMember = { user_id: string; role: string; joined_at: string };
+type LiveMember = { user_id: string; name?: string; email?: string; role: string; joined_at: string };
 
 type LiveOrgMember = { user_id: string; display_name: string; email: string; role: string; joined_at: string };
 
@@ -40,8 +38,8 @@ const numericKey = (uuid: string) => Number(`0x${uuid.replace(/-/g, "").slice(0,
 
 const memberFromLive = (entry: LiveMember): TeamMember => ({
   user_id: numericKey(entry.user_id),
-  name: "",
-  email: "",
+  name: entry.name ?? "",
+  email: entry.email ?? "",
   role: roleOf(entry.role) ?? "TEAM_MEMBER",
   joined_at: entry.joined_at,
 });
