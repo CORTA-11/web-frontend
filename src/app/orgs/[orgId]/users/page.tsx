@@ -10,6 +10,8 @@ import { useOrgUsers } from "@/features/teams/queries";
 import { useSession } from "@/features/auth/session";
 import { initials } from "@/lib/format";
 import { can } from "@/lib/rbac";
+import { InviteMemberDialog } from "@/features/invitations/components/InviteMemberDialog";
+import { PendingInvitations } from "@/features/invitations/components/PendingInvitations";
 
 export default function PeoplePage() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -26,6 +28,7 @@ export default function PeoplePage() {
         eyebrow="Organisation"
         title="People"
         meta={users.data ? `${users.data.length} registered` : undefined}
+        actions={<InviteMemberDialog orgId={orgId} />}
       />
       <QueryBoundary query={users}>
         {(data) => (
@@ -61,6 +64,7 @@ export default function PeoplePage() {
           </Table>
         )}
       </QueryBoundary>
+      <PendingInvitations orgId={orgId} />
     </div>
   );
 }

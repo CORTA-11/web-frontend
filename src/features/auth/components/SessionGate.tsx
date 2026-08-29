@@ -10,17 +10,12 @@ const Booting = () => (
   </div>
 );
 
-import { initializeUserKeys } from "@/features/files/keystore";
-
 export function RequireSession({ children }: { children: ReactNode }) {
   const { user, isPending } = useSession();
   const router = useRouter();
 
   useEffect(() => {
     if (!isPending && !user) router.replace("/login");
-    if (user) {
-      initializeUserKeys(user).catch(console.error);
-    }
   }, [isPending, user, router]);
 
   if (isPending) return <Booting />;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { authApi, type RegisterInput } from "@/features/auth/api";
 import { qk } from "@/lib/query-keys";
@@ -12,6 +12,9 @@ import { notifyError } from "@/lib/query";
 /** Where a signed-in account belongs: operators to the console, everyone else to their org. */
 export const homeFor = (user: User) =>
   user.platform_role === "SUPER_ADMIN" ? "/admin" : "/orgs";
+
+const safeNext = (value: string | null, fallback: string) =>
+  value?.startsWith("/") && !value.startsWith("//") ? value : fallback;
 
 /**
  * The session is a query, not a store: the CSRF token stays in memory and the
@@ -32,13 +35,14 @@ export function useSession() {
 export function useLogin() {
   const client = useQueryClient();
   const router = useRouter();
+  const search = useSearchParams();
 
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       authApi.login(email, password),
     onSuccess: (user) => {
       client.setQueryData<User>(qk.session, user);
-      router.replace(homeFor(user));
+      router.replace(safeNext(search.get("next"), homeFor(user)));
     },
   });
 }
@@ -46,12 +50,13 @@ export function useLogin() {
 export function useRegister() {
   const client = useQueryClient();
   const router = useRouter();
+  const search = useSearchParams();
 
   return useMutation({
     mutationFn: (input: RegisterInput) => authApi.register(input),
     onSuccess: (user) => {
       client.setQueryData<User>(qk.session, user);
-      router.replace(homeFor(user));
+      router.replace(safeNext(search.get("next"), homeFor(user)));
     },
   });
 }

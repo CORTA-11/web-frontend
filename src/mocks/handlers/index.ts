@@ -8,6 +8,7 @@ import { fileHandlers } from "@/mocks/handlers/files";
 import { platformHandlers } from "@/mocks/handlers/platform";
 import { resourceHandlers } from "@/mocks/handlers/resources";
 import { settingsHandlers } from "@/mocks/handlers/settings";
+import { invitationHandlers } from "@/mocks/handlers/invitations";
 import { teamHandlers } from "@/mocks/handlers/teams";
 
 /**
@@ -18,6 +19,7 @@ import { teamHandlers } from "@/mocks/handlers/teams";
 export const handlers = [
   ...(isLive("auth") ? [] : authHandlers),
   ...(isLive("teams") ? [] : teamHandlers),
+  ...(isLive("teams") ? [] : invitationHandlers),
   ...(isLive("board") ? [] : boardHandlers),
   ...(isLive("chat") ? [] : chatHandlers),
   ...(isLive("docs") ? [] : docHandlers),

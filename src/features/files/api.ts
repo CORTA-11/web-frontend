@@ -4,7 +4,7 @@ import { API_BASE } from "@/lib/env";
 import { api, ApiError } from "@/lib/http";
 import { fileKey } from "@/lib/keystore";
 import type { StoredFile, User } from "@/lib/types";
-import { getOrCreateTeamKey, getTeamKey } from "@/features/files/keystore";
+import { getOrCreateTeamKey, getTeamKey, initializeUserKeys } from "@/features/files/keystore";
 
 const orgHeader = (orgId: string) => ({ "X-Org-ID": orgId });
 
@@ -39,6 +39,7 @@ export const filesApi = {
   /** Sealed before it is attached, so plaintext never reaches the network. */
   upload: async (teamId: string, orgId: string, file: File, user: User) => {
     if (isLive("files")) {
+      await initializeUserKeys(user);
       const keyInfo = await getOrCreateTeamKey(orgId, teamId, user);
       const { file: encryptedFile, iv } = await fileCrypto.encrypt(file, keyInfo.key);
 

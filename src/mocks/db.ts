@@ -22,6 +22,9 @@ export const db = {
     email_enabled: true,
     email_address: "",
   } as NotificationPrefs,
+  invitations: [] as Array<{
+    id: string; token: string; orgId: string; email: string; createdAt: string; expiresAt: string;
+  }>,
 };
 
 let counter = 0;
