@@ -13,7 +13,7 @@ const session = (userId: number) => {
 };
 
 type RegisterBody = {
-  mode: "create_org" | "join_org";
+  mode: "individual" | "create_org" | "join_org";
   name: string;
   email: string;
   password: string;
@@ -51,21 +51,27 @@ export const authHandlers = [
       return session(nextId);
     }
 
-    // A new tenant starts pending until the platform operator approves it.
-    const orgId = uid("org");
-    const name = body.org_name?.trim() || `${body.name.trim()}'s organisation`;
-    db.organizations.push({
-      id: orgId,
-      name,
-      public_id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24),
-      status: "pending",
-      owner_name: body.name.trim(),
-      owner_email: email,
-      user_count: 1,
-      team_count: 0,
-      requested_at: now(),
-    });
-    db.people.push({ id: nextId, org_id: orgId, name: body.name.trim(), email, org_role: "ORG_ADMIN", password: body.password });
+    if (body.mode === "create_org") {
+      // A new tenant starts pending until the platform operator approves it.
+      const orgId = uid("org");
+      const name = body.org_name?.trim() || `${body.name.trim()}'s organisation`;
+      db.organizations.push({
+        id: orgId,
+        name,
+        public_id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24),
+        status: "pending",
+        owner_name: body.name.trim(),
+        owner_email: email,
+        user_count: 1,
+        team_count: 0,
+        requested_at: now(),
+      });
+      db.people.push({ id: nextId, org_id: orgId, name: body.name.trim(), email, org_role: "ORG_ADMIN", password: body.password });
+      return session(nextId);
+    }
+
+    // Individual / normal user registration without an organisation
+    db.people.push({ id: nextId, org_id: "", name: body.name.trim(), email, org_role: "ORG_MEMBER", password: body.password });
     return session(nextId);
   }),
 
@@ -121,5 +127,33 @@ export const authHandlers = [
       next_cursor: null,
       previous_cursor: null,
     });
+  }),
+
+  http.post("/api/v1/orgs", async ({ request }) => {
+    const actor = actorFrom(request);
+    if (!actor) return new HttpResponse("Unauthorized", { status: 401 });
+    const { name: rawName } = (await request.json()) as { name: string };
+    const name = rawName.trim();
+    if (name.length < 2) return new HttpResponse("Give your organisation a name", { status: 400 });
+
+    const id = uid("org");
+    const created = {
+      id,
+      name,
+      public_id: id,
+      status: "pending" as const,
+      owner_name: actor.name,
+      owner_email: actor.email,
+      user_count: 1,
+      team_count: 0,
+      requested_at: now(),
+    };
+    db.organizations.push(created);
+    actor.org_id = id;
+    actor.org_role = "ORG_ADMIN";
+    return HttpResponse.json({
+      id, name, lifecycle_state: "pending", created_at: created.requested_at,
+      updated_at: created.requested_at, deleted_at: null, my_role: "owner",
+    }, { status: 201 });
   }),
 ];

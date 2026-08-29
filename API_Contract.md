@@ -42,10 +42,11 @@ admins may read and change it, because they assign team leaders.
 
 ### `POST /auth/register`
 ```json
-{ "mode": "create_org"|"join_org", "name": "", "email": "", "password": "",
+{ "mode": "individual"|"create_org"|"join_org", "name": "", "email": "", "password": "",
   "org_name": "", "org_public_id": "", "fields": { "student_id": "" } }
 // → 200 AuthResponse | 404 unknown org | 409 email taken / org not active
 ```
+`individual` registers a standard user account without creating or joining an organisation.
 `create_org` registers a new tenant with `status: "pending"`; it stays unusable
 until a platform operator approves it. `join_org` only accepts an **active** org.
 

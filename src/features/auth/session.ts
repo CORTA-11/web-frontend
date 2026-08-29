@@ -2,10 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { authApi, type RegisterInput } from "@/features/auth/api";
 import { qk } from "@/lib/query-keys";
 import { setCSRFToken } from "@/lib/token";
 import type { OrgRole, User } from "@/lib/types";
+import { notifyError } from "@/lib/query";
 
 /** Where a signed-in account belongs: operators to the console, everyone else to their org. */
 export const homeFor = (user: User) =>
@@ -71,10 +73,28 @@ export function useLogout() {
 export function useUserOrgs() {
   const { user } = useSession();
   return useQuery({
-    queryKey: ["user-orgs", user?.id],
+    queryKey: [...qk.userOrgs, user?.id],
     queryFn: () => authApi.organizations(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!user,
+  });
+}
+
+export function useCreateOrganization() {
+  const client = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (name: string) => authApi.createOrganization(name),
+    onSuccess: (org) => {
+      client.setQueryData<User>(qk.session, (user) =>
+        user ? { ...user, org_id: org.id, org_role: "ORG_ADMIN" } : user
+      );
+      client.invalidateQueries({ queryKey: qk.userOrgs });
+      toast.success(`${org.name} created`);
+      router.replace(`/orgs/${org.id}`);
+    },
+    onError: notifyError,
   });
 }
 
@@ -87,4 +107,3 @@ export function useSwitchOrg() {
     });
   };
 }
-

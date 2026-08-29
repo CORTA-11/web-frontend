@@ -16,7 +16,7 @@ import { useRegister } from "@/features/auth/session";
 import { errorMessage } from "@/lib/http";
 import type { RegistrationField } from "@/lib/types";
 
-type Mode = "create_org" | "join_org";
+type Mode = "individual" | "create_org" | "join_org";
 
 const buildSchema = (mode: Mode, extra: RegistrationField[]) =>
   z.object({
@@ -36,7 +36,7 @@ const buildSchema = (mode: Mode, extra: RegistrationField[]) =>
   });
 
 export function RegisterForm() {
-  const [mode, setMode] = useState<Mode>("join_org");
+  const [mode, setMode] = useState<Mode>("individual");
   const [orgId, setOrgId] = useState("");
   const register_ = useRegister();
 
@@ -47,9 +47,9 @@ export function RegisterForm() {
     retry: false,
   });
 
-  const extra = useMemo(() => org.data?.registration_fields ?? [], [org.data]);
+  const extra = useMemo(() => (mode === "join_org" ? org.data?.registration_fields ?? [] : []), [mode, org.data]);
   const schema = useMemo(() => buildSchema(mode, extra), [mode, extra]);
-  const { register, handleSubmit, formState } = useForm({
+  const { register, handleSubmit, formState, clearErrors } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { name: "", email: "", password: "", org_name: "", org_public_id: "", fields: {} },
   });
@@ -63,18 +63,25 @@ export function RegisterForm() {
       <div className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold">Create an account</h1>
         <p className="text-xs text-muted-foreground">
-          Start a new organisation, or join one you have the ID for.
+          Register as an individual, join an organisation, or start a new one.
         </p>
       </div>
 
-      <Tabs value={mode} onValueChange={(value) => setMode(value as Mode)}>
+      <Tabs
+        value={mode}
+        onValueChange={(value) => {
+          setMode(value as Mode);
+          clearErrors();
+        }}
+      >
         <TabsList className="w-full">
+          <TabsTrigger value="individual" className="flex-1">Individual</TabsTrigger>
           <TabsTrigger value="join_org" className="flex-1">Join organisation</TabsTrigger>
           <TabsTrigger value="create_org" className="flex-1">Create organisation</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {mode === "join_org" ? (
+      {mode === "join_org" && (
         <Field
           label="Organisation ID"
           htmlFor="org_public_id"
@@ -91,14 +98,16 @@ export function RegisterForm() {
           />
           {org.isError && <p className="text-xs text-danger">{errorMessage(org.error)}</p>}
         </Field>
-      ) : (
+      )}
+
+      {mode === "create_org" && (
         <Field label="Organisation name" htmlFor="org_name" error={errors.org_name?.message}>
           <Input id="org_name" autoFocus {...register("org_name")} />
         </Field>
       )}
 
       <Field label="Full name" htmlFor="name" error={errors.name?.message}>
-        <Input id="name" autoComplete="name" {...register("name")} />
+        <Input id="name" autoFocus={mode === "individual"} autoComplete="name" {...register("name")} />
       </Field>
 
       <Field label="Email" htmlFor="email" error={errors.email?.message}>
@@ -109,11 +118,13 @@ export function RegisterForm() {
         <Input id="password" type="password" autoComplete="new-password" {...register("password")} />
       </Field>
 
-      <RegistrationFields
-        fields={extra}
-        register={register as never}
-        errors={(errors.fields ?? {}) as Record<string, { message?: string }>}
-      />
+      {mode === "join_org" && (
+        <RegistrationFields
+          fields={extra}
+          register={register as never}
+          errors={(errors.fields ?? {}) as Record<string, { message?: string }>}
+        />
+      )}
 
       {register_.isError && (
         <p role="alert" className="border-l-2 border-danger pl-2.5 text-xs text-danger">

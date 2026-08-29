@@ -1,6 +1,7 @@
 /** Every cache key in one place, so invalidation is auditable. */
 export const qk = {
   session: ["session"] as const,
+  userOrgs: ["user-orgs"] as const,
   orgUsers: (orgId: string) => ["orgs", orgId, "users"] as const,
   orgSettings: (orgId: string) => ["orgs", orgId, "settings"] as const,
   teams: (orgId: string) => ["orgs", orgId, "teams"] as const,

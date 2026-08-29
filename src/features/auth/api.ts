@@ -3,7 +3,7 @@ import { setCSRFToken } from "@/lib/token";
 import type { OrgRole, User, UserOrganization } from "@/lib/types";
 
 export type RegisterInput = {
-  mode: "create_org" | "join_org";
+  mode: "individual" | "create_org" | "join_org";
   name: string;
   email: string;
   password: string;
@@ -30,7 +30,7 @@ type AuthPayload = {
 };
 
 /** backend org row as seen in GET /orgs — carries the caller's org role. */
-type OrgRow = {
+export type OrgRow = {
   id: string;
   name: string;
   lifecycle_state: "pending" | "active" | "deleting" | "deleted";
@@ -92,6 +92,9 @@ export const authApi = {
 
   organizations: async (): Promise<{ items: UserOrganization[] }> =>
     api<{ items: UserOrganization[] }>("/v1/orgs", { method: "GET" }),
+
+  createOrganization: (name: string): Promise<OrgRow> =>
+    api<OrgRow>("/v1/orgs", { method: "POST", json: { name } }),
 };
 
 /** Re-fetches only the caller's org context after an organisation becomes active. */
