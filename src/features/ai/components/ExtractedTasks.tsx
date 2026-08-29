@@ -20,7 +20,7 @@ type Props = {
 export function ExtractedTasks({ teamId, orgId, members, tasks, onAdded }: Props) {
   const [draft, setDraft] = useState(tasks);
   const [chosen, setChosen] = useState(() => new Set(tasks.map((_, index) => index)));
-  const create = useCreateTask(teamId, orgId);
+  const create = useCreateTask(teamId, orgId, members);
 
   const patch = (index: number, changes: Partial<ExtractedTask>) =>
     setDraft((current) => current.map((task, at) => (at === index ? { ...task, ...changes } : task)));

@@ -57,6 +57,8 @@ export type Team = {
 
 export type TeamMember = {
   user_id: number;
+  /** User UUID from core-api, used to resolve task assignments back to the API. */
+  public_id?: string;
   name: string;
   email: string;
   avatar_url?: string;

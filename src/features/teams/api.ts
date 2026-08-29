@@ -34,10 +34,11 @@ type LiveMember = { user_id: string; name?: string; email?: string; role: string
 type LiveOrgMember = { user_id: string; display_name: string; email: string; role: string; joined_at: string };
 
 /** Stable numeric key from a UUID so the roster table keeps a usable id. */
-const numericKey = (uuid: string) => Number(`0x${uuid.replace(/-/g, "").slice(0, 15)}`);
+export const numericKey = (uuid: string) => Number(`0x${uuid.replace(/-/g, "").slice(0, 15)}`);
 
 const memberFromLive = (entry: LiveMember): TeamMember => ({
   user_id: numericKey(entry.user_id),
+  public_id: entry.user_id,
   name: entry.name ?? "",
   email: entry.email ?? "",
   role: roleOf(entry.role) ?? "TEAM_MEMBER",

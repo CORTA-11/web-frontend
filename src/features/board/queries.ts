@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { boardApi, type TaskDraft, type TaskMove } from "@/features/board/api";
 import { qk } from "@/lib/query-keys";
 import { notifyError } from "@/lib/query";
-import type { Board, Task } from "@/lib/types";
+import type { Board, Task, TeamMember } from "@/lib/types";
 
 export const useBoard = (teamId: string, orgId: string) =>
   useQuery({ queryKey: qk.board(teamId), queryFn: () => boardApi.get(teamId, orgId) });
@@ -18,20 +18,20 @@ const reindex = (board: Board, tasks: Task[]): Board => ({
   tasks,
 });
 
-export function useCreateTask(teamId: string, orgId: string) {
+export function useCreateTask(teamId: string, orgId: string, members: TeamMember[] = []) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (draft: TaskDraft) => boardApi.create(teamId, orgId, draft),
+    mutationFn: (draft: TaskDraft) => boardApi.create(teamId, orgId, draft, members),
     onSuccess: () => client.invalidateQueries({ queryKey: qk.board(teamId) }),
     onError: notifyError,
   });
 }
 
-export function useUpdateTask(teamId: string, orgId: string) {
+export function useUpdateTask(teamId: string, orgId: string, members: TeamMember[] = []) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ taskId, patch }: { taskId: string; patch: TaskMove }) =>
-      boardApi.update(teamId, orgId, taskId, patch),
+      boardApi.update(teamId, orgId, taskId, patch, undefined, members),
     onSuccess: () => client.invalidateQueries({ queryKey: qk.board(teamId) }),
     onError: notifyError,
   });
@@ -46,7 +46,10 @@ type MoveInput = { taskId: string; patch: TaskMove; tasks: Task[] };
 export function useMoveTask(teamId: string, orgId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ taskId, patch }: MoveInput) => boardApi.update(teamId, orgId, taskId, patch),
+    mutationFn: ({ taskId, patch, tasks }: MoveInput) => {
+      const current = tasks.find((task) => task.id === taskId);
+      return boardApi.update(teamId, orgId, taskId, patch, current);
+    },
     onMutate: async ({ tasks }: MoveInput) => {
       await client.cancelQueries({ queryKey: qk.board(teamId) });
       const previous = client.getQueryData<Board>(qk.board(teamId));

@@ -129,10 +129,12 @@ Task = { id, column_id, title, description, assignee_id, priority: "low"|"medium
          start_date, due_date, tags: string[], created_at }
 ```
 
-**Live today:** `GET/POST /{teamSlug}/tasks` with `X-Org-ID`, where a task is only
-`{ id, team_id, description, created_at }`. No status, assignee, priority or
-dates, and no update or delete — so live mode is read-plus-create and the UI
-reports the gap rather than pretending.
+**Live today:** `GET/POST/PATCH/DELETE /v1/orgs/{org_id}/teams/{team_id}/tasks`, where a task is
+`{ id, description, status, assignee_id, created_at, updated_at }`. There is no priority, due date
+or tags. `assignee_id` is the user UUID; PATCH treats an absent `assignee_id` as "keep", an explicit
+`null` as unassign, and a value as reassign. Team members resolve assignees via
+`/v1/orgs/{org_id}/teams/{team_id}/members`. The UI folds the flat status list into columns, maps
+assignees to the roster numeric key, and reports the missing fields rather than pretending.
 
 ---
 
