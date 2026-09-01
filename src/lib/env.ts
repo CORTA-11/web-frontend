@@ -17,8 +17,8 @@ export type ApiModule =
   | "ai"
   | "settings";
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-export const WS_URL = process.env.NEXT_PUBLIC_WS_BASE_URL ?? "";
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api";
+export const WS_URL = process.env.NEXT_PUBLIC_WS_BASE_URL?.trim() || "";
 
 export const isLive = (module: ApiModule) =>
   live.has("all") || live.has(module);

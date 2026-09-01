@@ -1,0 +1,24 @@
+services:
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_LIVE_MODULES: ${NEXT_PUBLIC_LIVE_MODULES:-auth,teams,board,files,resources}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api}
+        API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:8080}
+    image: web-frontend:local
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:8080}
+    ports:
+      - "3000:3000"
+    networks:
+      - synodus-network
+
+networks:
+  synodus-network:
+    external: true
