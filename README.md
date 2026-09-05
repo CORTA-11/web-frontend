@@ -36,12 +36,19 @@ Organisation join ID for registration: `aratuwa`.
 core-api through the `/api` proxy:
 
 ```env
-NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,files
+NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,chat,files,resources
+NEXT_PUBLIC_WS_BASE_URL=ws://localhost:8081
 ```
 
-Anything not listed stays mocked. `all` switches everything over. What core-api
-actually implements today — and what it still owes the frontend — is listed in
-`PLAN.md` §10.
+Anything not listed stays mocked. `all` switches everything over. Chat live
+mode uses core-api for history/send/delete and fetches a short-lived socket
+ticket before connecting to socket-server at `NEXT_PUBLIC_WS_BASE_URL`.
+
+For Docker, start the backend stack first, then run:
+
+```bash
+docker compose up --build -d web
+```
 
 ## Tests
 
