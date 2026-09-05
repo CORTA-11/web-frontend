@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { resourcesApi, type RequestDraft, type ResourceDraft } from "@/features/resources/api";
 import { qk } from "@/lib/query-keys";
 import { notifyError } from "@/lib/query";
+import type { ResourceRequest } from "@/lib/types";
 
 export const useResources = (orgId: string) =>
   useQuery({ queryKey: qk.resources(orgId), queryFn: () => resourcesApi.list(orgId) });
@@ -54,10 +55,18 @@ export const useRequestResource = (orgId: string) =>
     "Request submitted for approval"
   );
 
-export const useDecideRequest = (orgId: string) =>
-  useResourceMutation(
-    orgId,
-    ({ id, status }: { id: string; status: "approved" | "rejected" }) =>
+export const useDecideRequest = (orgId: string) => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: "approved" | "rejected" }) =>
       resourcesApi.decide(orgId, id, status),
-    "Request updated"
-  );
+    onSuccess: (updated) => {
+      client.setQueryData<ResourceRequest[]>(qk.requests(orgId), (current) =>
+        current?.map((request) => (request.id === updated.id ? updated : request))
+      );
+      client.invalidateQueries({ queryKey: qk.bookings(orgId) });
+      toast.success("Request updated");
+    },
+    onError: notifyError,
+  });
+};

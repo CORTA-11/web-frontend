@@ -1,15 +1,40 @@
 import { http, HttpResponse } from "msw";
 import { db, now, uid } from "@/mocks/db";
-import { actorFrom, publicUser, tokenFor } from "@/mocks/session";
-
-const REFRESH_COOKIE = "corta_refresh";
+import { actorFrom, publicUser, REFRESH_COOKIE, setCurrentUser, tokenFor } from "@/mocks/session";
 
 const session = (userId: number) => {
-  const person = db.people.find((p) => p.id === userId)!;
+	setCurrentUser(userId);
+	const person = db.people.find((p) => p.id === userId)!;
   return HttpResponse.json(
     { access_token: tokenFor(person.id), user: publicUser(person) },
     { headers: { "Set-Cookie": `${REFRESH_COOKIE}=${person.id}; Path=/; SameSite=Lax` } }
-  );
+	);
+};
+
+const v1Session = (userId: number) => {
+	setCurrentUser(userId);
+	const person = db.people.find((p) => p.id === userId)!;
+	const issuedAt = now();
+	return HttpResponse.json(
+		{
+			user: {
+				id: person.public_id ?? String(person.id),
+				email: person.email,
+				display_name: person.name,
+				platform_role: person.platform_role ?? null,
+			},
+			session: {
+				id: uid("session"),
+				created_at: issuedAt,
+				last_seen_at: issuedAt,
+				idle_expires_at: issuedAt,
+				absolute_expires_at: issuedAt,
+				current: true,
+			},
+			csrf_token: "mock-csrf-token",
+		},
+		{ headers: { "Set-Cookie": `${REFRESH_COOKIE}=${person.id}; Path=/; SameSite=Lax` } }
+	);
 };
 
 type RegisterBody = {
@@ -22,7 +47,31 @@ type RegisterBody = {
 };
 
 export const authHandlers = [
-  http.post("/api/auth/login", async ({ request }) => {
+	http.post("/api/v1/auth/login", async ({ request }) => {
+		const { email, password } = (await request.json()) as { email: string; password: string };
+		const person = db.people.find((p) => p.email === email.trim().toLowerCase());
+		if (!person || person.password !== password) {
+			return new HttpResponse("Invalid email or password", { status: 401 });
+		}
+		return v1Session(person.id);
+	}),
+
+	http.get("/api/v1/auth/session", ({ request }) => {
+		const person = actorFrom(request);
+		return person ? v1Session(person.id) : new HttpResponse("Unauthorized", { status: 401 });
+	}),
+
+	http.delete("/api/v1/auth/session", () =>
+		{
+			setCurrentUser(null);
+			return new HttpResponse(null, {
+				status: 204,
+				headers: { "Set-Cookie": `${REFRESH_COOKIE}=; Path=/; Max-Age=0` },
+			});
+		}
+	),
+
+	http.post("/api/auth/login", async ({ request }) => {
     const { email, password } = (await request.json()) as { email: string; password: string };
     const person = db.people.find((p) => p.email === email.trim().toLowerCase());
     if (!person || person.password !== password) {
