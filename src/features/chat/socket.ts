@@ -1,30 +1,55 @@
 "use client";
 
 import { useEffect } from "react";
-import { WS_URL } from "@/lib/env";
+import { isLive, WS_URL } from "@/lib/env";
+import { chatApi } from "@/features/chat/api";
 import type { ChatMessage } from "@/lib/types";
 import { useChatCacheWriter } from "@/features/chat/queries";
 
 type Event = { type: "message.created" | "message.deleted"; data: ChatMessage };
 
 /**
- * Live fan-out from socket-server (`/ws?team_id=`). Inert until
- * NEXT_PUBLIC_WS_BASE_URL is set — core-api does not publish chat events yet, so the
- * REST round-trip remains the source of truth in the meantime.
+ * Live fan-out from socket-server. Inert until chat live mode and
+ * NEXT_PUBLIC_WS_BASE_URL are enabled.
  */
-export function useChatSocket(teamId: string) {
+export function useChatSocket(orgId: string, teamId: string) {
   const write = useChatCacheWriter(teamId);
 
   useEffect(() => {
-    if (!WS_URL) return;
+    if (!WS_URL || !isLive("chat")) return;
 
-    const socket = new WebSocket(
-      `${WS_URL}/ws?team_id=${encodeURIComponent(teamId)}`
-    );
-    socket.onmessage = (event) => {
-      const parsed = JSON.parse(event.data) as Event;
-      if (parsed.data?.channel_id === teamId) write(parsed.data);
+    let cancelled = false;
+    let socket: WebSocket | undefined;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let attempt = 0;
+
+    const connect = async () => {
+      try {
+        const { token } = await chatApi.socketTicket(orgId, teamId);
+        if (cancelled) return;
+        const params = new URLSearchParams({ token, team_id: teamId });
+        socket = new WebSocket(`${WS_URL.replace(/\/$/, "")}/ws?${params}`);
+        socket.onopen = () => {
+          attempt = 0;
+        };
+        socket.onmessage = (event) => {
+          const parsed = JSON.parse(event.data) as Event;
+          if (parsed.data?.channel_id === teamId) write(parsed.data);
+        };
+        socket.onclose = () => {
+          if (cancelled) return;
+          retry = setTimeout(connect, Math.min(500 * 2 ** attempt++, 5000));
+        };
+      } catch {
+        if (!cancelled) retry = setTimeout(connect, Math.min(500 * 2 ** attempt++, 5000));
+      }
     };
-    return () => socket.close();
-  }, [teamId, write]);
+
+    void connect();
+    return () => {
+      cancelled = true;
+      if (retry) clearTimeout(retry);
+      socket?.close();
+    };
+  }, [orgId, teamId, write]);
 }

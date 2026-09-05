@@ -10,6 +10,7 @@ import { useChatHistory, useDeleteMessage, useSendMessage } from "@/features/cha
 import { useChatSocket } from "@/features/chat/socket";
 import { useMembers, useTeamContext } from "@/features/teams/queries";
 import { day } from "@/lib/format";
+import { isLive } from "@/lib/env";
 import { can } from "@/lib/rbac";
 import type { ChatMessage } from "@/lib/types";
 
@@ -23,15 +24,15 @@ const grouped = (message: ChatMessage, previous?: ChatMessage) =>
 
 export function ChatRoom({ teamId }: { teamId: string }) {
   const { orgId } = useParams<{ orgId: string }>();
-  const history = useChatHistory(teamId);
+  const history = useChatHistory(orgId, teamId);
   const members = useMembers(teamId, orgId);
   const { actor, user } = useTeamContext(teamId);
-  const send = useSendMessage(teamId);
-  const remove = useDeleteMessage(teamId);
+  const send = useSendMessage(orgId, teamId);
+  const remove = useDeleteMessage(orgId, teamId);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const foot = useRef<HTMLDivElement>(null);
 
-  useChatSocket(teamId);
+  useChatSocket(orgId, teamId);
 
   const count = history.data?.messages.length ?? 0;
   useEffect(() => {
@@ -81,7 +82,11 @@ export function ChatRoom({ teamId }: { teamId: string }) {
         pending={send.isPending}
         onCancelReply={() => setReplyTo(null)}
         onSend={(message, mentions) => {
-          send.mutate({ message, mentions, reply_to_id: replyTo?.id ?? null });
+          const liveMentions = members.data
+            ?.filter((member) => mentions.includes(member.user_id))
+            .map((member) => member.public_id)
+            .filter((id): id is string => Boolean(id));
+          send.mutate({ message, mentions: isLive("chat") ? liveMentions : mentions, reply_to_id: replyTo?.id ?? null });
           setReplyTo(null);
         }}
       />
