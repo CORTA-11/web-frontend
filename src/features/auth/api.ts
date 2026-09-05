@@ -35,7 +35,7 @@ type LegacyAuthPayload = { access_token: string; user: User };
 export type OrgRow = {
   id: string;
   name: string;
-  lifecycle_state: "pending" | "active" | "deleting" | "deleted";
+  lifecycle_state: "provisioning" | "pending" | "active" | "failed" | "suspended" | "rejected" | "deleting" | "deleted";
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

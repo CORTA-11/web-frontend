@@ -87,7 +87,6 @@ export function useUserOrgs() {
 
 export function useCreateOrganization() {
   const client = useQueryClient();
-  const router = useRouter();
 
   return useMutation({
     mutationFn: (name: string) => authApi.createOrganization(name),
@@ -97,7 +96,6 @@ export function useCreateOrganization() {
       );
       client.invalidateQueries({ queryKey: qk.userOrgs });
       toast.success(`${org.name} created`);
-      router.replace(`/orgs/${org.id}`);
     },
     onError: notifyError,
   });
