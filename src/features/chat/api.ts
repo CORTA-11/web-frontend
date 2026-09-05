@@ -8,6 +8,8 @@ export type SendMessage = {
   mentions?: Array<number | string>;
 };
 
+export type DeleteMessageResult = ChatMessage | { id: string; deleted_at: string };
+
 const liveBase = (orgId: string, teamId: string) => `/v1/orgs/${orgId}/teams/${teamId}/chat`;
 
 export const chatApi = {
@@ -24,7 +26,7 @@ export const chatApi = {
   remove: (orgId: string, teamId: string, messageId: string) =>
     isLive("chat")
       ? api<ChatMessage>(`${liveBase(orgId, teamId)}/messages/${messageId}`, { method: "DELETE" })
-      : api<{ id: string; deleted_at: string }>(`/teams/${teamId}/chat/messages/${messageId}`, { method: "DELETE" }),
+      : api<DeleteMessageResult>(`/teams/${teamId}/chat/messages/${messageId}`, { method: "DELETE" }),
 
   socketTicket: (orgId: string, teamId: string) =>
     api<{ token: string }>(`${liveBase(orgId, teamId)}/socket-ticket`, { method: "POST" }),

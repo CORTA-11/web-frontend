@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { chatApi, type SendMessage } from "@/features/chat/api";
+import { chatApi, type DeleteMessageResult, type SendMessage } from "@/features/chat/api";
 import { qk } from "@/lib/query-keys";
 import { notifyError } from "@/lib/query";
 import type { ChatMessage } from "@/lib/types";
@@ -39,7 +39,7 @@ export function useDeleteMessage(orgId: string, teamId: string) {
   const client = useQueryClient();
   const write = useChatCacheWriter(teamId);
   return useMutation({
-    mutationFn: (messageId: string) => chatApi.remove(orgId, teamId, messageId),
+    mutationFn: (messageId: string): Promise<DeleteMessageResult> => chatApi.remove(orgId, teamId, messageId),
     onSuccess: (result) => {
       if ("message" in result) {
         write(result);
