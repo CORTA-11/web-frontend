@@ -17,7 +17,12 @@ const v1Session = (userId: number) => {
 	const issuedAt = now();
 	return HttpResponse.json(
 		{
-			user: { id: person.public_id ?? String(person.id), email: person.email, display_name: person.name },
+			user: {
+				id: person.public_id ?? String(person.id),
+				email: person.email,
+				display_name: person.name,
+				platform_role: person.platform_role ?? null,
+			},
 			session: {
 				id: uid("session"),
 				created_at: issuedAt,

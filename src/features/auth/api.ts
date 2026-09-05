@@ -1,4 +1,5 @@
-import { api } from "@/lib/http";
+import { api, ApiError } from "@/lib/http";
+import { isLive } from "@/lib/env";
 import { setCSRFToken } from "@/lib/token";
 import type { OrgRole, User, UserOrganization } from "@/lib/types";
 
@@ -12,8 +13,8 @@ export type RegisterInput = {
   fields?: Record<string, string | undefined>;
 };
 
-/** backend session user: { id, email, display_name } — no org scoping. */
-type SessionUser = { id: string; email: string; display_name: string };
+/** backend session user: { id, email, display_name } — tenant scoping is listed separately. */
+type SessionUser = { id: string; email: string; display_name: string; platform_role?: User["platform_role"] };
 
 /** backend auth response: sets the session cookie and hands us a CSRF token. */
 type AuthPayload = {
@@ -28,6 +29,7 @@ type AuthPayload = {
   };
   csrf_token: string;
 };
+type LegacyAuthPayload = { access_token: string; user: User };
 
 /** backend org row as seen in GET /orgs — carries the caller's org role. */
 export type OrgRow = {
@@ -61,7 +63,7 @@ async function enrich(user: SessionUser): Promise<User> {
     name: user.display_name,
     email: user.email,
     org_role: org ? orgRoleOf(org.my_role) : "ORG_MEMBER",
-    platform_role: null,
+    platform_role: user.platform_role ?? null,
   };
 }
 
@@ -71,27 +73,107 @@ async function sessionFrom(payload: AuthPayload): Promise<{ user: User; csrf_tok
   return { user, csrf_token: payload.csrf_token };
 }
 
+const persistMockSession = (user: User | null) => {
+  if (typeof document === "undefined") return;
+  document.cookie = user
+    ? `corta_refresh=${user.id}; Path=/; SameSite=Lax`
+    : "corta_refresh=; Path=/; Max-Age=0";
+};
+
+async function setMockCurrentUser(user: User | null) {
+  persistMockSession(user);
+  const { setCurrentUser } = await import("@/mocks/session");
+  setCurrentUser(user?.id ?? null);
+}
+
+async function mockSessionFrom(payload: LegacyAuthPayload): Promise<User> {
+  setCSRFToken("mock-csrf-token");
+  await setMockCurrentUser(payload.user);
+  return payload.user;
+}
+
+async function mockSession(): Promise<User> {
+  const userId = Number(
+    document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("corta_refresh="))
+      ?.split("=")[1]
+  );
+  if (!Number.isFinite(userId)) throw new ApiError(401, "Unauthorized");
+  const { db } = await import("@/mocks/db");
+  const person = db.people.find((entry) => entry.id === userId);
+  if (!person) throw new ApiError(401, "Unauthorized");
+  const user = {
+    id: person.id,
+    public_id: person.public_id,
+    org_id: person.org_id,
+    name: person.name,
+    email: person.email,
+    org_role: person.org_role,
+    platform_role: person.platform_role ?? null,
+  };
+  await setMockCurrentUser(user);
+  return user;
+}
+
+async function mockOrganizations(): Promise<{ items: UserOrganization[] }> {
+  const user = await mockSession();
+  const { db } = await import("@/mocks/db");
+  const items: UserOrganization[] = [];
+  const primaryOrg = db.organizations.find((org) => org.id === user.org_id);
+  if (primaryOrg) {
+    items.push({
+      id: primaryOrg.id,
+      name: primaryOrg.name,
+      lifecycle_state: primaryOrg.status,
+      my_role: user.org_role === "ORG_ADMIN" ? "administrator" : "member",
+    });
+  }
+  if (user.email === "admin@aratuwa.edu" || user.email === "member@aratuwa.edu") {
+    const additionalOrg = db.organizations.find((org) => org.id === "6a2f4d19-7c05-4b83-a94d-2e1b8f70c645");
+    if (additionalOrg) {
+      items.push({
+        id: additionalOrg.id,
+        name: additionalOrg.name,
+        lifecycle_state: additionalOrg.status,
+        my_role: "member",
+      });
+    }
+  }
+  return { items };
+}
+
 export const authApi = {
   login: async (email: string, password: string): Promise<User> =>
-    (await sessionFrom(await api<AuthPayload>("/v1/auth/login", { method: "POST", json: { email, password } }))).user,
+    isLive("auth")
+      ? (await sessionFrom(await api<AuthPayload>("/v1/auth/login", { method: "POST", json: { email, password } }))).user
+      : mockSessionFrom(await api<LegacyAuthPayload>("/auth/login", { method: "POST", json: { email, password } })),
 
   register: async (input: RegisterInput): Promise<User> =>
-    (
-      await sessionFrom(
-        await api<AuthPayload>("/v1/auth/register", {
-          method: "POST",
-          json: { display_name: input.name, email: input.email, password: input.password },
-        })
-      )
-    ).user,
+    isLive("auth")
+      ? (
+          await sessionFrom(
+            await api<AuthPayload>("/v1/auth/register", {
+              method: "POST",
+              json: { display_name: input.name, email: input.email, password: input.password },
+            })
+          )
+        ).user
+      : mockSessionFrom(await api<LegacyAuthPayload>("/auth/register", { method: "POST", json: input })),
 
   session: async (): Promise<User> =>
-    (await sessionFrom(await api<AuthPayload>("/v1/auth/session"))).user,
+    isLive("auth") ? (await sessionFrom(await api<AuthPayload>("/v1/auth/session"))).user : mockSession(),
 
-  logout: () => api<void>("/v1/auth/session", { method: "DELETE" }),
+  logout: async () => {
+    await api<void>(isLive("auth") ? "/v1/auth/session" : "/auth/logout", {
+      method: isLive("auth") ? "DELETE" : "POST",
+    });
+    if (!isLive("auth")) await setMockCurrentUser(null);
+  },
 
   organizations: async (): Promise<{ items: UserOrganization[] }> =>
-    api<{ items: UserOrganization[] }>("/v1/orgs", { method: "GET" }),
+    isLive("auth") ? api<{ items: UserOrganization[] }>("/v1/orgs", { method: "GET" }) : mockOrganizations(),
 
   createOrganization: (name: string): Promise<OrgRow> =>
     api<OrgRow>("/v1/orgs", { method: "POST", json: { name } }),

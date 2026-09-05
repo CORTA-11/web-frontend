@@ -3,6 +3,7 @@ import { ACCOUNTS, signIn } from "./helpers";
 
 test("an admin creates a team and a leader adds a member", async ({ page }) => {
   await signIn(page, ACCOUNTS.admin);
+  await page.getByRole("link", { name: /Aratuwa Research Lab/ }).click();
   await page.getByRole("navigation").getByRole("link", { name: "Teams", exact: true }).click();
 
   await page.getByRole("button", { name: "New team" }).click();
@@ -18,16 +19,18 @@ test("an admin creates a team and a leader adds a member", async ({ page }) => {
 
 test("a leader adds and removes a team member", async ({ page }) => {
   await signIn(page, ACCOUNTS.leader);
+  await page.getByRole("link", { name: /Aratuwa Research Lab/ }).click();
   await page.getByRole("navigation").getByRole("link", { name: "Neural Imaging" }).first().click();
   await page.getByRole("navigation").getByRole("link", { name: "Members" }).click();
 
-  await page.getByLabel("Add member").selectOption({ index: 1 });
+  await page.getByLabel("Add member").fill("kamsan@aratuwa.edu");
   await page.getByRole("button", { name: "Add" }).click();
   await expect(page.getByText("Member added")).toBeVisible();
 });
 
 test("a team leader cannot leave their own team", async ({ page }) => {
   await signIn(page, ACCOUNTS.leader);
+  await page.getByRole("link", { name: /Aratuwa Research Lab/ }).click();
   await page.getByRole("navigation").getByRole("link", { name: "Neural Imaging" }).first().click();
   await page.getByRole("navigation").getByRole("link", { name: "Members" }).click();
   await expect(page.getByRole("button", { name: "Leave team" })).toHaveCount(0);
