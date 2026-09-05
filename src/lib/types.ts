@@ -220,6 +220,6 @@ export type ExtractedTask = {
 export type UserOrganization = {
   id: string;
   name: string;
-  lifecycle_state: "pending" | "active" | "suspended" | "rejected" | "deleting" | "deleted";
+  lifecycle_state: "provisioning" | "pending" | "active" | "suspended" | "rejected" | "failed" | "deleting" | "deleted";
   my_role: string;
 };
