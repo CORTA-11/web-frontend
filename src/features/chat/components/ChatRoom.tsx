@@ -64,6 +64,7 @@ export function ChatRoom({ teamId }: { teamId: string }) {
                       canDelete={
                         message.sender.id === user?.id || can(actor, "chat:delete_any")
                       }
+                      self={message.sender.id === user?.id}
                       onReply={setReplyTo}
                       onDelete={(id) => remove.mutate(id)}
                     />
