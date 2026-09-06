@@ -6,8 +6,8 @@ import { docsApi } from "@/features/docs/api";
 import { qk } from "@/lib/query-keys";
 import { notifyError } from "@/lib/query";
 
-export const useDocs = (teamId: string) =>
-  useQuery({ queryKey: qk.docs(teamId), queryFn: () => docsApi.list(teamId) });
+export const useDocs = (orgId: string, teamId: string) =>
+  useQuery({ queryKey: qk.docs(teamId), queryFn: () => docsApi.list(orgId, teamId) });
 
 /** Polled so other people's saves show up without a manual refresh. */
 export const useDoc = (teamId: string, docId: string) =>
@@ -18,10 +18,10 @@ export const useDoc = (teamId: string, docId: string) =>
     staleTime: 0,
   });
 
-export function useCreateDoc(teamId: string) {
+export function useCreateDoc(orgId: string, teamId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (title: string) => docsApi.create(teamId, title),
+    mutationFn: (title: string) => docsApi.create(orgId, teamId, title),
     onSuccess: () => client.invalidateQueries({ queryKey: qk.docs(teamId) }),
     onError: notifyError,
   });
