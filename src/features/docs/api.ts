@@ -8,8 +8,9 @@ type LiveDocument = {
   title: string;
   updated_by: string;
   updated_at: string;
-  body_html?: string;
 };
+
+type LiveDocumentProjection = LiveDocument & { body_html: string };
 
 const liveBase = (orgId: string, teamId: string) => `/v1/orgs/${orgId}/teams/${teamId}/documents`;
 const fromLive = (document: LiveDocument): DocSummary => ({
@@ -28,7 +29,7 @@ export const docsApi = {
   get: (orgId: string, teamId: string, docId: string) =>
     isLive("docs")
       // core-api calls the persisted rich-text projection body_html; the existing editor contract calls it content.
-      ? api<LiveDocument>(`${liveBase(orgId, teamId)}/${docId}`).then((document) => ({ ...fromLive(document), content: document.body_html ?? "" }))
+      ? api<LiveDocumentProjection>(`${liveBase(orgId, teamId)}/${docId}`).then((document) => ({ ...fromLive(document), content: document.body_html }))
       : api<Doc>(`/teams/${teamId}/docs/${docId}`),
   create: (orgId: string, teamId: string, title: string) =>
     isLive("docs")
