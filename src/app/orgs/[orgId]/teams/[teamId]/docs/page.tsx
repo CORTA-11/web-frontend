@@ -52,6 +52,7 @@ export default function DocsPage() {
           {(data) => (
             <DocList
               basePath={basePath}
+              orgId={orgId}
               teamId={teamId}
               docs={data}
               canDelete={can(actor, "doc:delete")}

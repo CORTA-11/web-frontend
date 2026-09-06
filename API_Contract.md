@@ -167,12 +167,14 @@ When `NEXT_PUBLIC_LIVE_MODULES` includes `docs`, the catalog uses core-api:
 ### `GET /api/v1/orgs/{orgId}/teams/{teamId}/documents` → `{ items: DocumentSummary[] }`
 ### `POST /api/v1/orgs/{orgId}/teams/{teamId}/documents` `{ title }` → `DocumentSummary`
 ### `GET /api/v1/orgs/{orgId}/teams/{teamId}/documents/{documentId}` → `DocumentProjection`
+### `PATCH /api/v1/orgs/{orgId}/teams/{teamId}/documents/{documentId}` `{ title?, body_html? }` → `DocumentProjection`
+### `DELETE /api/v1/orgs/{orgId}/teams/{teamId}/documents/{documentId}` → 204 (TEAM_LEADER)
 
 All routes require an authenticated Team Member; creation also requires the
 CSRF token. The catalog is ordered by recent activity. Canonical Yjs state is
 never included in these browser responses. The projection contains the
-persisted title and rich-text body. Edit/delete and the live collaboration
-connection are delivered by subsequent Document slices.
+persisted title and rich-text body. The live collaboration connection is
+delivered by a subsequent Document slice.
 
 ```ts
 DocumentSummary = { id, team_id, title, updated_by, created_at, updated_at }
