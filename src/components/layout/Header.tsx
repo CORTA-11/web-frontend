@@ -77,7 +77,9 @@ export function Header() {
         ) : (
           <div className="flex min-w-0 items-baseline gap-2 px-1">
             <span className="truncate text-sm font-medium">{org.data?.name ?? "Organisation"}</span>
-            {org.data && <span className="data-mono hidden text-muted-foreground sm:inline">{org.data.public_id}</span>}
+            {org.data?.public_id && (
+              <span className="data-mono hidden text-muted-foreground sm:inline">{org.data.public_id}</span>
+            )}
           </div>
         )}
       </div>
