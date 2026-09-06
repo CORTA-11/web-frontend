@@ -17,8 +17,8 @@ export default function DocsPage() {
   const router = useRouter();
   const { team, actor } = useTeamContext(teamId);
   const isMember = Boolean(team.data?.my_role);
-  const docs = useDocs(teamId);
-  const create = useCreateDoc(teamId);
+  const docs = useDocs(orgId, teamId);
+  const create = useCreateDoc(orgId, teamId);
   const basePath = `/orgs/${orgId}/teams/${teamId}/docs`;
 
   return (
