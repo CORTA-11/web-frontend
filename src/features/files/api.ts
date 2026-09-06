@@ -3,8 +3,8 @@ import { isLive } from "@/lib/env";
 import { API_BASE } from "@/lib/env";
 import { api, ApiError } from "@/lib/http";
 import { fileKey } from "@/lib/keystore";
-import type { StoredFile, User } from "@/lib/types";
-import { getOrCreateTeamKey, getTeamKey, initializeUserKeys } from "@/features/files/keystore";
+import type { StoredFile } from "@/lib/types";
+import { getOrCreateTeamKey, getTeamKey } from "@/features/files/keystore";
 
 const orgHeader = (orgId: string) => ({ "X-Org-ID": orgId });
 
@@ -37,10 +37,9 @@ export const filesApi = {
       : api<StoredFile[]>(`/teams/${teamId}/files`),
 
   /** Sealed before it is attached, so plaintext never reaches the network. */
-  upload: async (teamId: string, orgId: string, file: File, user: User) => {
+  upload: async (teamId: string, orgId: string, file: File) => {
     if (isLive("files")) {
-      await initializeUserKeys(user);
-      const keyInfo = await getOrCreateTeamKey(orgId, teamId, user);
+      const keyInfo = await getOrCreateTeamKey(orgId, teamId);
       const { file: encryptedFile, iv } = await fileCrypto.encrypt(file, keyInfo.key);
 
       const form = new FormData();
@@ -70,7 +69,7 @@ export const filesApi = {
    * Streams through fetch so the bearer token travels with the request — and so
    * the bytes are unsealed in the page, never handed to the browser encrypted.
    */
-  download: async (teamId: string, orgId: string, file: StoredFile, user: User) => {
+  download: async (teamId: string, orgId: string, file: StoredFile) => {
     const path = isLive("files")
       ? `/v1/orgs/${orgId}/teams/${teamId}/files/${file.id}`
       : `/teams/${teamId}/files/download/${file.id}`;
@@ -84,7 +83,7 @@ export const filesApi = {
     if (isLive("files")) {
       const keyVersionStr = response.headers.get("X-File-Key-Version");
       const keyVersion = keyVersionStr ? parseInt(keyVersionStr, 10) : 1;
-      const key = await getTeamKey(orgId, teamId, keyVersion, user);
+      const key = await getTeamKey(orgId, teamId, keyVersion);
       decryptedBlob = await fileCrypto.decrypt(await response.blob(), key);
     } else {
       const key = await fileKey();

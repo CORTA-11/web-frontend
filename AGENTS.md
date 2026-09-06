@@ -54,11 +54,14 @@ a module is one person's diff.
   by `TeamMembersOnly` / `OrgGate` in the UI.
 - `lib/rbac.ts` holds every permission rule, one line per SRS clause it enforces.
 - **File bytes are sealed in the browser.** `lib/crypto.ts` owns the AES-256-GCM
-  envelope and is the only place that calls `crypto.subtle`; `lib/keystore.ts`
-  owns the key, which is the one secret kept in `localStorage`. Uploads encrypt
-  and downloads decrypt in `features/files/api.ts` — never bypass it with a raw
-  `fetch`. The key is a fixed development key today (PLAN.md §8.10), so no
-  screen claims end-to-end encryption.
+  envelope and the E2EE key material (PBKDF2-SHA256, RSA-OAEP, AES-GCM) and is the
+  only place that calls `crypto.subtle`; `features/files/keystore.ts` owns the key
+  lifecycle: the RSA private key lives only in memory (one password-unlocked per
+  tab), the sealed copy lives in `public.user_public_keys`, and team symmetric
+  keys rotate through `team_keys` when membership changes. Uploads encrypt and
+  downloads decrypt in `features/files/api.ts` — never bypass it with a raw
+  `fetch`. The old fixed development key in `localStorage` is gone; a locked tab
+  asks for the password via `UnlockGate`.
 
 ## 4. File length & quality rules
 

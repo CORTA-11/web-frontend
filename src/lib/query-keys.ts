@@ -16,5 +16,6 @@ export const qk = {
   docs: (teamId: string) => ["teams", teamId, "docs"] as const,
   doc: (teamId: string, docId: string) => ["teams", teamId, "docs", docId] as const,
   files: (teamId: string) => ["teams", teamId, "files"] as const,
+  userKeys: ["user-keys"] as const,
   notifications: ["notification-prefs"] as const,
 };
