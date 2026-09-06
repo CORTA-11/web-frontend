@@ -8,8 +8,8 @@ import type { ChatMessage } from "@/lib/types";
 
 type History = { messages: ChatMessage[] };
 
-export const useChatHistory = (teamId: string) =>
-  useQuery({ queryKey: qk.chat(teamId), queryFn: () => chatApi.history(teamId) });
+export const useChatHistory = (teamId: string, orgId: string) =>
+  useQuery({ queryKey: qk.chat(teamId), queryFn: () => chatApi.history(teamId, orgId) });
 
 /** Applied by both the send mutation and the socket, so ordering stays consistent. */
 export function useChatCacheWriter(teamId: string) {
@@ -25,19 +25,19 @@ export function useChatCacheWriter(teamId: string) {
     });
 }
 
-export function useSendMessage(teamId: string) {
+export function useSendMessage(teamId: string, orgId: string) {
   const write = useChatCacheWriter(teamId);
   return useMutation({
-    mutationFn: (body: SendMessage) => chatApi.send(teamId, body),
+    mutationFn: (body: SendMessage) => chatApi.send(teamId, orgId, body),
     onSuccess: write,
     onError: notifyError,
   });
 }
 
-export function useDeleteMessage(teamId: string) {
+export function useDeleteMessage(teamId: string, orgId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (messageId: string) => chatApi.remove(teamId, messageId),
+    mutationFn: (messageId: string) => chatApi.remove(teamId, orgId, messageId),
     onSuccess: ({ id, deleted_at }) =>
       client.setQueryData<History>(qk.chat(teamId), (current) =>
         current

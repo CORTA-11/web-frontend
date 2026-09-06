@@ -4,27 +4,57 @@ import { useEffect } from "react";
 import { WS_URL } from "@/lib/env";
 import type { ChatMessage } from "@/lib/types";
 import { useChatCacheWriter } from "@/features/chat/queries";
+import { chatApi } from "@/features/chat/api";
 
 type Event = { type: "message.created" | "message.deleted"; data: ChatMessage };
 
-/**
- * Live fan-out from socket-server (`/ws?team_id=`). Inert until
- * NEXT_PUBLIC_WS_BASE_URL is set — core-api does not publish chat events yet, so the
- * REST round-trip remains the source of truth in the meantime.
- */
-export function useChatSocket(teamId: string) {
+const backoff = (attempt: number) => Math.min(1000 * 2 ** attempt, 30_000);
+
+export function useChatSocket(teamId: string, orgId: string) {
   const write = useChatCacheWriter(teamId);
 
   useEffect(() => {
     if (!WS_URL) return;
 
-    const socket = new WebSocket(
-      `${WS_URL}/ws?team_id=${encodeURIComponent(teamId)}`
-    );
-    socket.onmessage = (event) => {
-      const parsed = JSON.parse(event.data) as Event;
-      if (parsed.data?.channel_id === teamId) write(parsed.data);
+    let cancelled = false;
+    let socket: WebSocket | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempt = 0;
+
+    const connect = async () => {
+      try {
+        const { token } = await chatApi.socketTicket(orgId, teamId);
+        if (cancelled) return;
+
+        socket = new WebSocket(
+          `${WS_URL}/ws?token=${encodeURIComponent(token)}&team_id=${encodeURIComponent(teamId)}`
+        );
+        socket.onopen = () => {
+          attempt = 0;
+        };
+        socket.onmessage = (event) => {
+          const parsed = JSON.parse(event.data) as Event;
+          if (parsed.data?.channel_id === teamId) write(parsed.data);
+        };
+        socket.onclose = () => {
+          if (cancelled) return;
+          attempt += 1;
+          timer = setTimeout(connect, backoff(attempt));
+        };
+        socket.onerror = () => socket?.close();
+      } catch {
+        if (cancelled) return;
+        attempt += 1;
+        timer = setTimeout(connect, backoff(attempt));
+      }
     };
-    return () => socket.close();
-  }, [teamId, write]);
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      socket?.close();
+      if (timer) clearTimeout(timer);
+    };
+  }, [teamId, orgId, write]);
 }

@@ -23,15 +23,15 @@ const grouped = (message: ChatMessage, previous?: ChatMessage) =>
 
 export function ChatRoom({ teamId }: { teamId: string }) {
   const { orgId } = useParams<{ orgId: string }>();
-  const history = useChatHistory(teamId);
+  const history = useChatHistory(teamId, orgId);
   const members = useMembers(teamId, orgId);
   const { actor, user } = useTeamContext(teamId);
-  const send = useSendMessage(teamId);
-  const remove = useDeleteMessage(teamId);
+  const send = useSendMessage(teamId, orgId);
+  const remove = useDeleteMessage(teamId, orgId);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const foot = useRef<HTMLDivElement>(null);
 
-  useChatSocket(teamId);
+  useChatSocket(teamId, orgId);
 
   const count = history.data?.messages.length ?? 0;
   useEffect(() => {
