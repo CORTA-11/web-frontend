@@ -5,6 +5,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: '**/live/**',
   webServer: {
     command: `NEXT_PUBLIC_LIVE_MODULES=__mock__ NEXT_PUBLIC_MOCKS=on API_PROXY_TARGET=http://127.0.0.1:9 npm run dev -- --port ${port}`,
     env: {

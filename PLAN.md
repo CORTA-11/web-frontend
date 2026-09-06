@@ -104,7 +104,7 @@ if the platform tier stays.
 | 3.1.5.1, 3.1.5.3 | Notification preferences | `/orgs/{org}/notifications` | M |
 | 3.1.6.1–3 | File upload, list, download, delete | `…/{team}/files` | L |
 | 3.1.7.1–4 | Kanban with drag, priority, assignee, dates | `…/{team}/board` | L (list/create), M |
-| 3.1.8.1–5 | Documents, rich-text editor, autosave, leader-only delete | `…/{team}/docs` | M |
+| 3.1.8.1–5 | Documents, rich-text editor, autosave, leader-only delete | `…/{team}/docs` | L (list/create/open), M |
 | 3.1.9.1–3 | Chat summary, transcript summary, task extraction | dialogs in chat and docs | M |
 | 3.1.9 (admin) | AI enable/disable, model or custom endpoint | `/orgs/{org}/settings` | M |
 | 3.5.4.1–2 | Tenant and team isolation | everywhere | enforced both sides |

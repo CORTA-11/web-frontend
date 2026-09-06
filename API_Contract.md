@@ -166,14 +166,17 @@ When `NEXT_PUBLIC_LIVE_MODULES` includes `docs`, the catalog uses core-api:
 
 ### `GET /api/v1/orgs/{orgId}/teams/{teamId}/documents` → `{ items: DocumentSummary[] }`
 ### `POST /api/v1/orgs/{orgId}/teams/{teamId}/documents` `{ title }` → `DocumentSummary`
+### `GET /api/v1/orgs/{orgId}/teams/{teamId}/documents/{documentId}` → `DocumentProjection`
 
-Both routes require an authenticated Team Member; creation also requires the
+All routes require an authenticated Team Member; creation also requires the
 CSRF token. The catalog is ordered by recent activity. Canonical Yjs state is
-never included in these browser responses. Open/edit/delete and the live
-collaboration connection are delivered by subsequent Document slices.
+never included in these browser responses. The projection contains the
+persisted title and rich-text body. Edit/delete and the live collaboration
+connection are delivered by subsequent Document slices.
 
 ```ts
 DocumentSummary = { id, team_id, title, updated_by, created_at, updated_at }
+DocumentProjection = { ...DocumentSummary, body_html }
 ```
 
 The MSW contract below remains the isolated UI-test fixture until those slices
