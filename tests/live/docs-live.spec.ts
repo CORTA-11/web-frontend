@@ -5,7 +5,7 @@ import { ACCOUNTS, signIn } from "../helpers";
 const organizationID = "30ee7153-9b48-4560-8cbf-972587a60fda";
 const organizationSchema = "org_30ee71539b4845608cbf972587a60fda";
 
-test("creates, opens, and reloads a persisted Document projection", async ({ page, playwright }) => {
+test("creates, edits, reloads, and deletes a persisted Document", async ({ page, playwright }) => {
   const setup = await playwright.request.newContext({
     baseURL: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8080",
     extraHTTPHeaders: { Origin: "http://127.0.0.1:3000" },
@@ -59,11 +59,32 @@ test("creates, opens, and reloads a persisted Document projection", async ({ pag
   await expect(page.getByLabel("Document title")).toHaveValue("Persisted projection");
   await expect(page.locator(".doc-body")).toHaveText("Persisted body");
 
+  const titleUpdate = page.waitForResponse(
+    (response) => response.request().method() === "PATCH" && response.url().endsWith(`/${documentID}`),
+  );
+  await page.getByLabel("Document title").fill("Updated projection");
+  await page.getByLabel("Document title").blur();
+  expect((await titleUpdate).ok()).toBeTruthy();
+
+  const bodyUpdate = page.waitForResponse(
+    (response) => response.request().method() === "PATCH" && response.url().endsWith(`/${documentID}`),
+  );
+  await page.locator(".doc-body").fill("Updated persisted body");
+  expect((await bodyUpdate).ok()).toBeTruthy();
+
   const reloadedProjection = page.waitForResponse(
     (response) => response.request().method() === "GET" && response.url() === firstResponse.url(),
   );
   await page.reload();
   expect((await reloadedProjection).ok()).toBeTruthy();
-  await expect(page.getByLabel("Document title")).toHaveValue("Persisted projection");
-  await expect(page.locator(".doc-body")).toHaveText("Persisted body");
+  await expect(page.getByLabel("Document title")).toHaveValue("Updated projection");
+  await expect(page.locator(".doc-body")).toHaveText("Updated persisted body");
+
+  const deletion = page.waitForResponse(
+    (response) => response.request().method() === "DELETE" && response.url().endsWith(`/${documentID}`),
+  );
+  await page.getByRole("button", { name: "Delete" }).click();
+  expect((await deletion).status()).toBe(204);
+  await expect(page).toHaveURL(`/orgs/${organizationID}/teams/${teamID}/docs`);
+  await expect(page.getByRole("link", { name: "Updated projection" })).toHaveCount(0);
 });

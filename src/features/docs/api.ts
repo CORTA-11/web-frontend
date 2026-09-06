@@ -20,6 +20,10 @@ const fromLive = (document: LiveDocument): DocSummary => ({
   updated_at: document.updated_at,
   updated_by: document.updated_by,
 });
+const projectionFromLive = (document: LiveDocumentProjection): Doc => ({
+  ...fromLive(document),
+  content: document.body_html,
+});
 
 export const docsApi = {
   list: (orgId: string, teamId: string) =>
@@ -29,14 +33,21 @@ export const docsApi = {
   get: (orgId: string, teamId: string, docId: string) =>
     isLive("docs")
       // core-api calls the persisted rich-text projection body_html; the existing editor contract calls it content.
-      ? api<LiveDocumentProjection>(`${liveBase(orgId, teamId)}/${docId}`).then((document) => ({ ...fromLive(document), content: document.body_html }))
+      ? api<LiveDocumentProjection>(`${liveBase(orgId, teamId)}/${docId}`).then(projectionFromLive)
       : api<Doc>(`/teams/${teamId}/docs/${docId}`),
   create: (orgId: string, teamId: string, title: string) =>
     isLive("docs")
       ? api<LiveDocument>(liveBase(orgId, teamId), { method: "POST", json: { title } }).then(fromLive)
       : api<Doc>(`/teams/${teamId}/docs`, { method: "POST", json: { title } }),
-  update: (teamId: string, docId: string, body: { title?: string; content?: string }) =>
-    api<Doc>(`/teams/${teamId}/docs/${docId}`, { method: "PATCH", json: body }),
-  remove: (teamId: string, docId: string) =>
-    api<void>(`/teams/${teamId}/docs/${docId}`, { method: "DELETE" }),
+  update: (orgId: string, teamId: string, docId: string, body: { title?: string; content?: string }) =>
+    isLive("docs")
+      ? api<LiveDocumentProjection>(`${liveBase(orgId, teamId)}/${docId}`, {
+          method: "PATCH",
+          json: { title: body.title, body_html: body.content },
+        }).then(projectionFromLive)
+      : api<Doc>(`/teams/${teamId}/docs/${docId}`, { method: "PATCH", json: body }),
+  remove: (orgId: string, teamId: string, docId: string) =>
+    isLive("docs")
+      ? api<void>(`${liveBase(orgId, teamId)}/${docId}`, { method: "DELETE" })
+      : api<void>(`/teams/${teamId}/docs/${docId}`, { method: "DELETE" }),
 };

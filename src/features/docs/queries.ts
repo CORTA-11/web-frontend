@@ -28,10 +28,10 @@ export function useCreateDoc(orgId: string, teamId: string) {
 }
 
 /** Autosave: the list needs refreshing, the open document does not. */
-export function useSaveDoc(teamId: string, docId: string) {
+export function useSaveDoc(orgId: string, teamId: string, docId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (body: { title?: string; content?: string }) => docsApi.update(teamId, docId, body),
+    mutationFn: (body: { title?: string; content?: string }) => docsApi.update(orgId, teamId, docId, body),
     onSuccess: (doc) => {
       client.setQueryData(qk.doc(teamId, docId), doc);
       client.invalidateQueries({ queryKey: qk.docs(teamId) });
@@ -40,10 +40,10 @@ export function useSaveDoc(teamId: string, docId: string) {
   });
 }
 
-export function useDeleteDoc(teamId: string) {
+export function useDeleteDoc(orgId: string, teamId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (docId: string) => docsApi.remove(teamId, docId),
+    mutationFn: (docId: string) => docsApi.remove(orgId, teamId, docId),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: qk.docs(teamId) });
       toast.success("Document deleted");

@@ -18,8 +18,8 @@ const AUTOSAVE_MS = 1200;
  * SRS 3.4.4.3 — edits persist, and other people's changes arrive on the next poll
  * whenever the local editor is clean.
  */
-export function DocEditor({ teamId, doc }: { teamId: string; doc: Doc }) {
-  const save = useSaveDoc(teamId, doc.id);
+export function DocEditor({ orgId, teamId, doc }: { orgId: string; teamId: string; doc: Doc }) {
+  const save = useSaveDoc(orgId, teamId, doc.id);
   const dirty = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [savedAt, setSavedAt] = useState<string | null>(null);

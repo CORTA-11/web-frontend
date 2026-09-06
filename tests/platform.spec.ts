@@ -53,6 +53,8 @@ test("a new organisation waits for approval before it can be used", async ({ pag
   await page.getByLabel("Password").fill("synodus-demo-password");
   await page.getByRole("button", { name: "Create account" }).click();
 
-  await page.getByRole("link", { name: /Jaffna Coastal Lab/ }).click();
-  await expect(page.getByText("Waiting for platform approval")).toBeVisible();
+  const pendingOrg = page.locator('[aria-disabled="true"]').filter({ hasText: "Jaffna Coastal Lab" });
+  await expect(pendingOrg).toContainText("Pending");
+  await expect(pendingOrg.getByRole("button")).toBeDisabled();
+  await expect(page.getByRole("link", { name: /Jaffna Coastal Lab/ })).toHaveCount(0);
 });

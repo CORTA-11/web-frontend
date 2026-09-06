@@ -9,10 +9,10 @@ import { useDeleteDoc } from "@/features/docs/queries";
 import { relative } from "@/lib/format";
 import type { DocSummary } from "@/lib/types";
 
-type Props = { basePath: string; teamId: string; docs: DocSummary[]; canDelete: boolean };
+type Props = { basePath: string; orgId: string; teamId: string; docs: DocSummary[]; canDelete: boolean };
 
-export function DocList({ basePath, teamId, docs, canDelete }: Props) {
-  const remove = useDeleteDoc(teamId);
+export function DocList({ basePath, orgId, teamId, docs, canDelete }: Props) {
+  const remove = useDeleteDoc(orgId, teamId);
 
   if (!docs.length) {
     return (

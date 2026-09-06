@@ -17,8 +17,8 @@ export default function DocPage() {
   const router = useRouter();
   const { actor } = useTeamContext(teamId);
   const doc = useDoc(orgId, teamId, docId);
-  const save = useSaveDoc(teamId, docId);
-  const remove = useDeleteDoc(teamId);
+  const save = useSaveDoc(orgId, teamId, docId);
+  const remove = useDeleteDoc(orgId, teamId);
   const docsPath = `/orgs/${orgId}/teams/${teamId}/docs`;
 
   return (
@@ -54,7 +54,7 @@ export default function DocPage() {
               }}
               className="h-auto border-0 px-0 text-lg font-semibold shadow-none focus-visible:ring-0"
             />
-            <DocEditor teamId={teamId} doc={data} />
+            <DocEditor orgId={orgId} teamId={teamId} doc={data} />
           </>
         )}
         </QueryBoundary>
