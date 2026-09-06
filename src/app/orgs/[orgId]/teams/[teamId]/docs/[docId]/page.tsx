@@ -16,7 +16,7 @@ export default function DocPage() {
   const { orgId, teamId, docId } = useParams<{ orgId: string; teamId: string; docId: string }>();
   const router = useRouter();
   const { actor } = useTeamContext(teamId);
-  const doc = useDoc(teamId, docId);
+  const doc = useDoc(orgId, teamId, docId);
   const save = useSaveDoc(teamId, docId);
   const remove = useDeleteDoc(teamId);
   const docsPath = `/orgs/${orgId}/teams/${teamId}/docs`;

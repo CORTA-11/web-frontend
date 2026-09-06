@@ -10,10 +10,10 @@ export const useDocs = (orgId: string, teamId: string) =>
   useQuery({ queryKey: qk.docs(teamId), queryFn: () => docsApi.list(orgId, teamId) });
 
 /** Polled so other people's saves show up without a manual refresh. */
-export const useDoc = (teamId: string, docId: string) =>
+export const useDoc = (orgId: string, teamId: string, docId: string) =>
   useQuery({
     queryKey: qk.doc(teamId, docId),
-    queryFn: () => docsApi.get(teamId, docId),
+    queryFn: () => docsApi.get(orgId, teamId, docId),
     refetchInterval: 20_000,
     staleTime: 0,
   });
