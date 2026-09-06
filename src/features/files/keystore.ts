@@ -1,5 +1,6 @@
 import { api, ApiError } from "@/lib/http";
 import { E2EE } from "@/lib/crypto";
+import { deviceKeyStorage } from "@/features/files/key-storage";
 
 export type TeamKeyWrap = {
   user_id: string;
@@ -54,9 +55,19 @@ export const keysApi = {
 };
 
 const WRAP_ALGORITHM = "rsa-oaep-2048";
-/** The RSA private key — the unlock secret — lives in this module only, never
- * localStorage. A reload (new tab) loses it and asks for the password again. */
+/** The RSA private key — in memory while the tab lives; a device copy lets a
+ * reload or new login unlock without the password being asked again. */
+/* This module keeps the memory copy; key-storage.ts handles the device copy. */
 let unlockedPrivateKey: CryptoKey | null = null;
+
+/** Auto-unlocks from the device copy; false means the password is needed. */
+export async function restoreUserKeysFromStorage(accountId: string): Promise<boolean> {
+  if (unlockedPrivateKey) return true;
+  const jwk = deviceKeyStorage.read(accountId);
+  if (!jwk) return false;
+  unlockedPrivateKey = await E2EE.importPrivateJWK(jwk);
+  return true;
+}
 
 /** Unwrapped AES keys per team key version, so downloads do not re-derive. */
 const teamKeyCache = new Map<string, CryptoKey>();
@@ -67,17 +78,13 @@ export function isUserKeyUnlocked(): boolean {
 }
 
 function requireUnlockedPrivateKey(): CryptoKey {
-  if (!unlockedPrivateKey) {
-    throw new Error("Your encryption keys are locked — unlock with your password");
-  }
+  if (!unlockedPrivateKey) throw new Error("Your encryption keys are locked — unlock with your password");
   return unlockedPrivateKey;
 }
 
-/**
- * Login/register path: unlock the sealed key with the password just typed, or
- * create and seal a fresh pair when the server has none on record.
- */
-export async function seedOrUnlockUserKeys(password: string): Promise<void> {
+/** Login/register path: unseal with the password just typed, or seed a fresh
+ * pair when the server has none; persist the result for this device. */
+export async function seedOrUnlockUserKeys(password: string, accountId: string): Promise<void> {
   if (unlockedPrivateKey) return;
 
   let row: UserKeyView | null = null;
@@ -89,15 +96,20 @@ export async function seedOrUnlockUserKeys(password: string): Promise<void> {
   }
 
   if (!row || !row.encrypted_private_key || !row.kek_salt) {
-    await seedUserKeys(password);
+    await seedUserKeys(password, accountId);
     return;
   }
-  unlockedPrivateKey = await E2EE.importPrivateJWK(
-    await E2EE.unsealPrivateJWK(row.encrypted_private_key, password, row.kek_salt, row.kek_iterations ?? 1)
+  const jwk = await E2EE.unsealPrivateJWK(
+    row.encrypted_private_key,
+    password,
+    row.kek_salt,
+    row.kek_iterations ?? 1
   );
+  deviceKeyStorage.persist(accountId, jwk);
+  unlockedPrivateKey = await E2EE.importPrivateJWK(jwk);
 }
 
-async function seedUserKeys(password: string): Promise<void> {
+async function seedUserKeys(password: string, accountId: string): Promise<void> {
   const pair = await E2EE.generateKeyPair();
   const publicKey = await E2EE.exportPublicKey(pair.publicKey);
   const salt = E2EE.randomSalt();
@@ -112,18 +124,14 @@ async function seedUserKeys(password: string): Promise<void> {
     kek_iterations: iterations,
     kek_algorithm: "pbkdf2-sha256",
   });
+  deviceKeyStorage.persist(accountId, jwk);
   unlockedPrivateKey = await E2EE.importPrivateJWK(jwk);
 }
 
-/**
- * The team symmetric key for the next upload. A version already covering the
- * caller and the current membership is reused; a new member, a departed member,
- * or a caller locked out of the active version recreates it for everyone via
- * the next version number.
- */
+/** The team symmetric key for the next upload — reuse the active version while
+ * it covers the membership, otherwise make the next version for everyone. */
 export async function getOrCreateTeamKey(orgId: string, teamId: string): Promise<{ key: CryptoKey; version: number }> {
   const privateKey = requireUnlockedPrivateKey();
-
   const [versions, members] = await Promise.all([
     keysApi.listTeamKeys(orgId, teamId),
     keysApi.getPublicKeysForTeam(orgId, teamId),
@@ -148,11 +156,10 @@ export async function getOrCreateTeamKey(orgId: string, teamId: string): Promise
       const publicKey = await E2EE.importPublicKey(member.public_key);
       wraps.push({ user_id: member.user_id, key: await E2EE.wrapFor(publicKey, raw), algorithm: WRAP_ALGORITHM });
     } catch {
-      // A member without a usable key cannot decrypt this version; rotation by
-      // the next uploader with a key will include them.
+      // A member without a usable key misses this version; a later uploader with
+      // one rotates them in.
     }
   }
-
   let version: TeamKeyView;
   try {
     version = await keysApi.createTeamKey(orgId, teamId, wraps);
@@ -177,14 +184,10 @@ export async function getOrCreateTeamKey(orgId: string, teamId: string): Promise
 export async function getTeamKey(orgId: string, teamId: string, version: number): Promise<CryptoKey> {
   const cached = teamKeyCache.get(cacheKey(teamId, version));
   if (cached) return cached;
-
   const privateKey = requireUnlockedPrivateKey();
   const versions = await keysApi.listTeamKeys(orgId, teamId);
   const target = versions.find((entry) => entry.version === version);
-  if (!target || target.wraps.length === 0) {
-    throw new Error(`Team key for version ${version} is not available`);
-  }
-
+  if (!target || target.wraps.length === 0) throw new Error(`Team key for version ${version} is not available`);
   const key = await unwrapTeamKey(target, privateKey);
   teamKeyCache.set(cacheKey(teamId, version), key);
   return key;

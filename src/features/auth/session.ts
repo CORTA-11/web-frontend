@@ -10,7 +10,7 @@ import { setCSRFToken } from "@/lib/token";
 import type { OrgRole, User } from "@/lib/types";
 import { notifyError } from "@/lib/query";
 import { ApiError } from "@/lib/http";
-import { keysApi, isUserKeyUnlocked, seedOrUnlockUserKeys } from "@/features/files/keystore";
+import { keysApi, isUserKeyUnlocked, restoreUserKeysFromStorage, seedOrUnlockUserKeys } from "@/features/files/keystore";
 
 /** Where a signed-in account belongs: operators to the console, everyone else to their org. */
 export const homeFor = (user: User) =>
@@ -50,7 +50,8 @@ export function useLogin() {
       router.replace(safeNext(search.get("next"), homeFor(user)));
       // Best-effort: a failed unlock surfaces again as the session gate on the
       // destination page rather than blocking navigation here.
-      if (keysAreLive()) seedOrUnlockUserKeys(password).catch(() => {});
+      if (keysAreLive() && user.public_id)
+        seedOrUnlockUserKeys(password, user.public_id).catch(() => {});
     },
   });
 }
@@ -65,7 +66,8 @@ export function useRegister() {
     onSuccess: async (user, input) => {
       client.setQueryData<User>(qk.session, user);
       router.replace(safeNext(search.get("next"), homeFor(user)));
-      if (keysAreLive()) seedOrUnlockUserKeys(input.password).catch(() => {});
+      if (keysAreLive() && user.public_id)
+        seedOrUnlockUserKeys(input.password, user.public_id).catch(() => {});
     },
   });
 }
@@ -85,10 +87,9 @@ export function useLogout() {
 }
 
 /**
- * Unlock state for the E2EE keys: the server either has a sealed private key
- * (needs the password) or none yet (also needs the password, to create one).
- * Only ends up locked when the tab was restored without login, since login and
- * register unlock with the password just typed.
+ * Unlock state for the E2EE keys. A device copy of the private key auto-unlocks
+ * without a prompt; only a new device (no stored copy) ends up locked and sees
+ * the password gate, once — after that this login is not asked again.
  */
 export function useUserKeyLock() {
   const { user } = useSession();
@@ -96,6 +97,7 @@ export function useUserKeyLock() {
   const { data, isPending } = useQuery({
     queryKey: [...qk.userKeys, user?.public_id],
     queryFn: async () => {
+      if (user?.public_id && (await restoreUserKeysFromStorage(user.public_id))) return "restored" as const;
       try {
         await keysApi.getUserKeys();
         return "sealed" as const;
@@ -118,8 +120,12 @@ export function useUserKeyLock() {
 
 export function useUnlockUserKeys() {
   const client = useQueryClient();
+  const { user } = useSession();
   return useMutation({
-    mutationFn: (password: string) => seedOrUnlockUserKeys(password),
+    mutationFn: (password: string) => {
+      if (!user?.public_id) throw new Error("Unauthenticated");
+      return seedOrUnlockUserKeys(password, user.public_id);
+    },
     onSuccess: () => client.invalidateQueries({ queryKey: qk.userKeys }),
     onError: notifyError,
   });

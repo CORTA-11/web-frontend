@@ -55,13 +55,15 @@ a module is one person's diff.
 - `lib/rbac.ts` holds every permission rule, one line per SRS clause it enforces.
 - **File bytes are sealed in the browser.** `lib/crypto.ts` owns the AES-256-GCM
   envelope and the E2EE key material (PBKDF2-SHA256, RSA-OAEP, AES-GCM) and is the
-  only place that calls `crypto.subtle`; `features/files/keystore.ts` owns the key
-  lifecycle: the RSA private key lives only in memory (one password-unlocked per
-  tab), the sealed copy lives in `public.user_public_keys`, and team symmetric
-  keys rotate through `team_keys` when membership changes. Uploads encrypt and
-  downloads decrypt in `features/files/api.ts` — never bypass it with a raw
-  `fetch`. The old fixed development key in `localStorage` is gone; a locked tab
-  asks for the password via `UnlockGate`.
+  only place that calls `crypto.subtle`; `features/files/keystore.ts` holds the key
+  in memory, `features/files/key-storage.ts` persists the unsealed RSA private key
+  per account in localStorage. The sealed copy lives in `public.user_public_keys`
+  and team symmetric keys rotate through `team_keys` when membership changes.
+  The device copy means the password is asked once per new device, then every
+  login/reload unlocks automatically; the sealed server copy lets a second device
+  log in and recover the same key. Uploads encrypt and downloads decrypt in
+  `features/files/api.ts` — never bypass it with a raw `fetch`. `UnlockGate` only
+  appears for a device with no stored key yet.
 
 ## 4. File length & quality rules
 

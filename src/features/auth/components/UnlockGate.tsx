@@ -8,9 +8,9 @@ import { useUnlockUserKeys } from "@/features/auth/session";
 import { errorMessage } from "@/lib/http";
 
 /**
- * Shown when a restored session has E2EE keys neither unlocked nor creatable:
- * the RSA private key is sealed with the account password, so this is the only
- * moment the password is asked for in the session (login/register already have it).
+ * Shown only when this device has no stored copy of the private key: the key is
+ * sealed with the account password, so a new device enters it once and keeps
+ * files unlocked here afterwards.
  */
 export function UnlockGate() {
   const [password, setPassword] = useState("");
@@ -26,8 +26,7 @@ export function UnlockGate() {
       <div className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold">Unlock encryption keys</h1>
         <p className="text-xs text-muted-foreground">
-          Team file keys are sealed with your password. Enter it once per tab to
-          read and write files.
+          Enter the account password once — files stay unlocked on this device afterwards.
         </p>
       </div>
 
