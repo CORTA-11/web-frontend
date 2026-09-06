@@ -3,7 +3,7 @@ import { ACCOUNTS, signIn } from "./helpers";
 
 test("signs a member in and out", async ({ page }) => {
   await signIn(page, ACCOUNTS.member);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Good to see you");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Your organisations");
 
   await page.getByRole("button", { name: "Account menu" }).click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();

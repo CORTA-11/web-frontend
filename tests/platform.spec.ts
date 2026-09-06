@@ -53,5 +53,6 @@ test("a new organisation waits for approval before it can be used", async ({ pag
   await page.getByLabel("Password").fill("synodus-demo-password");
   await page.getByRole("button", { name: "Create account" }).click();
 
+  await page.getByRole("link", { name: /Jaffna Coastal Lab/ }).click();
   await expect(page.getByText("Waiting for platform approval")).toBeVisible();
 });

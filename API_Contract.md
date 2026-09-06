@@ -160,7 +160,24 @@ to Redis yet.
 
 ---
 
-## Documents — members only
+## Documents — Team Members only
+
+When `NEXT_PUBLIC_LIVE_MODULES` includes `docs`, the catalog uses core-api:
+
+### `GET /api/v1/orgs/{orgId}/teams/{teamId}/documents` → `{ items: DocumentSummary[] }`
+### `POST /api/v1/orgs/{orgId}/teams/{teamId}/documents` `{ title }` → `DocumentSummary`
+
+Both routes require an authenticated Team Member; creation also requires the
+CSRF token. The catalog is ordered by recent activity. Canonical Yjs state is
+never included in these browser responses. Open/edit/delete and the live
+collaboration connection are delivered by subsequent Document slices.
+
+```ts
+DocumentSummary = { id, team_id, title, updated_by, created_at, updated_at }
+```
+
+The MSW contract below remains the isolated UI-test fixture until those slices
+replace the rest of the mock editor path.
 
 ### `GET /teams/{teamId}/docs` → `DocSummary[]`
 ### `POST /teams/{teamId}/docs` `{ title }` → Doc

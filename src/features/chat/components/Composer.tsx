@@ -11,7 +11,7 @@ type Props = {
   members: TeamMember[];
   replyTo: ChatMessage | null;
   onCancelReply: () => void;
-  onSend: (message: string, mentions: Array<string | number>) => void;
+  onSend: (message: string, mentions: number[]) => void;
   pending: boolean;
 };
 
@@ -43,7 +43,7 @@ export function Composer({ members, replyTo, onCancelReply, onSend, pending }: P
   const submit = () => {
     const message = text.trim();
     if (!message) return;
-    const mentions = members.filter((m) => message.includes(`@${m.name}`)).map((m) => m.public_id ?? m.user_id);
+    const mentions = members.filter((m) => message.includes(`@${m.name}`)).map((m) => m.user_id);
     onSend(message, mentions);
     setText("");
     setQuery(null);

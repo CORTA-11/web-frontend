@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ShieldAlertIcon } from "lucide-react";
 import { useSession, useSwitchOrg, useUserOrgs } from "@/features/auth/session";
 import { orgRoleOf } from "@/features/auth/api";
-import { useOrgSettings } from "@/features/settings/queries";
 
 const Notice = ({ title, body }: { title: string; body: string }) => (
   <div className="flex h-svh items-center justify-center p-6">
@@ -27,7 +26,6 @@ export function OrgGate({ orgId, children }: { orgId: string; children: ReactNod
   const { user } = useSession();
   const { data: orgsPage, isPending } = useUserOrgs();
   const switchOrg = useSwitchOrg();
-  const settings = useOrgSettings(orgId);
   const router = useRouter();
 
   useEffect(() => {
@@ -56,6 +54,20 @@ export function OrgGate({ orgId, children }: { orgId: string; children: ReactNod
     );
   }
 
+  if (targetOrg.lifecycle_state !== "active") {
+    const isPendingApproval = targetOrg.lifecycle_state === "pending";
+    return (
+      <Notice
+        title={isPendingApproval ? "Waiting for platform approval" : "Organisation is not ready"}
+        body={
+          isPendingApproval
+            ? "Your organisation is queued for review by the platform operator. You will be able to use it as soon as it is approved."
+            : `Your organisation is currently ${targetOrg.lifecycle_state}. You will be able to use it once it is active.`
+        }
+      />
+    );
+  }
+
   if (user.org_id !== orgId) {
     const role = orgRoleOf(targetOrg.my_role);
     switchOrg(orgId, role);
@@ -63,24 +75,6 @@ export function OrgGate({ orgId, children }: { orgId: string; children: ReactNod
       <div className="flex h-svh items-center justify-center text-xs text-muted-foreground">
         Switching organisation…
       </div>
-    );
-  }
-
-  if (settings.data?.status === "pending") {
-    return (
-      <Notice
-        title="Waiting for platform approval"
-        body="Your organisation has been registered and is queued for review by the platform operator. You will be able to sign in and set up teams as soon as it is approved."
-      />
-    );
-  }
-
-  if (settings.data?.status === "suspended" || settings.data?.status === "rejected") {
-    return (
-      <Notice
-        title="This organisation is not active"
-        body="The platform operator has suspended access. Contact them to have it reinstated."
-      />
     );
   }
 

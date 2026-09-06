@@ -10,7 +10,7 @@ import { AssignedTasks, type TeamTask } from "@/features/overview/components/Ass
 import { UpcomingBookings } from "@/features/overview/components/UpcomingBookings";
 import { boardApi } from "@/features/board/api";
 import Link from "next/link";
-import { ArrowRightIcon, BuildingIcon } from "lucide-react";
+import { ArrowRightIcon, BuildingIcon, Clock3Icon, LockKeyholeIcon } from "lucide-react";
 import { useBookings, useResourceRequests, useResources } from "@/features/resources/queries";
 import { useTeams } from "@/features/teams/queries";
 import { useSession, useUserOrgs } from "@/features/auth/session";
@@ -19,6 +19,7 @@ import { can } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const WINDOW_DAYS = 7;
 
@@ -156,34 +157,45 @@ function DashboardOrgsSection({ orgId }: { orgId: string }) {
     <section className="flex flex-col gap-2">
       <h2 className="label-eyebrow">Your Organisations</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {orgs.map((org) => (
+        {orgs.map((org) => {
+          const cardBody = (
+            <CardHeader className="p-4 flex flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="flex size-9 items-center justify-center border border-border bg-background">
+                  <BuildingIcon className="size-4 text-muted-foreground" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <CardTitle className="text-sm font-medium truncate">{org.name}</CardTitle>
+                  <CardDescription className="text-xs truncate">
+                    {org.id === orgId ? "Active organisation" : org.lifecycle_state === "active" ? "Switch organisation" : "Unavailable"}
+                  </CardDescription>
+                  {org.lifecycle_state !== "active" && (
+                    <Badge variant="secondary" className="mt-2 w-fit">
+                      <Clock3Icon />
+                      {org.lifecycle_state.replace("_", " ")}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <Button variant="ghost" size="icon-sm" className="shrink-0 pointer-events-none" disabled={org.lifecycle_state !== "active"}>
+                {org.lifecycle_state === "active" ? <ArrowRightIcon className="size-4" /> : <LockKeyholeIcon className="size-4" />}
+              </Button>
+            </CardHeader>
+          );
+
+          return (
           <Card
             key={org.id}
             className={cn(
-              "border-border hover:bg-muted/50 transition-colors",
+              "border-border",
+              org.lifecycle_state === "active" && "hover:bg-muted/50 transition-colors",
               org.id === orgId && "border-primary/30 bg-muted/20"
             )}
           >
-            <Link href={`/orgs/${org.id}`} className="block">
-              <CardHeader className="p-4 flex flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="flex size-9 items-center justify-center border border-border bg-background">
-                    <BuildingIcon className="size-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <CardTitle className="text-sm font-medium truncate">{org.name}</CardTitle>
-                    <CardDescription className="text-xs truncate">
-                      {org.id === orgId ? "Active organisation" : "Switch organisation"}
-                    </CardDescription>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon-sm" className="shrink-0 pointer-events-none">
-                  <ArrowRightIcon className="size-4" />
-                </Button>
-              </CardHeader>
-            </Link>
+            {org.lifecycle_state === "active" ? <Link href={`/orgs/${org.id}`} className="block">{cardBody}</Link> : <div aria-disabled="true" className="block opacity-70">{cardBody}</div>}
           </Card>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

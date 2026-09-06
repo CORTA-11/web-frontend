@@ -59,12 +59,15 @@ export function Header() {
               {orgs.map((o) => (
                 <DropdownMenuItem
                   key={o.id}
-                  disabled={o.id === orgId}
+                  disabled={o.id === orgId || o.lifecycle_state !== "active"}
                   render={<Link href={`/orgs/${o.id}`} />}
                   className="flex items-center gap-2"
                 >
                   <BuildingIcon className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="truncate flex-1">{o.name}</span>
+                  {o.lifecycle_state !== "active" && (
+                    <span className="text-2xs text-muted-foreground">{o.lifecycle_state}</span>
+                  )}
                   {o.id === orgId && <span className="size-1.5 rounded-full bg-primary" />}
                 </DropdownMenuItem>
               ))}

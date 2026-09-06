@@ -6,6 +6,7 @@ const ORG = "8f1d2a60-4c7e-4f1a-9b23-0d5e6a7c1b40";
 
 test("an org admin administers teams without reading their workspace", async ({ page }) => {
   await signIn(page, ACCOUNTS.admin);
+  await page.getByRole("link", { name: /Aratuwa Research Lab/ }).click();
   await page.getByRole("navigation").getByRole("link", { name: "Teams", exact: true }).click();
 
   const row = page.getByRole("row").filter({ hasText: "Neural Imaging" });
