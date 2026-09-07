@@ -11,6 +11,7 @@ type LiveDocument = {
 };
 
 type LiveDocumentProjection = LiveDocument & { body_html: string };
+type DocumentTicket = { token: string };
 
 const liveBase = (orgId: string, teamId: string) => `/v1/orgs/${orgId}/teams/${teamId}/documents`;
 const fromLive = (document: LiveDocument): DocSummary => ({
@@ -39,13 +40,8 @@ export const docsApi = {
     isLive("docs")
       ? api<LiveDocument>(liveBase(orgId, teamId), { method: "POST", json: { title } }).then(fromLive)
       : api<Doc>(`/teams/${teamId}/docs`, { method: "POST", json: { title } }),
-  update: (orgId: string, teamId: string, docId: string, body: { title?: string; content?: string }) =>
-    isLive("docs")
-      ? api<LiveDocumentProjection>(`${liveBase(orgId, teamId)}/${docId}`, {
-          method: "PATCH",
-          json: { title: body.title, body_html: body.content },
-        }).then(projectionFromLive)
-      : api<Doc>(`/teams/${teamId}/docs/${docId}`, { method: "PATCH", json: body }),
+  ticket: (orgId: string, teamId: string, docId: string) =>
+    api<DocumentTicket>(`${liveBase(orgId, teamId)}/${docId}/socket-ticket`, { method: "POST" }),
   remove: (orgId: string, teamId: string, docId: string) =>
     isLive("docs")
       ? api<void>(`${liveBase(orgId, teamId)}/${docId}`, { method: "DELETE" })

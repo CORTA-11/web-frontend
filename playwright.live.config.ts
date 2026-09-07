@@ -11,6 +11,7 @@ export default defineConfig({
       NEXT_PUBLIC_LIVE_MODULES: "auth,teams,docs",
       NEXT_PUBLIC_MOCKS: "off",
       API_PROXY_TARGET: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8080",
+      NEXT_PUBLIC_WS_BASE_URL: process.env.NEXT_PUBLIC_WS_BASE_URL ?? "ws://127.0.0.1:10000",
     },
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,

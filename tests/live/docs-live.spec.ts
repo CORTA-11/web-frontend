@@ -3,9 +3,7 @@ import { execFileSync } from "node:child_process";
 import { ACCOUNTS, signIn } from "../helpers";
 
 const organizationID = "30ee7153-9b48-4560-8cbf-972587a60fda";
-const organizationSchema = "org_30ee71539b4845608cbf972587a60fda";
-
-test("creates, edits, reloads, and deletes a persisted Document", async ({ page, playwright }) => {
+test("edits, formats, and reloads a collaborative Document body", async ({ page, playwright }) => {
   const setup = await playwright.request.newContext({
     baseURL: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8080",
     extraHTTPHeaders: { Origin: "http://127.0.0.1:3000" },
@@ -16,7 +14,7 @@ test("creates, edits, reloads, and deletes a persisted Document", async ({ page,
   expect(login.ok()).toBeTruthy();
   const { csrf_token: csrfToken } = (await login.json()) as { csrf_token: string };
   const team = await setup.post(`/api/v1/orgs/${organizationID}/teams`, {
-    data: { name: `Document Projection ${Date.now()}`, leader_email: ACCOUNTS.member },
+    data: { name: `Collaborative Document ${Date.now()}`, leader_email: ACCOUNTS.member },
     headers: { "X-CSRF-Token": csrfToken },
   });
   expect(team.ok()).toBeTruthy();
@@ -33,58 +31,74 @@ test("creates, edits, reloads, and deletes a persisted Document", async ({ page,
   expect(memberLogin.ok()).toBeTruthy();
   const { csrf_token: memberCSRF } = (await memberLogin.json()) as { csrf_token: string };
   const created = await memberSetup.post(`/api/v1/orgs/${organizationID}/teams/${teamID}/documents`, {
-    data: { title: "Persisted projection" },
+    data: { title: "Collaborative notes" },
     headers: { "X-CSRF-Token": memberCSRF },
   });
   expect(created.ok()).toBeTruthy();
   const { id: documentID } = (await created.json()) as { id: string };
+  const other = await memberSetup.post(`/api/v1/orgs/${organizationID}/teams/${teamID}/documents`, {
+    data: { title: "Other notes" },
+    headers: { "X-CSRF-Token": memberCSRF },
+  });
+  expect(other.ok()).toBeTruthy();
   await memberSetup.dispose();
+
+  await signIn(page, ACCOUNTS.member);
+  const ticket = page.waitForResponse(
+    (response) => response.request().method() === "POST" && response.url().endsWith(`/${documentID}/socket-ticket`),
+  );
+  const bodyPatches: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "PATCH" && request.url().endsWith(`/${documentID}`)) {
+      bodyPatches.push(request.postData() ?? "");
+    }
+  });
+  await page.goto(`/orgs/${organizationID}/teams/${teamID}/docs/${documentID}`);
+  expect((await ticket).ok()).toBeTruthy();
+  await expect(page.getByText("Synced", { exact: true })).toBeVisible();
+
+  const body = page.locator(".doc-body");
+  await body.click();
+  await page.keyboard.type("Persisted through collaboration");
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.getByRole("button", { name: "Bold" }).click();
+  await expect(body.locator("strong")).toHaveText("Persisted through collaboration");
+  await expect.poll(async () => {
+    const response = await page.request.get(
+      `/api/v1/orgs/${organizationID}/teams/${teamID}/documents/${documentID}`,
+    );
+    if (!response.ok()) return `status:${response.status()}`;
+    const projection = (await response.json()) as { body_html: string };
+    return projection.body_html;
+  }, { timeout: 10_000 }).toContain("<strong>Persisted through collaboration</strong>");
+
+  await page.getByRole("link", { name: "All documents" }).click();
+  await page.getByRole("link", { name: "Other notes" }).click();
+  await expect(page.getByText("Synced", { exact: true })).toBeVisible();
+  await expect(page.locator(".doc-body")).not.toContainText("Persisted through collaboration");
+  await page.getByRole("link", { name: "All documents" }).click();
+  await page.getByRole("link", { name: "Collaborative notes" }).click();
+  await expect(page.getByText("Synced", { exact: true })).toBeVisible();
+  await expect(page.locator(".doc-body strong")).toHaveText("Persisted through collaboration");
+
+  await page.reload();
+  await expect(page.getByText("Synced", { exact: true })).toBeVisible();
+  await expect(page.locator(".doc-body strong")).toHaveText("Persisted through collaboration");
 
   execFileSync("docker", [
     "compose", "-f", "../core-api/docker-compose.yaml", "--project-directory", "../core-api",
-    "exec", "-T", "postgres", "sh", "-c",
-    `psql -U "$(cat /run/secrets/db_admin_user)" -d appdb -v ON_ERROR_STOP=1 -c "UPDATE ${organizationSchema}.documents SET body_html = '<p>Persisted body</p>' WHERE public_id = '${documentID}'::uuid"`,
+    "restart", "collaboration-server",
   ]);
-
-  await signIn(page, ACCOUNTS.member);
-  const firstProjection = page.waitForResponse(
-    (response) => response.request().method() === "GET" && /\/api\/v1\/orgs\/[^/]+\/teams\/[^/]+\/documents\/[^/]+$/.test(response.url()),
-  );
-  await page.goto(`/orgs/${organizationID}/teams/${teamID}/docs/${documentID}`);
-  const firstResponse = await firstProjection;
-  expect(firstResponse.ok()).toBeTruthy();
-  const firstBody = (await firstResponse.json()) as Record<string, unknown>;
-  expect(firstBody).toMatchObject({ title: "Persisted projection", body_html: "<p>Persisted body</p>" });
-  expect(firstBody).not.toHaveProperty("canonical_state");
-  await expect(page.getByLabel("Document title")).toHaveValue("Persisted projection");
-  await expect(page.locator(".doc-body")).toHaveText("Persisted body");
-
-  const titleUpdate = page.waitForResponse(
-    (response) => response.request().method() === "PATCH" && response.url().endsWith(`/${documentID}`),
-  );
-  await page.getByLabel("Document title").fill("Updated projection");
-  await page.getByLabel("Document title").blur();
-  expect((await titleUpdate).ok()).toBeTruthy();
-
-  const bodyUpdate = page.waitForResponse(
-    (response) => response.request().method() === "PATCH" && response.url().endsWith(`/${documentID}`),
-  );
-  await page.locator(".doc-body").fill("Updated persisted body");
-  expect((await bodyUpdate).ok()).toBeTruthy();
-
-  const reloadedProjection = page.waitForResponse(
-    (response) => response.request().method() === "GET" && response.url() === firstResponse.url(),
-  );
+  await expect.poll(async () => {
+    try {
+      const response = await page.request.get("http://127.0.0.1:8082/health");
+      return response.ok();
+    } catch {
+      return false;
+    }
+  }).toBeTruthy();
   await page.reload();
-  expect((await reloadedProjection).ok()).toBeTruthy();
-  await expect(page.getByLabel("Document title")).toHaveValue("Updated projection");
-  await expect(page.locator(".doc-body")).toHaveText("Updated persisted body");
-
-  const deletion = page.waitForResponse(
-    (response) => response.request().method() === "DELETE" && response.url().endsWith(`/${documentID}`),
-  );
-  await page.getByRole("button", { name: "Delete" }).click();
-  expect((await deletion).status()).toBe(204);
-  await expect(page).toHaveURL(`/orgs/${organizationID}/teams/${teamID}/docs`);
-  await expect(page.getByRole("link", { name: "Updated projection" })).toHaveCount(0);
+  await expect(page.getByText("Synced", { exact: true })).toBeVisible();
+  await expect(page.locator(".doc-body strong")).toHaveText("Persisted through collaboration");
+  expect(bodyPatches.filter((payload) => payload.includes("body_html"))).toHaveLength(0);
 });

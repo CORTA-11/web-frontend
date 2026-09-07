@@ -13,6 +13,11 @@ const summary = (doc: Doc): DocSummary => ({
 });
 
 export const docHandlers = [
+  teamRoute.post(
+    "/api/v1/orgs/:orgId/teams/:teamId/documents/:docId/socket-ticket",
+    () => HttpResponse.json({ token: "mock-document-ticket-is-not-valid-outside-isolated-ui-tests" }),
+  ),
+
   teamRoute.get("/api/teams/:teamId/docs", ({ params }) =>
     HttpResponse.json(
       db.docs
