@@ -23,7 +23,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
   if (isPending) return <Booting />;
   if (!user) return null;
   if (keyLock.applicable && keyLock.isPending) return <Booting />;
-  if (keyLock.locked) return <UnlockGate />;
+  // if (keyLock.locked) return <UnlockGate />;
   return <>{children}</>;
 }
 
