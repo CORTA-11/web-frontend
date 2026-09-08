@@ -16,11 +16,11 @@ import { WS_URL } from "@/lib/env";
 import type { Doc } from "@/lib/types";
 import "@/features/docs/editor.css";
 
-type Props = { orgId: string; teamId: string; doc: Doc };
+type Props = { orgId: string; teamId: string; doc: Doc; onDeleted: () => void };
 const TitleDocument = Document.extend({ content: "paragraph" });
 const offlineStatus = "Offline—changes will sync when reconnected";
 
-export function DocEditor({ orgId, teamId, doc }: Props) {
+export function DocEditor({ orgId, teamId, doc, onDeleted }: Props) {
   const [document] = useState(() => new YDoc());
   const [status, setStatus] = useState("Connecting");
   const titleEditor = useEditor({
@@ -62,6 +62,13 @@ export function DocEditor({ orgId, teamId, doc }: Props) {
       onSynced: ({ state }) => state && setStatus("Synced"),
       onDisconnect: () => setStatus(offlineStatus),
       onAuthenticationFailed: () => setStatus(offlineStatus),
+      onStateless: ({ payload }) => {
+        if (payload === JSON.stringify({ type: "document.deleted" })) {
+          provider?.destroy();
+          provider = null;
+          onDeleted();
+        }
+      },
     });
     let provider: HocuspocusProvider | null = connect();
     const disconnect = () => {
@@ -80,7 +87,7 @@ export function DocEditor({ orgId, teamId, doc }: Props) {
       window.removeEventListener("online", reconnect);
       provider?.destroy();
     };
-  }, [doc.id, document, orgId, teamId]);
+  }, [doc.id, document, onDeleted, orgId, teamId]);
 
   if (!titleEditor || !bodyEditor) return null;
   return (
