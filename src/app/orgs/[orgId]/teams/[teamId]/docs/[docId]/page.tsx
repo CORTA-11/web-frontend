@@ -4,10 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { QueryBoundary } from "@/components/common/QueryBoundary";
 import { DocEditor } from "@/features/docs/components/DocEditor";
-import { useDeleteDoc, useDoc, useSaveDoc } from "@/features/docs/queries";
+import { useDeleteDoc, useDoc } from "@/features/docs/queries";
 import { useTeamContext } from "@/features/teams/queries";
 import { TeamMembersOnly } from "@/features/teams/components/TeamMembersOnly";
 import { can } from "@/lib/rbac";
@@ -17,7 +16,6 @@ export default function DocPage() {
   const router = useRouter();
   const { actor } = useTeamContext(teamId);
   const doc = useDoc(orgId, teamId, docId);
-  const save = useSaveDoc(orgId, teamId, docId);
   const remove = useDeleteDoc(orgId, teamId);
   const docsPath = `/orgs/${orgId}/teams/${teamId}/docs`;
 
@@ -43,20 +41,9 @@ export default function DocPage() {
 
       <TeamMembersOnly teamId={teamId}>
         <QueryBoundary query={doc} rows={8}>
-        {(data) => (
-          <>
-            <Input
-              aria-label="Document title"
-              defaultValue={data.title}
-              onBlur={(event) => {
-                const title = event.target.value.trim();
-                if (title && title !== data.title) save.mutate({ title });
-              }}
-              className="h-auto border-0 px-0 text-lg font-semibold shadow-none focus-visible:ring-0"
-            />
-            <DocEditor orgId={orgId} teamId={teamId} doc={data} />
-          </>
-        )}
+          {(data) => (
+            <DocEditor key={`${orgId}:${teamId}:${data.id}`} orgId={orgId} teamId={teamId} doc={data} />
+          )}
         </QueryBoundary>
       </TeamMembersOnly>
     </div>

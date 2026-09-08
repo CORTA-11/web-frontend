@@ -1,71 +1,78 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { HocuspocusProvider } from "@hocuspocus/provider";
+import { Collaboration } from "@tiptap/extension-collaboration";
+import Document from "@tiptap/extension-document";
+import Paragraph from "@tiptap/extension-paragraph";
+import Text from "@tiptap/extension-text";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extension-placeholder";
+import { Doc as YDoc } from "yjs";
+import { docsApi } from "@/features/docs/api";
 import { EditorToolbar } from "@/features/docs/components/EditorToolbar";
-import { useSaveDoc } from "@/features/docs/queries";
-import { clock } from "@/lib/format";
+import { WS_URL } from "@/lib/env";
 import type { Doc } from "@/lib/types";
 import "@/features/docs/editor.css";
 
-const AUTOSAVE_MS = 1200;
+type Props = { orgId: string; teamId: string; doc: Doc };
+const TitleDocument = Document.extend({ content: "paragraph" });
 
-/**
- * Autosave plus periodic pull. Real-time co-editing (SRS 3.1.8.5) needs document
- * rooms on socket-server; until then this is the documented degraded mode from
- * SRS 3.4.4.3 — edits persist, and other people's changes arrive on the next poll
- * whenever the local editor is clean.
- */
-export function DocEditor({ orgId, teamId, doc }: { orgId: string; teamId: string; doc: Doc }) {
-  const save = useSaveDoc(orgId, teamId, doc.id);
-  const dirty = useRef(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
-
-  const editor = useEditor({
+export function DocEditor({ orgId, teamId, doc }: Props) {
+  const [document] = useState(() => new YDoc());
+  const [status, setStatus] = useState("Connecting");
+  const titleEditor = useEditor({
     immediatelyRender: false,
-    extensions: [StarterKit, Placeholder.configure({ placeholder: "Start writing…" })],
-    content: doc.content,
-    editorProps: { attributes: { class: "doc-body min-h-96 outline-none" } },
-    onUpdate: ({ editor }) => {
-      dirty.current = true;
-      clearTimeout(timer.current);
-      const html = editor.getHTML();
-      timer.current = setTimeout(() => {
-        save.mutate(
-          { content: html },
-          {
-            onSuccess: () => {
-              dirty.current = false;
-              setSavedAt(new Date().toISOString());
-            },
-          }
-        );
-      }, AUTOSAVE_MS);
+    extensions: [
+      TitleDocument,
+      Paragraph,
+      Text,
+      Collaboration.configure({ document, field: "title" }),
+      Placeholder.configure({ placeholder: "Untitled document" }),
+    ],
+    editorProps: {
+      attributes: {
+        "aria-label": "Document title",
+        class: "doc-title outline-none",
+      },
+      handleKeyDown: (_view, event) => event.key === "Enter",
     },
   });
-
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const bodyEditor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit.configure({ undoRedo: false }),
+      Collaboration.configure({ document, field: "body" }),
+      Placeholder.configure({ placeholder: "Start writing…" }),
+    ],
+    editorProps: { attributes: { class: "doc-body min-h-96 outline-none" } },
+  });
 
   useEffect(() => {
-    if (!editor || dirty.current || save.isPending) return;
-    if (doc.content !== editor.getHTML()) editor.commands.setContent(doc.content, { emitUpdate: false });
-  }, [doc.content, editor, save.isPending]);
+    const base = WS_URL || `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
+    const query = new URLSearchParams({ org_id: orgId, team_id: teamId });
+    const provider = new HocuspocusProvider({
+      document,
+      name: `${orgId}:${teamId}:${doc.id}`,
+      token: async () => (await docsApi.ticket(orgId, teamId, doc.id)).token,
+      url: `${base.replace(/\/$/, "")}/ws/docs?${query}`,
+      onConnect: () => setStatus("Connecting"),
+      onSynced: ({ state }) => state && setStatus("Synced"),
+      onDisconnect: () => setStatus("Offline—changes will sync when reconnected"),
+      onAuthenticationFailed: () => setStatus("Offline—changes will sync when reconnected"),
+    });
+    return () => provider.destroy();
+  }, [doc.id, document, orgId, teamId]);
 
-  if (!editor) return null;
-
+  if (!titleEditor || !bodyEditor) return null;
   return (
     <div className="flex flex-col gap-3">
-      <EditorToolbar editor={editor} />
-      <EditorContent editor={editor} />
+      <EditorContent editor={titleEditor} />
+      <EditorToolbar editor={bodyEditor} />
+      <EditorContent editor={bodyEditor} />
       <p className="border-t border-border pt-2 text-xs text-muted-foreground" aria-live="polite">
-        {save.isPending
-          ? "Saving…"
-          : savedAt
-            ? `Saved at ${clock(savedAt)}`
-            : `Last edited by ${doc.updated_by}`}
+        {status}
       </p>
     </div>
   );

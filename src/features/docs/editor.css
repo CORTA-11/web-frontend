@@ -1,4 +1,15 @@
 /* Reading layout for document content — narrow measure, quiet rules. */
+.doc-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.doc-title p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
 .doc-body {
   max-width: 68ch;
   color: var(--foreground);
