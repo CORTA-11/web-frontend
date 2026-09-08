@@ -1,58 +1,7 @@
-import { api, ApiError } from "@/lib/http";
+import { ApiError } from "@/lib/http";
 import { E2EE } from "@/lib/crypto";
 import { deviceKeyStorage } from "@/features/files/key-storage";
-
-export type TeamKeyWrap = {
-  user_id: string;
-  key: string;
-  algorithm: string;
-};
-export type UserKeyView = {
-  user_id: string;
-  public_key: string;
-  encrypted_private_key?: string | null;
-  kek_salt?: string | null;
-  kek_iterations?: number | null;
-  kek_algorithm?: string | null;
-};
-
-export type TeamKeyView = {
-  id: number;
-  team_id: string;
-  version: number;
-  status: string;
-  algorithm: string;
-  wraps: TeamKeyWrap[];
-  wrapped_user_ids: string[];
-  created_by: string;
-  created_at: string;
-};
-
-export const keysApi = {
-  getUserKeys: () => api<UserKeyView>("/v1/auth/user-keys", { method: "GET" }),
-
-  upsertUserKeys: (update: {
-    public_key: string;
-    encrypted_private_key: string;
-    kek_salt: string;
-    kek_iterations: number;
-    kek_algorithm: string;
-  }) => api<UserKeyView>("/v1/auth/user-keys", { method: "PUT", json: update }),
-
-  getPublicKeysForTeam: (orgId: string, teamId: string) =>
-    api<{ user_id: string; public_key: string; created_at: string }[]>(
-      `/v1/orgs/${orgId}/teams/${teamId}/members/public-keys`
-    ),
-
-  createTeamKey: (orgId: string, teamId: string, wraps: TeamKeyWrap[]) =>
-    api<TeamKeyView>(`/v1/orgs/${orgId}/teams/${teamId}/keys`, {
-      method: "POST",
-      json: { algorithm: "aes-256-gcm", wraps },
-    }),
-
-  listTeamKeys: (orgId: string, teamId: string) =>
-    api<TeamKeyView[]>(`/v1/orgs/${orgId}/teams/${teamId}/keys`, { method: "GET" }),
-};
+import { keysApi, type TeamKeyView, type TeamKeyWrap, type UserKeyView } from "@/features/files/api";
 
 const WRAP_ALGORITHM = "rsa-oaep-2048";
 /** The RSA private key — in memory while the tab lives; a device copy lets a
@@ -198,4 +147,31 @@ async function unwrapTeamKey(view: TeamKeyView, privateKey: CryptoKey): Promise<
   const wrap = view.wraps[0];
   if (!wrap) throw new Error("No key material is recorded for this team");
   return E2EE.importTeamKey(await E2EE.unwrap(privateKey, wrap.key));
+}
+
+/**
+ * The leader's client re-wraps team key versions for a member who joined after
+ * they rotated. Old versions become visible to that member only here — approve
+ * must run after this succeeds, so approve just records the decision.
+ */
+export async function grantMemberAccess(orgId: string, teamId: string, memberUserId: string): Promise<number> {
+  const privateKey = requireUnlockedPrivateKey();
+  const members = await keysApi.getPublicKeysForTeam(orgId, teamId);
+  const member = members.find((entry) => entry.user_id === memberUserId);
+  if (!member) throw new Error("That member has no recorded encryption key");
+  const publicKey = await E2EE.importPublicKey(member.public_key);
+
+  const versions = await keysApi.listTeamKeys(orgId, teamId);
+  let count = 0;
+  for (const version of versions) {
+    if (version.wraps.length === 0 || version.wrapped_user_ids.includes(memberUserId)) continue;
+    const raw = await E2EE.unwrap(privateKey, version.wraps[0].key);
+    await keysApi.addTeamKeyMemberWrap(orgId, teamId, version.version, {
+      user_id: memberUserId,
+      key: await E2EE.wrapFor(publicKey, raw),
+      algorithm: WRAP_ALGORITHM,
+    });
+    count += 1;
+  }
+  return count;
 }

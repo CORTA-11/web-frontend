@@ -10,7 +10,8 @@ import { setCSRFToken } from "@/lib/token";
 import type { OrgRole, User } from "@/lib/types";
 import { notifyError } from "@/lib/query";
 import { ApiError } from "@/lib/http";
-import { keysApi, isUserKeyUnlocked, restoreUserKeysFromStorage, seedOrUnlockUserKeys } from "@/features/files/keystore";
+import { keysApi } from "@/features/files/api";
+import { isUserKeyUnlocked, restoreUserKeysFromStorage, seedOrUnlockUserKeys } from "@/features/files/keystore";
 
 /** Where a signed-in account belongs: operators to the console, everyone else to their org. */
 export const homeFor = (user: User) =>

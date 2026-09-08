@@ -8,6 +8,101 @@ import { getOrCreateTeamKey, getTeamKey } from "@/features/files/keystore";
 
 const orgHeader = (orgId: string) => ({ "X-Org-ID": orgId });
 
+export type TeamKeyWrap = {
+  user_id: string;
+  key: string;
+  algorithm: string;
+};
+export type UserKeyView = {
+  user_id: string;
+  public_key: string;
+  encrypted_private_key?: string | null;
+  kek_salt?: string | null;
+  kek_iterations?: number | null;
+  kek_algorithm?: string | null;
+};
+
+export type TeamKeyView = {
+  id: number;
+  team_id: string;
+  version: number;
+  status: string;
+  algorithm: string;
+  wraps: TeamKeyWrap[];
+  wrapped_user_ids: string[];
+  created_by: string;
+  created_at: string;
+};
+
+export type KeyAccessRequestView = {
+  id: string;
+  team_id: string;
+  team_name: string;
+  requested_by: string;
+  requested_by_name: string;
+  status: string;
+  created_at: string;
+  decided_by?: string | null;
+  decided_by_name?: string;
+  decided_at?: string | null;
+};
+
+export const keysApi = {
+  getUserKeys: () => api<UserKeyView>("/v1/auth/user-keys", { method: "GET" }),
+
+  upsertUserKeys: (update: {
+    public_key: string;
+    encrypted_private_key: string;
+    kek_salt: string;
+    kek_iterations: number;
+    kek_algorithm: string;
+  }) => api<UserKeyView>("/v1/auth/user-keys", { method: "PUT", json: update }),
+
+  getPublicKeysForTeam: (orgId: string, teamId: string) =>
+    api<{ user_id: string; public_key: string; created_at: string }[]>(
+      `/v1/orgs/${orgId}/teams/${teamId}/members/public-keys`
+    ),
+
+  createTeamKey: (orgId: string, teamId: string, wraps: TeamKeyWrap[]) =>
+    api<TeamKeyView>(`/v1/orgs/${orgId}/teams/${teamId}/keys`, {
+      method: "POST",
+      json: { algorithm: "aes-256-gcm", wraps },
+    }),
+
+  listTeamKeys: (orgId: string, teamId: string) =>
+    api<TeamKeyView[]>(`/v1/orgs/${orgId}/teams/${teamId}/keys`, { method: "GET" }),
+
+  /** Appends a re-wrap so the target member can decrypt this key version. */
+  addTeamKeyMemberWrap: (orgId: string, teamId: string, version: number, wrap: TeamKeyWrap) =>
+    api<TeamKeyView>(`/v1/orgs/${orgId}/teams/${teamId}/keys/${version}/wraps`, {
+      method: "POST",
+      json: wrap,
+    }),
+};
+
+/** Requests from members to read team key versions that predate their joining. */
+export const keyAccessApi = {
+  create: (teamId: string, orgId: string) =>
+    api<KeyAccessRequestView>(`/v1/orgs/${orgId}/teams/${teamId}/key-access-requests`, {
+      method: "POST",
+    }),
+
+  list: (teamId: string, orgId: string) =>
+    api<{ items: KeyAccessRequestView[] }>(`/v1/orgs/${orgId}/teams/${teamId}/key-access-requests`, {
+      method: "GET",
+    }).then((body) => body.items),
+
+  approve: (teamId: string, orgId: string, requestId: string) =>
+    api<KeyAccessRequestView>(`/v1/orgs/${orgId}/teams/${teamId}/key-access-requests/${requestId}/approve`, {
+      method: "POST",
+    }),
+
+  deny: (teamId: string, orgId: string, requestId: string) =>
+    api<KeyAccessRequestView>(`/v1/orgs/${orgId}/teams/${teamId}/key-access-requests/${requestId}/deny`, {
+      method: "POST",
+    }),
+};
+
 type LiveFileView = {
   id: string;
   name: string;
