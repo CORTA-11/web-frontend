@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon, Trash2Icon } from "lucide-react";
@@ -18,6 +19,7 @@ export default function DocPage() {
   const doc = useDoc(orgId, teamId, docId);
   const remove = useDeleteDoc(orgId, teamId);
   const docsPath = `/orgs/${orgId}/teams/${teamId}/docs`;
+  const leaveDeletedDocument = useCallback(() => router.replace(docsPath), [docsPath, router]);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
@@ -42,7 +44,13 @@ export default function DocPage() {
       <TeamMembersOnly teamId={teamId}>
         <QueryBoundary query={doc} rows={8}>
           {(data) => (
-            <DocEditor key={`${orgId}:${teamId}:${data.id}`} orgId={orgId} teamId={teamId} doc={data} />
+            <DocEditor
+              key={`${orgId}:${teamId}:${data.id}`}
+              orgId={orgId}
+              teamId={teamId}
+              doc={data}
+              onDeleted={leaveDeletedDocument}
+            />
           )}
         </QueryBoundary>
       </TeamMembersOnly>
