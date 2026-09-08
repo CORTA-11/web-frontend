@@ -1,11 +1,11 @@
 # CORTA Web Frontend — Plan and Delivered State
 
-Scope: `web-frontend/` only. `core-api`, `socket-server` and `mobile-app` were not
-touched. Where the web app needs something the backend does not have, it is
-listed in [§8 Backend asks](#8-backend-asks) rather than worked around.
+Scope: `web-frontend/`. Related live contracts delivered by `core-api` and
+`socket-server` are identified where they replace earlier frontend mocks.
 
-**Status: all phases built.** 31 Playwright specs pass, `npm run build` and
-`tsc --noEmit` are clean.
+**Status: all phases built.** 31 isolated Playwright scenarios and the live
+multi-context Document Presence scenario pass; `npm run build` and `tsc --noEmit`
+are clean.
 
 ---
 
@@ -36,7 +36,7 @@ src/
   feature code and mock handlers so the two cannot drift.
 - Adapters for core-api's actual shapes live in the relevant `api.ts` and nowhere
   else, each with a comment saying what is missing.
-- `NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,files` makes those modules skip the
+- `NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,files,docs` makes those modules skip the
   mock server. Everything unlisted stays mocked.
 
 ## 3. Libraries added
@@ -47,7 +47,7 @@ src/
 | API mocking at the network level | `msw` | the old `src/lib/mock/*` and its dual code paths |
 | Kanban drag and drop | `@dnd-kit/core`, `sortable`, `utilities` | column moves, with keyboard dragging for free |
 | Forms and validation | `react-hook-form`, `zod`, `@hookform/resolvers` | per-field state; dynamic registration fields become a generated schema |
-| Rich text | `@tiptap/react` + starter-kit + placeholder | the document editor |
+| Collaborative rich text | Tiptap + Collaboration/Caret, Yjs, Hocuspocus provider | the document editor and Presence |
 | Booking calendar | `react-big-calendar` + `date-fns` | multi-resource day view |
 | Dates and durations | `date-fns` | hand-rolled formatting |
 | Toasts | `sonner` | ad-hoc banner state |
@@ -104,7 +104,7 @@ if the platform tier stays.
 | 3.1.5.1, 3.1.5.3 | Notification preferences | `/orgs/{org}/notifications` | M |
 | 3.1.6.1–3 | File upload, list, download, delete | `…/{team}/files` | L |
 | 3.1.7.1–4 | Kanban with drag, priority, assignee, dates | `…/{team}/board` | L (list/create), M |
-| 3.1.8.1–5 | Documents, rich-text editor, autosave, leader-only delete | `…/{team}/docs` | L (list/create/open), M |
+| 3.1.8.1–5 | Collaborative Documents with Presence and leader-only delete | `…/{team}/docs` | L |
 | 3.1.9.1–3 | Chat summary, transcript summary, task extraction | dialogs in chat and docs | M |
 | 3.1.9 (admin) | AI enable/disable, model or custom endpoint | `/orgs/{org}/settings` | M |
 | 3.5.4.1–2 | Tenant and team isolation | everywhere | enforced both sides |
@@ -122,7 +122,7 @@ Not on web, per SRS 3.1.10: push notifications, private sticky notes, quick capt
 | 3 Board | dnd-kit board with optimistic moves and keyboard dragging, task dialog, assignee filter |
 | 4 Chat | Grouped message list, day separators, replies, `@` mention autocomplete, delete rules, WS hook behind a flag |
 | 5 Resources | Admin CRUD with weekly availability windows, multi-resource calendar, slot requests with clash warning, approval queue with server-side conflict rejection |
-| 6 Docs & files | TipTap editor with autosave and periodic pull, rename, leader-only delete; upload/download/delete with drag-and-drop |
+| 6 Docs & files | Tiptap/Yjs collaboration with title/body Presence and offline merge, leader-only delete; upload/download/delete with drag-and-drop |
 | 7 AI | Chat summary over a date range, transcript summary with follow-up question, task extraction into an editable review table |
 | 8 Console & polish | Org settings, people, notifications, org overview, platform console, privacy gates, 31 Playwright specs |
 | 9 File encryption | AES-256-GCM envelope in `lib/crypto.ts`, browser-held key in `lib/keystore.ts`; files are sealed before upload and opened after download |
@@ -147,16 +147,13 @@ Nothing here is worked around; the affected module stays mocked until it lands.
 4. Team member endpoints, leader assignment, team rename and delete.
 5. Resources, bookings and the approval workflow, including **server-side**
    conflict rejection (SRS 2.4). The client-side check is advisory only.
-6. Documents CRUD, and Yjs document rooms on socket-server for character-level
-   co-editing (SRS 3.1.8.5). Until then the editor autosaves and polls, which is
-   the degraded mode SRS 3.4.4.3 already allows for.
-7. Context service endpoints for summarise and extract (SRS 3.1.9).
-8. Platform tier: organisation records with a status, and the approve / suspend
+6. Context service endpoints for summarise and extract (SRS 3.1.9).
+7. Platform tier: organisation records with a status, and the approve / suspend
    routes behind a platform role.
-9. **Membership checks on every team-content route.** The frontend enforces the
+8. **Membership checks on every team-content route.** The frontend enforces the
    privacy model, but the server is the authority — an org admin calling
    `GET /teams/{id}/chat/messages` directly must get a 403.
-10. **SRS 3.5.3.3 says all encryption and decryption happen on the client.**
+9. **SRS 3.5.3.3 says all encryption and decryption happen on the client.**
     Files now are: `lib/crypto.ts` seals them with AES-256-GCM before upload and
     opens them after download, so core-api only ever sees ciphertext and a
     `application/vnd.corta.encrypted` content type. What is still missing is key
@@ -172,8 +169,8 @@ Nothing here is worked around; the affected module stays mocked until it lands.
 - Chat mentions use a plain textarea with an autocomplete rather than TipTap's
   mention extension: messages stay plain text, which matches the contract and is
   less code. TipTap is used for documents only.
-- The document editor polls every 20s and only accepts remote content when the
-  local editor is clean. Real co-editing needs ask §8.6.
+- Document title and body use one Yjs Document and one Hocuspocus connection;
+  authenticated Presence is ephemeral and offline changes merge on reconnect.
 - `react-big-calendar` shows resource columns in Day view only; Week and Agenda
   views combine resources.
 - The mock server resets on page reload — it is in-memory by design.

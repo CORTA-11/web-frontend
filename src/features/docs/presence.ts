@@ -6,14 +6,7 @@ export type EditorPresence = {
   sessionId: string;
 };
 
-const colors = ["#2563eb", "#7c3aed", "#c026d3", "#db2777", "#ea580c", "#0d9488"] as const;
-const hexColor = /^#[0-9a-f]{6}$/i;
-
-export function presenceColor(userId: string): string {
-  let hash = 0;
-  for (const character of userId) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
-  return colors[hash % colors.length]!;
-}
+const presenceColor = /^(?:#[0-9a-f]{6}|var\(--presence-[1-6]\))$/i;
 
 export function readPresence(value: unknown): EditorPresence | null {
   if (value === null || typeof value !== "object") return null;
@@ -23,7 +16,7 @@ export function readPresence(value: unknown): EditorPresence | null {
   const identity = user as Record<string, unknown>;
   if (
     typeof state.clientId !== "number" ||
-    typeof identity.color !== "string" || !hexColor.test(identity.color) ||
+    typeof identity.color !== "string" || !presenceColor.test(identity.color) ||
     typeof identity.id !== "string" ||
     typeof identity.name !== "string" ||
     typeof identity.sessionId !== "string"

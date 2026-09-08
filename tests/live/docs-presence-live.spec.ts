@@ -24,14 +24,24 @@ test("authenticated Presence distinguishes Editing Sessions and cleans up", asyn
   await expect(present.getByText("Demo Member", { exact: true })).toHaveCount(2);
   await expect(present.getByText("Demo Research Lead", { exact: true })).toHaveCount(1);
 
+  const title = first.locator(".doc-title");
+  await title.click();
+  await title.press("End");
+  await title.pressSequentially(" together");
+  await expect(observer.locator(".doc-title")).toContainText("Presence notes together");
+  await expect(observer.locator(`.doc-title .collaboration-caret[data-user-id="${memberID}"]`)).toBeVisible();
+
+  await title.press("ControlOrMeta+A");
+  await expect(observer.locator(`.doc-title .collaboration-selection[data-user-id="${memberID}"]`)).toBeVisible();
+
   const body = first.locator(".doc-body");
   await body.click();
   await body.pressSequentially("Presence marker");
   await expect(observer.locator(".doc-body")).toContainText("Presence marker");
-  await expect(observer.locator(`.collaboration-caret[data-user-id="${memberID}"]`)).toBeVisible();
+  await expect(observer.locator(`.doc-body .collaboration-caret[data-user-id="${memberID}"]`)).toBeVisible();
 
   await body.press("ControlOrMeta+A");
-  await expect(observer.locator(`.collaboration-selection[data-user-id="${memberID}"]`)).toBeVisible();
+  await expect(observer.locator(`.doc-body .collaboration-selection[data-user-id="${memberID}"]`)).toBeVisible();
 
   await firstContext.close();
   await expect(present.getByText("Demo Member", { exact: true })).toHaveCount(1);
