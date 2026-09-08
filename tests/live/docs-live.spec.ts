@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { ACCOUNTS, signIn } from "../helpers";
 
 const organizationID = "30ee7153-9b48-4560-8cbf-972587a60fda";
-test("edits, formats, and reloads a collaborative Document body", async ({ page, playwright }) => {
+test("edits and reloads one collaborative Document", async ({ page, playwright }) => {
   const setup = await playwright.request.newContext({
     baseURL: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8080",
     extraHTTPHeaders: { Origin: "http://127.0.0.1:3000" },
@@ -57,6 +57,12 @@ test("edits, formats, and reloads a collaborative Document body", async ({ page,
   expect((await ticket).ok()).toBeTruthy();
   await expect(page.getByText("Synced", { exact: true })).toBeVisible();
 
+  const title = page.getByLabel("Document title");
+  await expect(title).toBeEditable();
+  await title.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.type("Renamed collaboratively");
+
   const body = page.locator(".doc-body");
   await body.click();
   await page.keyboard.type("Persisted through collaboration");
@@ -68,21 +74,26 @@ test("edits, formats, and reloads a collaborative Document body", async ({ page,
       `/api/v1/orgs/${organizationID}/teams/${teamID}/documents/${documentID}`,
     );
     if (!response.ok()) return `status:${response.status()}`;
-    const projection = (await response.json()) as { body_html: string };
-    return projection.body_html;
-  }, { timeout: 10_000 }).toContain("<strong>Persisted through collaboration</strong>");
+    const projection = (await response.json()) as { body_html: string; title: string };
+    return projection;
+  }, { timeout: 10_000 }).toMatchObject({
+    body_html: expect.stringContaining("<strong>Persisted through collaboration</strong>"),
+    title: "Renamed collaboratively",
+  });
 
   await page.getByRole("link", { name: "All documents" }).click();
   await page.getByRole("link", { name: "Other notes" }).click();
   await expect(page.getByText("Synced", { exact: true })).toBeVisible();
   await expect(page.locator(".doc-body")).not.toContainText("Persisted through collaboration");
   await page.getByRole("link", { name: "All documents" }).click();
-  await page.getByRole("link", { name: "Collaborative notes" }).click();
+  await page.getByRole("link", { name: "Renamed collaboratively" }).click();
   await expect(page.getByText("Synced", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Document title")).toHaveText("Renamed collaboratively");
   await expect(page.locator(".doc-body strong")).toHaveText("Persisted through collaboration");
 
   await page.reload();
   await expect(page.getByText("Synced", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Document title")).toHaveText("Renamed collaboratively");
   await expect(page.locator(".doc-body strong")).toHaveText("Persisted through collaboration");
 
   execFileSync("docker", [
@@ -99,6 +110,7 @@ test("edits, formats, and reloads a collaborative Document body", async ({ page,
   }).toBeTruthy();
   await page.reload();
   await expect(page.getByText("Synced", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Document title")).toHaveText("Renamed collaboratively");
   await expect(page.locator(".doc-body strong")).toHaveText("Persisted through collaboration");
   expect(bodyPatches.filter((payload) => payload.includes("body_html"))).toHaveLength(0);
 });

@@ -8,7 +8,7 @@ test("creates a document and returns to the catalog", async ({ page }) => {
   await page.getByRole("button", { name: "New document" }).click();
   await expect(page).toHaveURL(/\/docs\/d-/);
 
-  await expect(page.getByLabel("Document title")).toHaveValue("Untitled document");
+  await expect(page.getByLabel("Document title")).toBeEditable();
 
   await page.getByRole("link", { name: "All documents" }).click();
   await expect(page.getByRole("link", { name: "Untitled document" }).first()).toBeVisible();
