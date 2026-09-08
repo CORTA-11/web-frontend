@@ -2,58 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { HocuspocusProvider } from "@hocuspocus/provider";
-import { Collaboration } from "@tiptap/extension-collaboration";
-import Document from "@tiptap/extension-document";
-import Paragraph from "@tiptap/extension-paragraph";
-import Text from "@tiptap/extension-text";
-import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { Placeholder } from "@tiptap/extension-placeholder";
 import { Doc as YDoc } from "yjs";
+import { useSession } from "@/features/auth/session";
 import { docsApi } from "@/features/docs/api";
-import { EditorToolbar } from "@/features/docs/components/EditorToolbar";
+import { CollaborativeEditors } from "@/features/docs/components/CollaborativeEditors";
+import { PresenceList } from "@/features/docs/components/PresenceList";
+import { presenceColor, readPresence, type EditorPresence } from "@/features/docs/presence";
 import { WS_URL } from "@/lib/env";
 import type { Doc } from "@/lib/types";
 import "@/features/docs/editor.css";
 
 type Props = { orgId: string; teamId: string; doc: Doc; onDeleted: () => void };
-const TitleDocument = Document.extend({ content: "paragraph" });
 const offlineStatus = "Offline—changes will sync when reconnected";
 
 export function DocEditor({ orgId, teamId, doc, onDeleted }: Props) {
   const [document] = useState(() => new YDoc());
+  const [provider, setProvider] = useState<HocuspocusProvider | null>(null);
+  const [editors, setEditors] = useState<EditorPresence[]>([]);
   const [status, setStatus] = useState("Connecting");
-  const titleEditor = useEditor({
-    immediatelyRender: false,
-    extensions: [
-      TitleDocument,
-      Paragraph,
-      Text,
-      Collaboration.configure({ document, field: "title" }),
-      Placeholder.configure({ placeholder: "Untitled document" }),
-    ],
-    editorProps: {
-      attributes: {
-        "aria-label": "Document title",
-        class: "doc-title outline-none",
-      },
-      handleKeyDown: (_view, event) => event.key === "Enter",
-    },
-  });
-  const bodyEditor = useEditor({
-    immediatelyRender: false,
-    extensions: [
-      StarterKit.configure({ undoRedo: false }),
-      Collaboration.configure({ document, field: "body" }),
-      Placeholder.configure({ placeholder: "Start writing…" }),
-    ],
-    editorProps: { attributes: { class: "doc-body min-h-96 outline-none" } },
-  });
+  const { user } = useSession();
+  const presenceID = user?.public_id ?? (user ? `mock-${user.id}` : null);
 
   useEffect(() => {
+    if (!presenceID) return;
     const base = WS_URL || `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
     const query = new URLSearchParams({ org_id: orgId, team_id: teamId });
-    const connect = () => new HocuspocusProvider({
+    let active = true;
+    const nextProvider = new HocuspocusProvider({
       document,
       name: `${orgId}:${teamId}:${doc.id}`,
       token: async () => (await docsApi.ticket(orgId, teamId, doc.id)).token,
@@ -62,39 +37,46 @@ export function DocEditor({ orgId, teamId, doc, onDeleted }: Props) {
       onSynced: ({ state }) => state && setStatus("Synced"),
       onDisconnect: () => setStatus(offlineStatus),
       onAuthenticationFailed: () => setStatus(offlineStatus),
+      onAwarenessChange: ({ states }) => {
+        setEditors(states.map(readPresence).filter((entry): entry is EditorPresence => entry !== null));
+      },
       onStateless: ({ payload }) => {
         if (payload === JSON.stringify({ type: "document.deleted" })) {
-          provider?.destroy();
-          provider = null;
+          nextProvider.destroy();
           onDeleted();
         }
       },
     });
-    let provider: HocuspocusProvider | null = connect();
-    const disconnect = () => {
-      setStatus(offlineStatus);
-      provider?.destroy();
-      provider = null;
-    };
-    const reconnect = () => {
-      setStatus("Connecting");
-      provider ??= connect();
-    };
-    window.addEventListener("offline", disconnect);
-    window.addEventListener("online", reconnect);
+    queueMicrotask(() => {
+      if (active) setProvider(nextProvider);
+    });
+    const offline = () => setStatus(offlineStatus);
+    const online = () => setStatus("Connecting");
+    window.addEventListener("offline", offline);
+    window.addEventListener("online", online);
     return () => {
-      window.removeEventListener("offline", disconnect);
-      window.removeEventListener("online", reconnect);
-      provider?.destroy();
+      active = false;
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("online", online);
+      nextProvider.destroy();
     };
-  }, [doc.id, document, onDeleted, orgId, teamId]);
+  }, [doc.id, document, onDeleted, orgId, presenceID, teamId]);
 
-  if (!titleEditor || !bodyEditor) return null;
   return (
     <div className="flex flex-col gap-3">
-      <EditorContent editor={titleEditor} />
-      <EditorToolbar editor={bodyEditor} />
-      <EditorContent editor={bodyEditor} />
+      <PresenceList editors={editors} />
+      {provider && user && presenceID && (
+        <CollaborativeEditors
+          document={document}
+          provider={provider}
+          user={{
+            color: presenceColor(presenceID),
+            id: presenceID,
+            name: user.name,
+            sessionId: provider.sessionId,
+          }}
+        />
+      )}
       <p className="border-t border-border pt-2 text-xs text-muted-foreground" aria-live="polite">
         {status}
       </p>
