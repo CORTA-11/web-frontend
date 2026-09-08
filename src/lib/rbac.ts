@@ -27,6 +27,7 @@ const RULES = {
   "chat:delete_any": (a) => a.teamRole === "TEAM_LEADER", // 3.1.4.4
   "doc:delete": (a) => a.teamRole === "TEAM_LEADER", // 3.1.8.4
   "file:delete_any": (a) => a.teamRole === "TEAM_LEADER", // 3.1.6.3
+"file:access_decide": (a) => a.teamRole === "TEAM_LEADER", // 3.1.6.4 previous-file access
   "ai:extract_tasks": (a) => a.teamRole === "TEAM_LEADER", // 3.1.9.3
 } satisfies Record<string, (actor: Actor) => boolean>;
 

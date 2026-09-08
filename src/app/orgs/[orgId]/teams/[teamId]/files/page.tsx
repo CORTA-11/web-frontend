@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryBoundary } from "@/components/common/QueryBoundary";
 import { FileTable } from "@/features/files/components/FileTable";
+import { KeyAccessPanel } from "@/features/files/components/KeyAccessPanel";
 import { UploadZone } from "@/features/files/components/UploadZone";
 import { useFiles } from "@/features/files/queries";
 import { useTeamContext } from "@/features/teams/queries";
@@ -29,6 +30,13 @@ export default function FilesPage() {
         }
       />
       <TeamMembersOnly teamId={teamId}>
+        <KeyAccessPanel
+          teamId={teamId}
+          orgId={orgId}
+          currentUserId={user?.public_id}
+          actor={actor}
+          hasFiles={(files.data?.length ?? 0) > 0}
+        />
         <UploadZone teamId={teamId} orgId={orgId}>
         <QueryBoundary query={files}>
           {(data) => (
