@@ -18,6 +18,7 @@ import "@/features/docs/editor.css";
 
 type Props = { orgId: string; teamId: string; doc: Doc };
 const TitleDocument = Document.extend({ content: "paragraph" });
+const offlineStatus = "Offline—changes will sync when reconnected";
 
 export function DocEditor({ orgId, teamId, doc }: Props) {
   const [document] = useState(() => new YDoc());
@@ -52,17 +53,33 @@ export function DocEditor({ orgId, teamId, doc }: Props) {
   useEffect(() => {
     const base = WS_URL || `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
     const query = new URLSearchParams({ org_id: orgId, team_id: teamId });
-    const provider = new HocuspocusProvider({
+    const connect = () => new HocuspocusProvider({
       document,
       name: `${orgId}:${teamId}:${doc.id}`,
       token: async () => (await docsApi.ticket(orgId, teamId, doc.id)).token,
       url: `${base.replace(/\/$/, "")}/ws/docs?${query}`,
       onConnect: () => setStatus("Connecting"),
       onSynced: ({ state }) => state && setStatus("Synced"),
-      onDisconnect: () => setStatus("Offline—changes will sync when reconnected"),
-      onAuthenticationFailed: () => setStatus("Offline—changes will sync when reconnected"),
+      onDisconnect: () => setStatus(offlineStatus),
+      onAuthenticationFailed: () => setStatus(offlineStatus),
     });
-    return () => provider.destroy();
+    let provider: HocuspocusProvider | null = connect();
+    const disconnect = () => {
+      setStatus(offlineStatus);
+      provider?.destroy();
+      provider = null;
+    };
+    const reconnect = () => {
+      setStatus("Connecting");
+      provider ??= connect();
+    };
+    window.addEventListener("offline", disconnect);
+    window.addEventListener("online", reconnect);
+    return () => {
+      window.removeEventListener("offline", disconnect);
+      window.removeEventListener("online", reconnect);
+      provider?.destroy();
+    };
   }, [doc.id, document, orgId, teamId]);
 
   if (!titleEditor || !bodyEditor) return null;
