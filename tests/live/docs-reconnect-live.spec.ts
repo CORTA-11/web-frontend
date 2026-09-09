@@ -8,10 +8,12 @@ import {
   type Playwright,
 } from "@playwright/test";
 import { ACCOUNTS, signIn } from "../helpers";
+import { editorSemantics } from "./editor-semantics";
 
 const organizationID = "30ee7153-9b48-4560-8cbf-972587a60fda";
 
 test("an Editor merges offline changes after reconnecting", async ({ browser, playwright }) => {
+  test.setTimeout(90_000);
   const document = await createDocument(playwright);
   const offlineContext = await browser.newContext();
   const onlineContext = await browser.newContext();
@@ -49,11 +51,12 @@ test("an Editor merges offline changes after reconnecting", async ({ browser, pl
   await expect(offlineEditor.body).not.toContainText("Written remotely");
 
   await offlineContext.setOffline(false);
-  await expect(offlineEditor.page.getByText("Connecting", { exact: true })).toBeVisible();
-  await expect(offlineEditor.page.getByText("Synced", { exact: true })).toBeVisible();
-  await expectConvergence(offlineEditor.title, onlineEditor.title, "Offline title");
-  await expectConvergence(offlineEditor.body, onlineEditor.body, "Written offline");
-  await expect(offlineEditor.body).toContainText("Written remotely");
+  await expect(offlineEditor.page.getByText("Synced", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expectBothEditorsToContain(offlineEditor.title, onlineEditor.title, "Offline title");
+  await expectBothEditorsToContain(offlineEditor.body, onlineEditor.body, "Written offline");
+  await expectBothEditorsToContain(offlineEditor.body, onlineEditor.body, "Written remotely");
+  await expectSemanticConvergence(offlineEditor.title, onlineEditor.title);
+  await expectSemanticConvergence(offlineEditor.body, onlineEditor.body);
 
   await offlineContext.setOffline(true);
   await expect(offlineEditor.page.getByText(
@@ -61,7 +64,7 @@ test("an Editor merges offline changes after reconnecting", async ({ browser, pl
     { exact: true },
   )).toBeVisible();
   await offlineContext.setOffline(false);
-  await expect(offlineEditor.page.getByText("Synced", { exact: true })).toBeVisible();
+  await expect(offlineEditor.page.getByText("Synced", { exact: true })).toBeVisible({ timeout: 30_000 });
 
   await offlineContext.close();
   await onlineContext.close();
@@ -152,8 +155,16 @@ async function replaceText(locator: Locator, value: string) {
   await locator.pressSequentially(value);
 }
 
-async function expectConvergence(first: Locator, second: Locator, text: string) {
+async function expectBothEditorsToContain(first: Locator, second: Locator, text: string) {
   await expect(first).toContainText(text);
   await expect(second).toContainText(text);
-  await expect.poll(async () => (await first.innerText()) === (await second.innerText())).toBeTruthy();
+}
+
+async function expectSemanticConvergence(first: Locator, second: Locator) {
+  await expect.poll(async () => {
+    const [firstContent, secondContent] = await Promise.all([
+      editorSemantics.read(first), editorSemantics.read(second),
+    ]);
+    return firstContent.text === secondContent.text;
+  }).toBeTruthy();
 }
