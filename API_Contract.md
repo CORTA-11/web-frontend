@@ -155,8 +155,9 @@ ChatMessage = { id, channel_id, sender: { id, name, avatar_url? },
 
 Realtime: `socket-server` at `ws://…/ws?token=&team_id=` is expected to push
 `{ type: "message.created"|"message.deleted", data: ChatMessage }`. The client
-subscribes only when `NEXT_PUBLIC_WS_BASE_URL` is set; core-api does not publish
-to Redis yet.
+subscribes only when `NEXT_PUBLIC_WS_BASE_URL` is set. Core-api commits each
+chat write, publishes the event to `corta:chat:events`, and socket-server fans
+it out to the matching team room.
 
 ---
 
@@ -169,20 +170,33 @@ When `NEXT_PUBLIC_LIVE_MODULES` includes `docs`, the catalog uses core-api:
 ### `GET /api/v1/orgs/{orgId}/teams/{teamId}/documents/{documentId}` → `DocumentProjection`
 ### `PATCH /api/v1/orgs/{orgId}/teams/{teamId}/documents/{documentId}` `{ title?, body_html? }` → `DocumentProjection`
 ### `DELETE /api/v1/orgs/{orgId}/teams/{teamId}/documents/{documentId}` → 204 (TEAM_LEADER)
+### `POST /api/v1/orgs/{orgId}/teams/{teamId}/documents/{documentId}/socket-ticket` → `{ token }`
 
-All routes require an authenticated Team Member; creation also requires the
-CSRF token. The catalog is ordered by recent activity. Canonical Yjs state is
-never included in these browser responses. The projection contains the
-persisted title and rich-text body. The live collaboration connection is
-delivered by a subsequent Document slice.
+All routes require an authenticated Team Member. Create, patch, delete, and
+ticket issuance also require the CSRF token; none has an application rate
+limit. Create and patch accept at most 64 KiB of JSON, while the other routes
+accept no request body. The catalog is ordered by recent activity. Canonical
+Yjs state is never included in browser REST responses. The projection contains
+the latest persisted title and rich-text body.
+
+The socket ticket is valid for 60 seconds and binds the Editor, organization,
+team, and Document. The browser connects to
+`{NEXT_PUBLIC_WS_BASE_URL}/ws/docs?org_id={orgId}&team_id={teamId}`, passes the
+ticket as the Hocuspocus token, and uses
+`{orgId}:{teamId}:{documentId}` as the Document name. The service rejects an
+invalid or expired ticket, mismatched scope, non-member Editor, and unapproved
+Origin. Title and body share one Yjs Document; authenticated Presence and
+offline reconnect merge run over the same connection. Core-api remains the
+durable source of truth through private state endpoints that are never called
+by the browser.
 
 ```ts
 DocumentSummary = { id, team_id, title, updated_by, created_at, updated_at }
 DocumentProjection = { ...DocumentSummary, body_html }
 ```
 
-The MSW contract below remains the isolated UI-test fixture until those slices
-replace the rest of the mock editor path.
+When `docs` is not live, MSW still provides the isolated UI-test fixture below.
+It is a test/dev fallback, not the deployed collaboration transport.
 
 ### `GET /teams/{teamId}/docs` → `DocSummary[]`
 ### `POST /teams/{teamId}/docs` `{ title }` → Doc
@@ -194,8 +208,9 @@ replace the rest of the mock editor path.
 DocSummary = { id, team_public_id, title, updated_at, updated_by }
 Doc = DocSummary & { content }  // HTML from the rich-text editor
 ```
-The editor autosaves `content` and polls the document every 20s. Character-level
-co-editing needs Yjs document rooms on socket-server — see `PLAN.md` §10.
+The mock editor persists `content` through this fixture. Live mode does not poll
+or PATCH on an interval; Yjs updates synchronize through the Document Room and
+the collaboration service persists bounded canonical snapshots to core-api.
 
 ---
 

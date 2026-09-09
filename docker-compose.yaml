@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_LIVE_MODULES: ${NEXT_PUBLIC_LIVE_MODULES:-auth,teams,board,chat,files,resources}
+        NEXT_PUBLIC_LIVE_MODULES: ${NEXT_PUBLIC_LIVE_MODULES:-auth,teams,board,chat,docs,files,resources}
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api}
         NEXT_PUBLIC_WS_BASE_URL: ${NEXT_PUBLIC_WS_BASE_URL:-ws://localhost:10000}
         API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:8080}
