@@ -7,6 +7,7 @@ import {
   type Playwright,
 } from "@playwright/test";
 import { ACCOUNTS, signIn } from "../helpers";
+import { editorSemantics } from "./editor-semantics";
 
 const organizationID = "30ee7153-9b48-4560-8cbf-972587a60fda";
 
@@ -24,24 +25,28 @@ test("two Editors converge while Undo remains local", async ({ browser, playwrig
   await first.title.click();
   await first.title.press("ControlOrMeta+A");
   await first.title.pressSequentially("Shared title");
+  await first.body.click();
   await expect(second.title).toHaveText("Shared title");
 
   await Promise.all([
     first.title.press("Home").then(() => first.title.pressSequentially("Alpha ")),
     second.title.press("End").then(() => second.title.pressSequentially(" Beta")),
   ]);
+  await Promise.all([first.body.click(), second.body.click()]);
   await expectConvergence(first.title, second.title, /Alpha/);
   await expect(first.title).toContainText("Beta");
   await Promise.all([
     first.title.press("Home").then(() => first.title.pressSequentially("One")),
     second.title.press("Home").then(() => second.title.pressSequentially("Two")),
   ]);
+  await Promise.all([first.body.click(), second.body.click()]);
   await expectConvergence(first.title, second.title, /One/);
   await expect(first.title).toContainText("Two");
 
   await first.title.press("Enter");
   await first.title.press("ControlOrMeta+B");
   await first.title.pressSequentially(" plain");
+  await first.body.click();
   await expect(second.title).toContainText("plain");
   await expectHTMLConvergence(first.title, second.title);
   await expect(first.title.locator("p")).toHaveCount(1);
@@ -53,12 +58,14 @@ test("two Editors converge while Undo remains local", async ({ browser, playwrig
     first.body.click().then(() => first.body.pressSequentially("Alpha")),
     second.body.click().then(() => second.body.pressSequentially("Beta")),
   ]);
+  await Promise.all([first.title.click(), second.title.click()]);
   await expectConvergence(first.body, second.body, /Alpha/);
   await expect(first.body).toContainText("Beta");
   await Promise.all([
     first.body.press("Home").then(() => first.body.pressSequentially("Start ")),
     second.body.press("End").then(() => second.body.pressSequentially(" End")),
   ]);
+  await Promise.all([first.title.click(), second.title.click()]);
   await expectConvergence(first.body, second.body, /Start/);
   await expect(first.body).toContainText("End");
 
@@ -69,36 +76,35 @@ test("two Editors converge while Undo remains local", async ({ browser, playwrig
     first.body.press("Home").then(() => first.body.pressSequentially("Gamma ")),
     second.page.getByRole("button", { name: "Bold" }).click(),
   ]);
+  await Promise.all([first.title.click(), second.title.click()]);
   await expectHTMLConvergence(first.body, second.body);
   await expect(first.body.locator("strong")).not.toHaveCount(0);
 
+  await first.body.click();
   await first.body.press("ControlOrMeta+z");
+  await Promise.all([first.title.click(), second.title.click()]);
   await expect(first.body).not.toContainText("Gamma");
   await expect(second.body).not.toContainText("Gamma");
   await expect(first.body).toContainText("Alpha");
   await expect(first.body).toContainText("Beta");
   await expect(first.body.locator("strong")).not.toHaveCount(0);
   await expectHTMLConvergence(first.body, second.body);
+  await first.body.click();
   await first.body.press("ControlOrMeta+Shift+z");
+  await Promise.all([first.title.click(), second.title.click()]);
   await expectConvergence(first.body, second.body, /Gamma/);
   await expectHTMLConvergence(first.body, second.body);
 
-  const expectedTitle = (await first.title.innerText()).replace(/\s+/g, " ").trim();
-  const expectedBodyHTML = normalizeHTML(await first.body.innerHTML());
+  const expectedBody = (await editorSemantics.read(first.body)).html;
+  const expectedTitle = (await editorSemantics.read(first.title)).text;
   await expect.poll(async () => {
     const response = await first.page.request.get(
       `/api/v1/orgs/${organizationID}/teams/${document.teamID}/documents/${document.documentID}`,
     );
     if (!response.ok()) return { bodyHTML: "", title: `status:${response.status()}` };
     const projection = (await response.json()) as { body_html: string; title: string };
-    return {
-      bodyHTML: normalizeHTML(projection.body_html),
-      title: projection.title,
-    };
-  }, { timeout: 10_000 }).toMatchObject({
-    bodyHTML: expectedBodyHTML,
-    title: expectedTitle,
-  });
+    return { bodyHTML: editorSemantics.normalize(projection.body_html), title: projection.title };
+  }, { timeout: 10_000 }).toEqual({ bodyHTML: expectedBody, title: expectedTitle });
 
   await firstContext.close();
   await secondContext.close();
@@ -181,8 +187,8 @@ async function expectConvergence(
 }
 
 async function expectHTMLConvergence(first: Locator, second: Locator) {
-  await expect.poll(async () => normalizeHTML(await first.innerHTML()) === normalizeHTML(await second.innerHTML()))
+  await expect.poll(async () => (
+    editorSemantics.normalize(await first.innerHTML()) === editorSemantics.normalize(await second.innerHTML())
+  ))
     .toBeTruthy();
 }
-
-const normalizeHTML = (value: string) => value.replace(/\s+/g, " ").trim();

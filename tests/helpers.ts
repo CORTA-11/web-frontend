@@ -4,6 +4,7 @@ export const ACCOUNTS = {
   admin: "admin@aratuwa.edu",
   leader: "leader@aratuwa.edu",
   member: "member@aratuwa.edu",
+  platform: "platform@corta.dev",
 };
 
 export async function signIn(page: Page, email: string) {

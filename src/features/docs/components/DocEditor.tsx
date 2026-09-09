@@ -52,7 +52,7 @@ export function DocEditor({ orgId, teamId, doc, onDeleted }: Props) {
       if (active) setProvider(nextProvider);
     });
     const offline = () => setStatus(offlineStatus);
-    const online = () => setStatus("Connecting");
+    const online = () => setStatus(nextProvider.synced ? "Synced" : "Connecting");
     window.addEventListener("offline", offline);
     window.addEventListener("online", online);
     return () => {
