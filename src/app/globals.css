@@ -73,6 +73,12 @@
   --ok: oklch(0.58 0.09 155);
   --warn: oklch(0.66 0.1 75);
   --danger: oklch(0.55 0.14 25);
+  --presence-1: #2563eb;
+  --presence-2: #7c3aed;
+  --presence-3: #c026d3;
+  --presence-4: #db2777;
+  --presence-5: #ea580c;
+  --presence-6: #0d9488;
   --border: oklch(0.915 0 0);
   --input: oklch(0.89 0 0);
   --ring: oklch(0.5 0.1 232);

@@ -57,3 +57,24 @@
   height: 0;
   pointer-events: none;
 }
+.collaboration-caret {
+  border-left: 2px solid;
+  border-right: 2px solid transparent;
+  margin-left: -1px;
+  pointer-events: none;
+  position: relative;
+}
+.collaboration-caret-label {
+  border-radius: 2px 2px 2px 0;
+  color: var(--primary-foreground);
+  font-size: 0.6875rem;
+  left: -2px;
+  line-height: 1.25;
+  padding: 0.125rem 0.25rem;
+  position: absolute;
+  top: -1.25rem;
+  white-space: nowrap;
+}
+.collaboration-selection {
+  pointer-events: none;
+}
