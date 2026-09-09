@@ -36,13 +36,17 @@ Organisation join ID for registration: `aratuwa`.
 core-api through the `/api` proxy:
 
 ```env
-NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,chat,files,resources
+NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,chat,docs,files,resources
 NEXT_PUBLIC_WS_BASE_URL=ws://localhost:10000
 ```
 
 Anything not listed stays mocked. `all` switches everything over. Chat live
 mode uses core-api for history/send/delete and fetches a short-lived socket
 ticket before connecting to socket-server at `NEXT_PUBLIC_WS_BASE_URL`.
+Documents live mode uses core-api for the catalog and ticket issuance, then
+connects the Tiptap/Yjs editor to `/ws/docs` at the same WebSocket base URL.
+Title, body, Presence, reconnect merge, and persistence are handled in that
+Document Room; the REST projection is the initial catalog/read fallback.
 The Docker default assumes the app is opened through Envoy at
 `http://localhost:10000`, so WebSockets also use that entrypoint.
 

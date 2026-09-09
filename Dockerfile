@@ -13,7 +13,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ARG NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,chat,files,resources
+ARG NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,chat,docs,files,resources
 ARG NEXT_PUBLIC_API_BASE_URL=/api
 ARG NEXT_PUBLIC_WS_BASE_URL=ws://localhost:10000
 ARG API_PROXY_TARGET=http://api:8080

@@ -120,9 +120,9 @@ Not on web, per SRS 3.1.10: push notifications, private sticky notes, quick capt
 | 1 Auth | Login, register with create/join modes, dynamic registration fields, session as a query, guards |
 | 2 Teams | Teams table, create dialog, roster, add/remove, leader assignment, rename, leave rules |
 | 3 Board | dnd-kit board with optimistic moves and keyboard dragging, task dialog, assignee filter |
-| 4 Chat | Grouped message list, day separators, replies, `@` mention autocomplete, delete rules, WS hook behind a flag |
+| 4 Chat | Grouped message list, day separators, replies, `@` mention autocomplete, delete rules, and live core-api → Redis → socket-server events |
 | 5 Resources | Admin CRUD with weekly availability windows, multi-resource calendar, slot requests with clash warning, approval queue with server-side conflict rejection |
-| 6 Docs & files | Tiptap/Yjs collaboration with title/body Presence and offline merge, leader-only delete; upload/download/delete with drag-and-drop |
+| 6 Docs & files | Live Tiptap/Yjs/Hocuspocus Document Rooms with title/body Presence, offline merge, core-api persistence, and leader-only delete; upload/download/delete with drag-and-drop |
 | 7 AI | Chat summary over a date range, transcript summary with follow-up question, task extraction into an editable review table |
 | 8 Console & polish | Org settings, people, notifications, org overview, platform console, privacy gates, 31 Playwright specs |
 | 9 File encryption | AES-256-GCM envelope in `lib/crypto.ts`, browser-held key in `lib/keystore.ts`; files are sealed before upload and opened after download |
@@ -135,25 +135,25 @@ declares no behaviour and is a documented exception in `AGENTS.md`).
 
 ## 8. Backend asks
 
-Nothing here is worked around; the affected module stays mocked until it lands.
+Chat history and writes, Redis publication, socket tickets, the Document catalog,
+Document tickets, canonical Yjs persistence, Presence, reconnect merge, and room
+closure after deletion are live. Remaining gaps stay mocked until they land.
 
 1. `POST /auth/refresh` with an httpOnly refresh cookie, and a register endpoint
    that creates or joins an organisation. Today's `POST /users/login` returns a
    bare token with no rotation (SRS 3.5.1.3).
 2. Task fields `status`, `assignee_id`, `priority`, `due_date`, plus `PATCH` and
    `DELETE`. The Kanban is unbuildable as specified without them (SRS 3.1.7).
-3. Chat REST **and** publishing to `corta:chat:events` — socket-server is already
-   built and currently receives nothing.
-4. Team member endpoints, leader assignment, team rename and delete.
-5. Resources, bookings and the approval workflow, including **server-side**
+3. Team member endpoints, leader assignment, team rename and delete.
+4. Resources, bookings and the approval workflow, including **server-side**
    conflict rejection (SRS 2.4). The client-side check is advisory only.
-6. Context service endpoints for summarise and extract (SRS 3.1.9).
-7. Platform tier: organisation records with a status, and the approve / suspend
+5. Context service endpoints for summarise and extract (SRS 3.1.9).
+6. Platform tier: organisation records with a status, and the approve / suspend
    routes behind a platform role.
-8. **Membership checks on every team-content route.** The frontend enforces the
+7. **Membership checks on every team-content route.** The frontend enforces the
    privacy model, but the server is the authority — an org admin calling
    `GET /teams/{id}/chat/messages` directly must get a 403.
-9. **SRS 3.5.3.3 says all encryption and decryption happen on the client.**
+8. **SRS 3.5.3.3 says all encryption and decryption happen on the client.**
     Files now are: `lib/crypto.ts` seals them with AES-256-GCM before upload and
     opens them after download, so core-api only ever sees ciphertext and a
     `application/vnd.corta.encrypted` content type. What is still missing is key
@@ -171,6 +171,12 @@ Nothing here is worked around; the affected module stays mocked until it lands.
   less code. TipTap is used for documents only.
 - Document title and body use one Yjs Document and one Hocuspocus connection;
   authenticated Presence is ephemeral and offline changes merge on reconnect.
+- The first release runs one collaboration-service replica and uses standard
+  Hocuspocus persistence. Redis-backed room scaling, custom durable
+  acknowledgements, immediate revocation of connected Editors, granular
+  Document RBAC, richer editor nodes, and product-level version history/restore
+  are deferred. Ordinary tenant Postgres backups include canonical Document
+  content.
 - `react-big-calendar` shows resource columns in Day view only; Week and Agenda
   views combine resources.
 - The mock server resets on page reload — it is in-memory by design.
