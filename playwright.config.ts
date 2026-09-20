@@ -2,15 +2,17 @@ import { defineConfig, devices } from '@playwright/test';
 
 const port = process.env.PLAYWRIGHT_PORT ?? '3000';
 const baseURL = `http://127.0.0.1:${port}`;
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 export default defineConfig({
   testDir: './tests',
   testIgnore: '**/live/**',
   webServer: {
-    command: `NEXT_PUBLIC_LIVE_MODULES=__mock__ NEXT_PUBLIC_MOCKS=on API_PROXY_TARGET=http://127.0.0.1:9 npm run dev -- --port ${port}`,
+    command: `${npmCommand} run dev -- --port ${port}`,
+    timeout: 120_000,
     env: {
       ...process.env,
-      NEXT_PUBLIC_LIVE_MODULES: '__mock__',
+      NEXT_PUBLIC_LIVE_MODULES: '',
       NEXT_PUBLIC_MOCKS: 'on',
       API_PROXY_TARGET: 'http://127.0.0.1:9',
     },
@@ -18,6 +20,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
   },
   fullyParallel: true,
+  expect: { timeout: 15_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   // The dev server compiles routes on demand; more than a few parallel workers

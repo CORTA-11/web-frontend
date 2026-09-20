@@ -1,4 +1,5 @@
 import { api } from "@/lib/http";
+import { isLive } from "@/lib/env";
 import type { NotificationPrefs, OrgSettings } from "@/lib/types";
 
 /** core-api's organization view — the source of truth for the settings page. */
@@ -22,10 +23,15 @@ const fromBackend = (org: BackendOrg): OrgSettings => ({
 });
 
 export const settingsApi = {
-  org: (orgId: string) => api<BackendOrg>(`/v1/orgs/${orgId}`).then(fromBackend),
+  org: (orgId: string) =>
+    isLive("settings")
+      ? api<BackendOrg>(`/v1/orgs/${orgId}`).then(fromBackend)
+      : api<OrgSettings>(`/orgs/${orgId}/settings`),
 
   updateOrg: (orgId: string, body: Partial<OrgSettings>) =>
-    api<BackendOrg>(`/v1/orgs/${orgId}`, { method: "PATCH", json: { name: body.name } }).then(fromBackend),
+    isLive("settings")
+      ? api<BackendOrg>(`/v1/orgs/${orgId}`, { method: "PATCH", json: { name: body.name } }).then(fromBackend)
+      : api<OrgSettings>(`/orgs/${orgId}/settings`, { method: "PATCH", json: body }),
 
   notifications: () => api<NotificationPrefs>("/notification-prefs"),
 

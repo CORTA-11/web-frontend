@@ -20,7 +20,9 @@ export function useCreateDoc(orgId: string, teamId: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (title: string) => docsApi.create(orgId, teamId, title),
-    onSuccess: () => client.invalidateQueries({ queryKey: qk.docs(teamId) }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: qk.docs(teamId) });
+    },
     onError: notifyError,
   });
 }
