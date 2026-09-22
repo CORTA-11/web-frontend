@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "46912857635",
+    "project_id": "corta-50e32",
+    "storage_bucket": "corta-50e32.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:46912857635:android:47f2a79b6657119de5f396",
+        "android_client_info": {
+          "package_name": "com.corta.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtFFygt9SbzMxV9f7iPpY5QN5AeYqnQvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
