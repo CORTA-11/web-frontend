@@ -1,11 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = process.env.PLAYWRIGHT_PORT ?? "3000";
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
 export default defineConfig({
   testDir: "./tests/live",
   webServer: {
-    command: `npm run dev -- --port ${port}`,
+    command: `${npmCommand} run dev -- --port ${port}`,
+    timeout: 120_000,
     env: {
       ...process.env,
       NEXT_PUBLIC_LIVE_MODULES: "auth,teams,docs",

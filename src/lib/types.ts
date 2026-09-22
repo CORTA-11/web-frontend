@@ -207,6 +207,31 @@ export type AiSummary = {
   source_count: number;
 };
 
+export type AiDecision = { text: string; source_message_ids: string[] };
+
+export type AiCandidateActionItem = {
+  candidate_id: string;
+  title: string;
+  description: string;
+  assignee_user_id: string | null;
+  priority: Priority | "urgent" | null;
+  due_date: string | null;
+  source_message_ids: string[];
+  confidence: number;
+};
+
+export type AiProcessResponse = {
+  schema_version: "1";
+  request_id: string;
+  summary: {
+    overview: string;
+    key_points: string[];
+    decisions: AiDecision[];
+    open_questions: string[];
+  };
+  action_items: AiCandidateActionItem[];
+};
+
 export type ExtractedTask = {
   title: string;
   description: string;

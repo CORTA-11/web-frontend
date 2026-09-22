@@ -62,6 +62,47 @@ const chatLines = (teamId: string, from?: string, to?: string) =>
     .map((m) => `${m.sender.name}: ${m.message}`);
 
 export const aiHandlers = [
+  http.post("/api/v1/orgs/:orgId/teams/:teamId/ai/chat-summary", async ({ request, params }) => {
+    if (!db.settings.ai.enabled) return new HttpResponse("AI features are disabled for this organisation", { status: 403 });
+    const body = (await request.json()) as { from?: string; to?: string; provider?: { model?: string }; max_action_items?: number };
+    const teamId = String(params.teamId);
+    const messages = (db.chat[teamId] ?? [])
+      .filter((message) => !message.deleted_at)
+      .filter((message) => (!body.from || message.created_at >= body.from) && (!body.to || message.created_at <= body.to));
+    if (!messages.length) return new HttpResponse("No messages in that date range", { status: 404 });
+    const lines = messages.map((message) => `${message.sender.name}: ${message.message}`);
+    const summary = summarise(lines, body.provider?.model ?? db.settings.ai.model, messages.length);
+    const decisions = summary.decisions.map((text) => ({
+      text,
+      source_message_ids: messages.filter((message) => text.includes(message.message)).map((message) => message.id),
+    }));
+    const actionItems = lines.filter((line) => ACTION.test(line)).slice(0, body.max_action_items ?? 10).map((line) => {
+      const source = messages.find((message) => line.includes(message.message));
+      const task = toTask(line, teamId);
+      return {
+        candidate_id: uid("candidate"),
+        title: task.title,
+        description: task.description,
+        assignee_user_id: null,
+        priority: task.priority,
+        due_date: task.due_date?.slice(0, 10) ?? null,
+        source_message_ids: source ? [source.id] : [],
+        confidence: 0.8,
+      };
+    });
+    return HttpResponse.json({
+      schema_version: "1",
+      request_id: uid("request"),
+      summary: {
+        overview: summary.headline,
+        key_points: summary.bullets,
+        decisions,
+        open_questions: [],
+      },
+      action_items: actionItems,
+    });
+  }),
+
   http.post("/api/teams/:teamId/ai/chat-summary", async ({ request, params }) => {
     if (!db.settings.ai.enabled) return new HttpResponse("AI features are disabled for this organisation", { status: 403 });
     const { from, to } = (await request.json()) as { from?: string; to?: string };
