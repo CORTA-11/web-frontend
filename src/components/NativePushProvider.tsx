@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useSession } from "@/features/auth/session";
+import { api } from "@/lib/http";
+import { toast } from "sonner";
 
 export function NativePushProvider() {
+  const { user } = useSession();
+  const registeredTokenRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -36,6 +42,13 @@ export function NativePushProvider() {
           } catch {
             // ignore storage failure
           }
+          if (user && registeredTokenRef.current !== token.value) {
+            registeredTokenRef.current = token.value;
+            api("/v1/devices", {
+              method: "POST",
+              json: { token: token.value, platform: "android" },
+            }).catch((err) => console.warn("[Push] Failed to register device token:", err));
+          }
         });
 
         await PushNotifications.addListener("registrationError", (error) => {
@@ -44,6 +57,11 @@ export function NativePushProvider() {
 
         await PushNotifications.addListener("pushNotificationReceived", (notification) => {
           console.log("[Push] Notification received:", notification);
+          if (notification.title) {
+            toast(notification.title, {
+              description: notification.body,
+            });
+          }
         });
 
         await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
@@ -55,7 +73,25 @@ export function NativePushProvider() {
     }
 
     initPush();
-  }, []);
+  }, [user]);
+
+  // When user logs in or changes, register any existing token with the backend
+  useEffect(() => {
+    if (!user || typeof window === "undefined") return;
+
+    try {
+      const savedToken = localStorage.getItem("corta_fcm_token");
+      if (savedToken && registeredTokenRef.current !== savedToken) {
+        registeredTokenRef.current = savedToken;
+        api("/v1/devices", {
+          method: "POST",
+          json: { token: savedToken, platform: "android" },
+        }).catch((err) => console.warn("[Push] Failed to register saved device token:", err));
+      }
+    } catch {
+      // ignore storage failure
+    }
+  }, [user]);
 
   return null;
 }
