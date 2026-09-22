@@ -41,6 +41,9 @@ a module is one person's diff.
   `API_Contract.md`, the mapping lives in that feature's `api.ts` and nowhere
   else, with a comment saying what is missing.
 - **Query keys live in `lib/query-keys.ts`** so invalidation is auditable.
+- **Browser WebSockets use the page origin by default.** Next.js embeds
+  `NEXT_PUBLIC_*` values during the image build, so a localhost socket URL in
+  the production image sends every visitor's browser to its own machine.
 
 ## 3. Security and privacy
 

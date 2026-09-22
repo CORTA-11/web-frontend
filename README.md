@@ -47,8 +47,9 @@ Documents live mode uses core-api for the catalog and ticket issuance, then
 connects the Tiptap/Yjs editor to `/ws/docs` at the same WebSocket base URL.
 Title, body, Presence, reconnect merge, and persistence are handled in that
 Document Room; the REST projection is the initial catalog/read fallback.
-The Docker default assumes the app is opened through Envoy at
-`http://localhost:10000`, so WebSockets also use that entrypoint.
+When `NEXT_PUBLIC_WS_BASE_URL` is unset, chat and Documents connect through the
+same host as the page, using `wss:` for HTTPS and `ws:` for HTTP. Set the variable
+at build time only when WebSockets use a separate public endpoint.
 
 For Docker, start the backend stack first, then run:
 

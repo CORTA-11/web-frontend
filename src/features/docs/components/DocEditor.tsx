@@ -9,7 +9,7 @@ import { CollaborativeEditors } from "@/features/docs/components/CollaborativeEd
 import { PresenceList } from "@/features/docs/components/PresenceList";
 import { presenceColor } from "@/features/docs/presence-color";
 import { readPresence, type EditorPresence } from "@/features/docs/presence";
-import { WS_URL } from "@/lib/env";
+import { webSocketBaseUrl } from "@/lib/env";
 import type { Doc } from "@/lib/types";
 import "@/features/docs/editor.css";
 
@@ -26,7 +26,7 @@ export function DocEditor({ orgId, teamId, doc, onDeleted }: Props) {
 
   useEffect(() => {
     if (!presenceID) return;
-    const base = WS_URL || `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
+    const base = webSocketBaseUrl();
     const query = new URLSearchParams({ org_id: orgId, team_id: teamId });
     let active = true;
     const nextProvider = new HocuspocusProvider({

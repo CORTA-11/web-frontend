@@ -21,6 +21,10 @@ export type ApiModule =
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api";
 export const WS_URL = process.env.NEXT_PUBLIC_WS_BASE_URL?.trim() || "";
 
+export function webSocketBaseUrl() {
+  return WS_URL || `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`;
+}
+
 export const isLive = (module: ApiModule) =>
   !mocksForced && (live.has("all") || live.has(module));
 
