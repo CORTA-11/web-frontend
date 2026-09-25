@@ -15,6 +15,7 @@ import { useChatSummary } from "@/features/ai/queries";
 import { useMembers } from "@/features/teams/queries";
 import { useOrgSettings } from "@/features/settings/queries";
 import { errorMessage } from "@/lib/http";
+import { isLive } from "@/lib/env";
 import { can, type Actor } from "@/lib/rbac";
 import { numericKey } from "@/features/teams/api";
 import type { ExtractedTask } from "@/lib/types";
@@ -32,7 +33,9 @@ export function ChatSummaryDialog({ teamId, actor }: { teamId: string; actor: Ac
   const [model, setModel] = useState("");
   const [apiToken, setApiToken] = useState("");
 
-  if (!org.data?.ai.enabled) return null;
+  // Live chat AI takes provider settings per request; the organisation API
+  // does not expose the AI toggle used by the mock settings service.
+  if (!isLive("ai") && !org.data?.ai.enabled) return null;
 
   const payload = {
     from: new Date(`${range.from}T00:00:00`).toISOString(),

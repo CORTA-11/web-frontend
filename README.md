@@ -36,7 +36,7 @@ Organisation join ID for registration: `aratuwa`.
 core-api through the `/api` proxy:
 
 ```env
-NEXT_PUBLIC_LIVE_MODULES=auth,teams,board,chat,docs,files,resources
+NEXT_PUBLIC_LIVE_MODULES=auth,teams,ai,board,chat,docs,files,resources
 NEXT_PUBLIC_WS_BASE_URL=ws://localhost:10000
 ```
 
