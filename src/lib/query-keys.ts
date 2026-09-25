@@ -5,6 +5,7 @@ export const qk = {
   invitations: (orgId: string) => ["orgs", orgId, "invitations"] as const,
   orgUsers: (orgId: string) => ["orgs", orgId, "users"] as const,
   orgSettings: (orgId: string) => ["orgs", orgId, "settings"] as const,
+  teamAISettings: (orgId: string, teamId: string) => ["orgs", orgId, "teams", teamId, "ai-settings"] as const,
   teams: (orgId: string) => ["orgs", orgId, "teams"] as const,
   resources: (orgId: string) => ["orgs", orgId, "resources"] as const,
   bookings: (orgId: string) => ["orgs", orgId, "bookings"] as const,

@@ -59,7 +59,7 @@ test('live chat exposes AI summary with organization settings lacking AI configu
   assert.match(await renderDialog(true), /Summarise chat/);
 });
 
-test('mock chat respects the organization AI toggle', async () => {
-  assert.equal(await renderDialog(false), '');
+test('team chat summary is independent of organization AI settings', async () => {
+  assert.match(await renderDialog(false), /Summarise chat/);
   assert.match(await renderDialog(false, true), /Summarise chat/);
 });

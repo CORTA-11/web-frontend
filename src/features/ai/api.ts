@@ -4,13 +4,9 @@ import type { AiProcessResponse, AiSummary, ExtractedTask } from "@/lib/types";
 export type ChatRange = { from?: string; to?: string };
 
 export const aiApi = {
-  chatSummary: (orgId: string, teamId: string, body: ChatRange & {
-    provider: { protocol: "openai_chat_completions_v1"; endpoint_url: string; model: string; api_token: string; structured_output: boolean };
-    response_language: string;
-    max_action_items: number;
-  }) =>
+  chatSummary: (orgId: string, teamId: string, body: Required<ChatRange>) =>
     api<AiProcessResponse | AiSummary>(
-      `/v1/orgs/${orgId}/teams/${teamId}/ai/chat-summary`,
+      `/v1/orgs/${orgId}/teams/${teamId}/ai/process`,
       { method: "POST", json: body },
     ),
 

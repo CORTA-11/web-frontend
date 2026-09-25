@@ -3,6 +3,7 @@ import type { NotificationPrefs } from "@/lib/types";
 
 /** Mutable in-memory copy of the seed, reset on page reload. */
 export const db = {
+  teamAISettings: {} as Record<string, { endpoint_url: string; model: string; api_token: string }>,
   people: structuredClone(seed.people),
   organizations: structuredClone(seed.organizations),
   teams: structuredClone(seed.teams),

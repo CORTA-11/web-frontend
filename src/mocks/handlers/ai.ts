@@ -1,3 +1,4 @@
+import { actorFrom, teamRoleOf } from "@/mocks/session";
 import { http, HttpResponse } from "msw";
 import { db, now, uid } from "@/mocks/db";
 import type { AiSummary, ExtractedTask, Priority } from "@/lib/types";
@@ -62,21 +63,28 @@ const chatLines = (teamId: string, from?: string, to?: string) =>
     .map((m) => `${m.sender.name}: ${m.message}`);
 
 export const aiHandlers = [
-  http.post("/api/v1/orgs/:orgId/teams/:teamId/ai/chat-summary", async ({ request, params }) => {
-    if (!db.settings.ai.enabled) return new HttpResponse("AI features are disabled for this organisation", { status: 403 });
-    const body = (await request.json()) as { from?: string; to?: string; provider?: { model?: string }; max_action_items?: number };
+  http.post("/api/v1/orgs/:orgId/teams/:teamId/ai/process", async ({ request, params }) => {
     const teamId = String(params.teamId);
+    const actor = actorFrom(request);
+    if (!actor || !teamRoleOf(teamId, actor.id) || !db.teams.some((team) => team.public_id === teamId && String(team.org_id) === String(params.orgId)))
+      return new HttpResponse("You are not a member of this team", { status: 403 });
+    const settings = db.teamAISettings[teamId];
+    if (!settings) return new HttpResponse("Ask your team admin to configure AI in Team settings.", { status: 409 });
+    const body = (await request.json()) as { from: string; to: string };
+    if (!body.from || !body.to || !Number.isFinite(Date.parse(body.from)) || !Number.isFinite(Date.parse(body.to)) || body.from > body.to)
+      return new HttpResponse("Choose a valid date range", { status: 400 });
     const messages = (db.chat[teamId] ?? [])
       .filter((message) => !message.deleted_at)
       .filter((message) => (!body.from || message.created_at >= body.from) && (!body.to || message.created_at <= body.to));
     if (!messages.length) return new HttpResponse("No messages in that date range", { status: 404 });
+    if (messages.length > 100) return new HttpResponse("Choose a smaller date range (maximum 100 messages)", { status: 400 });
     const lines = messages.map((message) => `${message.sender.name}: ${message.message}`);
-    const summary = summarise(lines, body.provider?.model ?? db.settings.ai.model, messages.length);
+    const summary = summarise(lines, settings.model, messages.length);
     const decisions = summary.decisions.map((text) => ({
       text,
       source_message_ids: messages.filter((message) => text.includes(message.message)).map((message) => message.id),
     }));
-    const actionItems = lines.filter((line) => ACTION.test(line)).slice(0, body.max_action_items ?? 10).map((line) => {
+    const actionItems = lines.filter((line) => ACTION.test(line)).slice(0, 10).map((line) => {
       const source = messages.find((message) => line.includes(message.message));
       const task = toTask(line, teamId);
       return {

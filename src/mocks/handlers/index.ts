@@ -1,4 +1,5 @@
 import { isLive } from "@/lib/env";
+import { teamAISettingsHandlers } from "@/mocks/handlers/team-ai-settings";
 import { aiHandlers } from "@/mocks/handlers/ai";
 import { authHandlers } from "@/mocks/handlers/auth";
 import { boardHandlers } from "@/mocks/handlers/board";
@@ -25,7 +26,7 @@ export const handlers = [
   ...(isLive("docs") ? [] : docHandlers),
   ...(isLive("files") ? [] : fileHandlers),
   ...(isLive("resources") ? [] : resourceHandlers),
-  ...(isLive("ai") ? [] : aiHandlers),
+  ...(isLive("ai") ? [] : [...aiHandlers, ...teamAISettingsHandlers]),
   ...(isLive("settings") ? [] : settingsHandlers),
   ...(isLive("settings") ? [] : platformHandlers),
 ];

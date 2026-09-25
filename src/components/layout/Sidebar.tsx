@@ -70,6 +70,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   indent
                 />
               ))}
+            {teamId === team.public_id && can(user && { orgRole: user.org_role, teamRole: team.my_role }, "team:settings") && (
+              <NavItem href={`${base}/teams/${team.public_id}/settings`} label="Team settings" icon={SettingsIcon} indent />
+            )}
           </div>
         ))}
       </section>

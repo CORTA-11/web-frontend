@@ -18,6 +18,7 @@ const RULES = {
   "team:create": (a) => a.orgRole === "ORG_ADMIN", // 3.1.2.1
   "team:assign_leader": (a) => a.orgRole === "ORG_ADMIN", // 3.1.2.2
   "team:delete": (a) => a.orgRole === "ORG_ADMIN", // 3.1.2.6
+  "team:settings": (a) => a.teamRole === "TEAM_LEADER", // Team admins own shared AI configuration.
   "team:rename": (a) => a.teamRole === "TEAM_LEADER", // 3.1.2.5
   "team:manage_members": (a) => a.teamRole === "TEAM_LEADER", // 3.1.2.3-4
   "team:leave": (a) => a.teamRole === "TEAM_MEMBER", // 3.1.2.7

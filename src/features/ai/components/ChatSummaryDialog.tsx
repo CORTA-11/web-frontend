@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
@@ -13,42 +13,27 @@ import { ExtractedTasks } from "@/features/ai/components/ExtractedTasks";
 import { SummaryView } from "@/features/ai/components/SummaryView";
 import { useChatSummary } from "@/features/ai/queries";
 import { useMembers } from "@/features/teams/queries";
-import { useOrgSettings } from "@/features/settings/queries";
 import { errorMessage } from "@/lib/http";
-import { isLive } from "@/lib/env";
 import { can, type Actor } from "@/lib/rbac";
 import { numericKey } from "@/features/teams/api";
 import type { ExtractedTask } from "@/lib/types";
 
-const asDate = (date: Date) => date.toISOString().slice(0, 10);
+const asDate = (date: Date) => format(date, "yyyy-MM-dd");
 
 export function ChatSummaryDialog({ teamId, actor }: { teamId: string; actor: Actor | null }) {
   const { orgId } = useParams<{ orgId: string }>();
-  const org = useOrgSettings(orgId);
   const members = useMembers(teamId, orgId);
   const summarise = useChatSummary(orgId, teamId);
   const [open, setOpen] = useState(false);
   const [range, setRange] = useState({ from: asDate(subDays(new Date(), 7)), to: asDate(new Date()) });
-  const [endpoint, setEndpoint] = useState("");
-  const [model, setModel] = useState("");
-  const [apiToken, setApiToken] = useState("");
 
-  // Live chat AI takes provider settings per request; the organisation API
-  // does not expose the AI toggle used by the mock settings service.
-  if (!isLive("ai") && !org.data?.ai.enabled) return null;
-
-  const payload = {
-    from: new Date(`${range.from}T00:00:00`).toISOString(),
-    to: new Date(`${range.to}T23:59:59`).toISOString(),
-    provider: {
-      protocol: "openai_chat_completions_v1" as const,
-      endpoint_url: endpoint || org.data?.ai.custom_endpoint || "",
-      model: model || org.data?.ai.model || "",
-      api_token: apiToken,
-      structured_output: true,
-    },
-    response_language: "en",
-    max_action_items: 10,
+  const validRange = Boolean(range.from && range.to && range.from <= range.to);
+  const submit = () => {
+    if (!validRange) return;
+    summarise.mutate({
+      from: new Date(`${range.from}T00:00:00`).toISOString(),
+      to: new Date(`${range.to}T23:59:59.999`).toISOString(),
+    });
   };
 
   const processResult = summarise.data && "action_items" in summarise.data ? summarise.data : null;
@@ -91,20 +76,12 @@ export function ChatSummaryDialog({ teamId, actor }: { teamId: string; actor: Ac
                 onChange={(event) => setRange({ ...range, to: event.target.value })}
               />
             </Field>
-            <Field label="Endpoint" htmlFor="summary-endpoint">
-              <Input id="summary-endpoint" className="min-w-72 font-mono text-xs" value={endpoint || org.data?.ai.custom_endpoint || ""} onChange={(event) => setEndpoint(event.target.value)} placeholder="https://.../v1/chat/completions" />
-            </Field>
-            <Field label="Model" htmlFor="summary-model">
-              <Input id="summary-model" className="font-mono text-xs" value={model || org.data?.ai.model || ""} onChange={(event) => setModel(event.target.value)} />
-            </Field>
-            <Field label="API token" htmlFor="summary-token">
-              <Input id="summary-token" type="password" autoComplete="off" value={apiToken} onChange={(event) => setApiToken(event.target.value)} />
-            </Field>
-            <Button size="sm" disabled={summarise.isPending} onClick={() => summarise.mutate(payload)}>
+            <Button size="sm" disabled={!validRange || summarise.isPending} onClick={submit}>
               {summarise.isPending ? "Working…" : "Summarise"}
             </Button>
           </div>
 
+          {!validRange && <p className="text-xs text-danger">Choose a valid date range with From on or before To.</p>}
           {summarise.isError && <p className="text-xs text-danger">{errorMessage(summarise.error)}</p>}
           {summarise.data && <SummaryView summary={"summary" in summarise.data ? summarise.data.summary : summarise.data} />}
 
