@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'CORTA',
   webDir: 'public',
   server: {
-    url: 'https://geeth.cf',
+    url: 'https://synodus.teshank.org',
     cleartext: false,
     androidScheme: 'https',
   },
