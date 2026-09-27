@@ -1,8 +1,21 @@
-import { defineConfig, devices } from '@playwright/test';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { chromium, defineConfig, devices } from '@playwright/test';
 
-const port = process.env.PLAYWRIGHT_PORT ?? '3000';
+const port = process.env.PLAYWRIGHT_PORT ?? '3100';
 const baseURL = `http://127.0.0.1:${port}`;
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+function chromiumExecutable() {
+  if (process.env.CI) return '/usr/bin/chromium';
+  if (existsSync(chromium.executablePath())) return undefined;
+  const flatpakPath = 'app/com.google.Chrome/current/active/files/extra/chrome';
+  return [
+    join('/var/lib/flatpak', flatpakPath),
+    join(homedir(), '.local/share/flatpak', flatpakPath),
+  ].find(existsSync);
+}
 
 export default defineConfig({
   testDir: './tests',
@@ -17,15 +30,15 @@ export default defineConfig({
       API_PROXY_TARGET: 'http://127.0.0.1:9',
     },
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    // Reusing a dev server can silently run these mock tests against live API settings.
+    reuseExistingServer: false,
   },
   fullyParallel: true,
   expect: { timeout: 15_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // The dev server compiles routes on demand; more than a few parallel workers
-  // makes the first run of a route time out rather than fail for a real reason.
-  workers: process.env.CI ? 1 : 4,
+  // Cold route compilation on the dev server can exhaust the per-test timeout.
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL,
@@ -36,7 +49,7 @@ export default defineConfig({
       name: 'chromium',
       use: { 
         ...devices['Desktop Chrome'],
-        executablePath: process.env.CI ? '/usr/bin/chromium' : undefined,
+        launchOptions: { executablePath: chromiumExecutable() },
       },
     },
     

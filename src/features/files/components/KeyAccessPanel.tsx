@@ -33,7 +33,7 @@ export function KeyAccessPanel({
   hasFiles: boolean;
 }) {
   const [busy, setBusy] = useState(false);
-  const requests = useKeyAccessRequests(teamId, orgId);
+  const requests = useKeyAccessRequests(teamId, orgId, isLive("files") && hasFiles);
   const request = useRequestKeyAccess(teamId, orgId);
   const decide = useDecideKeyAccess(teamId, orgId);
   const isLeader = can(actor, "file:access_decide");

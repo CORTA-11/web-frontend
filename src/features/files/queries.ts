@@ -41,10 +41,11 @@ export function useDownloadFile(teamId: string, orgId: string) {
   });
 }
 
-export const useKeyAccessRequests = (teamId: string, orgId: string) =>
+export const useKeyAccessRequests = (teamId: string, orgId: string, enabled: boolean) =>
   useQuery({
     queryKey: qk.keyAccessRequests(teamId),
     queryFn: () => keyAccessApi.list(teamId, orgId),
+    enabled,
   });
 
 export function useRequestKeyAccess(teamId: string, orgId: string) {

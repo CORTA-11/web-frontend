@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon, Trash2Icon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { QueryBoundary } from "@/components/common/QueryBoundary";
 import { DocEditor } from "@/features/docs/components/DocEditor";
 import { useDeleteDoc, useDoc } from "@/features/docs/queries";
@@ -24,10 +24,10 @@ export default function DocPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <div className="flex items-center gap-2">
-        <Button size="xs" variant="ghost" render={<Link href={docsPath} />}>
+        <Link href={docsPath} className={buttonVariants({ size: "xs", variant: "ghost" })}>
           <ArrowLeftIcon />
           All documents
-        </Button>
+        </Link>
         {can(actor, "doc:delete") && (
           <Button
             size="xs"
