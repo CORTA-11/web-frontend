@@ -55,7 +55,13 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
 /** Picks the most specific problem detail: title, then the first violation. */
 async function messageFrom(response: Response): Promise<string> {
   if (!response.headers.get("content-type")?.includes("json")) {
-    return (await response.text()).trim() || response.statusText;
+    const message = (await response.text()).trim();
+    if (response.headers.get("content-type")?.includes("html") || /^<(!doctype|html)\b/i.test(message)) {
+      if (response.status === 504) return "The request timed out. Please try again.";
+      if (response.status >= 500) return "Service temporarily unavailable. Please try again.";
+      return `Request failed (HTTP ${response.status}).`;
+    }
+    return message || response.statusText;
   }
   try {
     const body: unknown = await response.json();
