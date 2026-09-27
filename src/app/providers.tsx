@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { NativePushProvider } from "@/components/NativePushProvider";
+import { AiInboxProvider } from "@/features/ai/components/AiInboxProvider";
 import { MOCKS_ENABLED } from "@/lib/env";
 import { ApiError } from "@/lib/http";
 
@@ -38,7 +39,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <NativePushProvider />
-      {ready ? children : null}
+      {ready ? <AiInboxProvider>{children}</AiInboxProvider> : null}
       <Toaster position="bottom-right" toastOptions={{ className: "font-sans text-sm" }} />
     </QueryClientProvider>
   );

@@ -9,7 +9,7 @@ import { useTeamContext } from "@/features/teams/queries";
 
 export default function ChatPage() {
   const { teamId } = useParams<{ teamId: string }>();
-  const { team, actor } = useTeamContext(teamId);
+  const { team } = useTeamContext(teamId);
   const isMember = Boolean(team.data?.my_role);
 
   return (
@@ -17,7 +17,7 @@ export default function ChatPage() {
       <PageHeader
         eyebrow={team.data?.name ?? "Team"}
         title="Chat"
-        actions={isMember ? <ChatSummaryDialog teamId={teamId} actor={actor} /> : null}
+        actions={isMember ? <ChatSummaryDialog teamId={teamId} /> : null}
       />
       <TeamMembersOnly teamId={teamId}>
         <ChatRoom teamId={teamId} />

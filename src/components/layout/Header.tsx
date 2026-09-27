@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
+import { AiInboxIndicator } from "@/features/ai/components/AiInboxIndicator";
 import { useOrgSettings } from "@/features/settings/queries";
 import { useUserOrgs } from "@/features/auth/session";
 import {
@@ -88,6 +89,7 @@ export function Header() {
       </div>
 
       <div className="ml-auto flex items-center gap-1">
+        <AiInboxIndicator orgId={orgId} />
         <ProfileMenu />
       </div>
     </header>

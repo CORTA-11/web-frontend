@@ -3,7 +3,7 @@ import { ACCOUNTS, openTeam, signIn } from "./helpers";
 
 test.setTimeout(90_000);
 
-test("team admin saves shared settings and the summary dialog only takes dates", async ({ page }) => {
+test("team admin saves settings and can revisit a chat summary in the inbox", async ({ page }) => {
   await signIn(page, ACCOUNTS.leader);
   await openTeam(page, "Neural Imaging", "Chat");
   await expect(page).toHaveURL(/\/chat$/);
@@ -30,16 +30,32 @@ test("team admin saves shared settings and the summary dialog only takes dates",
   await page.getByRole("button", { name: "Summarise chat" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.locator("input")).toHaveCount(2);
+  await dialog.getByRole("link", { name: "Open inbox" }).click();
+  await expect(page).toHaveURL(/\/ai-inbox$/);
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Chat", exact: true }).click();
+  await page.getByRole("button", { name: "Summarise chat" }).click();
   await dialog.getByLabel("From", { exact: true }).fill("2020-01-01");
   await dialog.getByLabel("To", { exact: true }).fill("2030-01-01");
   const result = page.waitForResponse((response) => response.url().endsWith("/ai/process"));
   const summary = page.waitForRequest((request) => request.url().endsWith("/ai/process"));
-  await dialog.getByRole("button", { name: "Summarise", exact: true }).click();
+  await dialog.getByRole("button", { name: "Send to inbox" }).click();
+  await expect(dialog).toHaveCount(0);
   expect(Object.keys((await summary).postDataJSON()).sort()).toEqual(["from", "to"]);
   const response = await result;
   expect(response.ok()).toBeTruthy();
   const body = await response.json();
-  await expect(dialog.getByText(body.summary.overview, { exact: true }).first()).toBeVisible();
+  const indicator = page.getByRole("banner").getByRole("link", { name: "AI inbox, 1 new summary" });
+  await expect(indicator).toBeVisible();
+  await indicator.click();
+  await expect(page).toHaveURL(/\/ai-inbox$/);
+  await page.getByRole("button", { name: /Chat summary/ }).click();
+  await expect(indicator).toHaveCount(0);
+  await expect(page.getByText(body.summary.overview, { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Suggested tasks", { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: /Chat summary/ }).click();
+  await expect(page.getByText(body.summary.overview, { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Suggested tasks", { exact: true })).toBeVisible();
 });
 
 test("a team member cannot open team settings", async ({ page }) => {

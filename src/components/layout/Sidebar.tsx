@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import {
-  BoxesIcon, CalendarClockIcon, FilesIcon, FileTextIcon, LayoutGridIcon,
+  BoxesIcon, CalendarClockIcon, FilesIcon, FileTextIcon, InboxIcon, LayoutGridIcon,
   MessagesSquareIcon, SettingsIcon, UsersIcon, UsersRoundIcon,
 } from "lucide-react";
 import { NavItem } from "@/components/layout/NavItem";
@@ -10,6 +10,7 @@ import { Wordmark } from "@/components/layout/Wordmark";
 import { useTeams } from "@/features/teams/queries";
 import { useSession } from "@/features/auth/session";
 import { can } from "@/lib/rbac";
+import { useAiInbox } from "@/features/ai/useAiInbox";
 
 const TEAM_SECTIONS = [
   { slug: "board", label: "Board", icon: LayoutGridIcon },
@@ -23,6 +24,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { orgId, teamId } = useParams<{ orgId: string; teamId?: string }>();
   const { user } = useSession();
   const teams = useTeams(orgId);
+  const inbox = useAiInbox();
   const isAdmin = can(user && { orgRole: user.org_role }, "org:manage");
   // Only teams you belong to are navigable; admins manage the rest from Teams.
   const myTeams = teams.data?.filter((team) => team.my_role) ?? [];
@@ -70,6 +72,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   indent
                 />
               ))}
+            {teamId === team.public_id && (
+              <NavItem
+                href={`${base}/teams/${team.public_id}/ai-inbox`}
+                label="AI inbox"
+                icon={InboxIcon}
+                indent
+                trailing={inbox.items.filter((item) => item.orgId === orgId && item.teamId === team.public_id && item.status === "ready" && !item.read).length || undefined}
+              />
+            )}
             {teamId === team.public_id && can(user && { orgRole: user.org_role, teamRole: team.my_role }, "team:settings") && (
               <NavItem href={`${base}/teams/${team.public_id}/settings`} label="Team settings" icon={SettingsIcon} indent />
             )}
