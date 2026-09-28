@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'CORTA',
   webDir: 'public',
   server: {
-    url: 'https://synodus.teshank.org',
+    url: 'https://synodus.cse23.org',
     cleartext: false,
     androidScheme: 'https',
   },
