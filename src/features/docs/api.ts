@@ -7,6 +7,7 @@ type LiveDocument = {
   team_id: string;
   title: string;
   updated_by: string;
+  updated_by_name?: string;
   updated_at: string;
 };
 
@@ -19,7 +20,8 @@ const fromLive = (document: LiveDocument): DocSummary => ({
   team_public_id: document.team_id,
   title: document.title,
   updated_at: document.updated_at,
-  updated_by: document.updated_by,
+  // core-api retains updated_by as an identity; the UI contract expects a display name.
+  updated_by: document.updated_by_name?.trim() || "Unknown editor",
 });
 const projectionFromLive = (document: LiveDocumentProjection): Doc => ({
   ...fromLive(document),
