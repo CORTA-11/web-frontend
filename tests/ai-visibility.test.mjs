@@ -37,22 +37,16 @@ async function renderDialog(live, enabled = false) {
   const { ChatSummaryDialog } = load('src/features/ai/components/ChatSummaryDialog.tsx', {
     'next/navigation': { useParams: () => ({ orgId: 'org' }) },
     '@/lib/env': env,
-    '@/components/ui/button': { Button: shell },
+    '@/components/ui/button': { Button: shell, buttonVariants: () => '' },
     '@/components/ui/dialog': Object.fromEntries(
       ['Dialog', 'DialogContent', 'DialogDescription', 'DialogHeader', 'DialogTitle', 'DialogTrigger']
         .map((name) => [name, shell])),
     '@/components/ui/input': { Input: () => null },
     '@/components/common/Field': { Field: shell },
-    '@/features/ai/components/ExtractedTasks': { ExtractedTasks: shell },
-    '@/features/ai/components/SummaryView': { SummaryView: shell },
-    '@/features/ai/queries': { useChatSummary: () => ({}) },
-    '@/features/teams/queries': { useMembers: () => ({ data: [] }) },
+    '@/features/ai/useAiInbox': { useAiInbox: () => ({ submit: () => {} }) },
     '@/features/settings/queries': { useOrgSettings: () => ({ data: settings }) },
-    '@/lib/http': { errorMessage: String },
-    '@/lib/rbac': { can: () => true },
-    '@/features/teams/api': { numericKey: Number },
   });
-  return renderToStaticMarkup(React.createElement(ChatSummaryDialog, { teamId: 'team', actor: null }));
+  return renderToStaticMarkup(React.createElement(ChatSummaryDialog, { teamId: 'team' }));
 }
 
 test('live chat exposes AI summary with organization settings lacking AI configuration', async () => {
