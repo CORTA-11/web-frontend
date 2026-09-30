@@ -78,5 +78,12 @@ async function messageFrom(response: Response): Promise<string> {
   }
 }
 
+/** Cookie-authenticated SSE; EventSource owns retries and never exposes tokens. */
+export function subscribe(path: string, event: string, onEvent: () => void): () => void {
+  const source = new EventSource(`${API_BASE}${path}`, { withCredentials: true });
+  source.addEventListener(event, onEvent);
+  return () => source.close();
+}
+
 export const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";
