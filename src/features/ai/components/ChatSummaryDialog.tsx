@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { format, subDays } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -63,14 +63,13 @@ export function ChatSummaryDialog({ teamId }: { teamId: string }) {
             <Button size="sm" disabled={!validRange} onClick={submit}>
               Send to inbox
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              nativeButton={false}
-              render={<Link href={`/orgs/${orgId}/teams/${teamId}/ai-inbox`} onClick={() => setOpen(false)} />}
+            <Link
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+              href={`/orgs/${orgId}/teams/${teamId}/ai-inbox`}
+              onClick={() => setOpen(false)}
             >
               Open inbox
-            </Button>
+            </Link>
           </div>
 
           {!validRange && <p className="text-xs text-danger">Choose a valid date range with From on or before To.</p>}

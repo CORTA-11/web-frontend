@@ -19,6 +19,7 @@ function chromiumExecutable() {
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.ts',
   testIgnore: '**/live/**',
   webServer: {
     command: `${npmCommand} run dev -- --port ${port}`,
