@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AccessStatus } from "@/features/content-access/components/AccessStatus";
 import { AccessControls } from "@/features/content-access/components/AccessControls";
 import { useContentAccess } from "@/features/content-access/queries";
 import { Trash2Icon } from "lucide-react";
@@ -33,7 +34,8 @@ export function DocList({ basePath, orgId, teamId, docs, canDelete }: Props) {
           <TableHead>Title</TableHead>
           <TableHead className="hidden sm:table-cell">Last edited by</TableHead>
           <TableHead>Updated</TableHead>
-          <TableHead>Access</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="w-36">Access</TableHead>
           {canDelete && <TableHead className="w-8" />}
         </TableRow>
       </TableHeader>
@@ -49,7 +51,8 @@ export function DocList({ basePath, orgId, teamId, docs, canDelete }: Props) {
             <TableCell className="text-muted-foreground" data-numeric>
               {relative(doc.updated_at)}
             </TableCell>
-            <TableCell><AccessControls orgId={orgId} teamId={teamId} kind="document" resourceId={doc.id} title={doc.title} /></TableCell>
+            <TableCell><AccessStatus orgId={orgId} teamId={teamId} kind="document" resourceId={doc.id} /></TableCell>
+            <TableCell><AccessControls orgId={orgId} teamId={teamId} kind="document" resourceId={doc.id} title={doc.title} showStatus={false} /></TableCell>
             {canDelete && (
               <TableCell>
                 <Button

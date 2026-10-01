@@ -18,6 +18,34 @@ async function decideAsCreator(page: Page, resourceId: string, decision: "approv
   }, { resourceId, decision, creator });
 }
 
+for (const catalog of [
+  { section: "Documents", owned: "Imaging pipeline v2 — spec", restricted: "Weekly sync — imaging" },
+  { section: "Files", owned: "segmentation-params.json", restricted: "lsm900-calibration-2026-08.pdf" },
+]) {
+  test(`${catalog.section} separate status from vertically aligned access buttons`, async ({ page }) => {
+    await signIn(page, ACCOUNTS.member);
+    await openTeam(page, "Neural Imaging", catalog.section);
+    await expect(page.getByRole("columnheader", { name: "Status", exact: true })).toBeVisible();
+    const headers = await page.getByRole("columnheader").allTextContents();
+    const statusColumn = headers.indexOf("Status");
+    const accessColumn = headers.indexOf("Access");
+    expect(statusColumn).toBeGreaterThanOrEqual(0);
+    expect(accessColumn).toBe(statusColumn + 1);
+    const owned = page.getByRole("row").filter({ hasText: catalog.owned });
+    const restricted = page.getByRole("row").filter({ hasText: catalog.restricted });
+    await expect(owned.getByRole("cell").nth(statusColumn)).toHaveText("Creator");
+    await expect(restricted.getByRole("cell").nth(statusColumn)).toHaveText("Restricted");
+    await expect(owned.getByRole("cell").nth(accessColumn)).toHaveText("Manage access");
+    await expect(restricted.getByRole("cell").nth(accessColumn)).toHaveText("Request access");
+    const manage = await owned.getByRole("button", { name: "Manage access" }).boundingBox();
+    const request = await restricted.getByRole("button", { name: "Request access" }).boundingBox();
+    expect(manage).not.toBeNull();
+    expect(request).not.toBeNull();
+    expect(Math.abs(manage!.x - request!.x)).toBeLessThan(1);
+    expect(Math.abs(manage!.width - request!.width)).toBeLessThan(1);
+  });
+}
+
 test("restricted document can be requested, denied, retried and opened after creator approval via SSE", async ({ page }) => {
   await signIn(page, ACCOUNTS.member);
   await openTeam(page, "Neural Imaging", "Documents");
