@@ -65,11 +65,6 @@ export function TaskCard({ task, member, onOpen, dragging }: Props) {
           </time>
         )}
 
-        {task.tags.map((tag) => (
-          <span key={tag} className="data-mono bg-foreground px-2 py-1 uppercase text-background">
-            #{tag}
-          </span>
-        ))}
       </div>
     </article>
   );

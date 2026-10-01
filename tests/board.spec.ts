@@ -6,6 +6,7 @@ test("creates a task, edits it and deletes it", async ({ page }) => {
   await openTeam(page, "Neural Imaging", "Board");
 
   await page.getByRole("button", { name: "New task" }).click();
+  await expect(page.getByLabel("Tags", { exact: true })).toHaveCount(0);
   await page.getByLabel("Title").fill("Verify z-offset on batch 05");
   await page.getByLabel("Priority").selectOption("high");
   await page.getByRole("button", { name: "Create task" }).click();
@@ -14,6 +15,7 @@ test("creates a task, edits it and deletes it", async ({ page }) => {
   await expect(card).toBeVisible();
 
   await card.click();
+  await expect(page.getByLabel("Tags", { exact: true })).toHaveCount(0);
   await page.getByLabel("Title").fill("Verify z-offset on batch 06");
   await page.getByRole("button", { name: "Save task" }).click();
   await expect(page.getByText("Verify z-offset on batch 06")).toBeVisible();
@@ -52,4 +54,20 @@ test("filters the board by assignee", async ({ page }) => {
   await page.getByLabel("Assignee").selectOption({ label: "Assigned to me" });
   await expect(page.getByText("Calibrate LSM900 after objective swap")).toHaveCount(0);
   await expect(page.getByText("Re-run segmentation on 12 Aug stack")).toBeVisible();
+});
+
+test("tags are hidden from cards and editing other fields preserves stored tags", async ({ page }) => {
+  await signIn(page, ACCOUNTS.member);
+  await openTeam(page, "Neural Imaging", "Board");
+  await expect(page.getByText("#pipeline", { exact: true })).toHaveCount(0);
+  await page.getByText("Re-run segmentation on 12 Aug stack", { exact: true }).click();
+  await expect(page.getByLabel("Tags", { exact: true })).toHaveCount(0);
+  await page.getByLabel("Title", { exact: true }).fill("Re-run segmentation with updated calibration");
+  const request = page.waitForRequest((request) => request.method() === "PATCH" && request.url().endsWith("/board/tasks/t-1"));
+  const response = page.waitForResponse((response) => response.request().method() === "PATCH" && response.url().endsWith("/board/tasks/t-1"));
+  await page.getByRole("button", { name: "Save task", exact: true }).click();
+  expect((await request).postDataJSON()).not.toHaveProperty("tags");
+  expect(await (await response).json()).toMatchObject({ tags: ["pipeline"] });
+  await expect(page.getByText("Re-run segmentation with updated calibration", { exact: true })).toBeVisible();
+  await expect(page.getByText("#pipeline", { exact: true })).toHaveCount(0);
 });

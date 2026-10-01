@@ -20,7 +20,6 @@ type Values = {
   priority: Task["priority"];
   start_date: string;
   due_date: string;
-  tags: string;
 };
 
 const asDateInput = (value: string | null) => (value ? value.slice(0, 10) : "");
@@ -51,7 +50,6 @@ export function TaskDialog({ teamId, orgId, columns, members, task, defaultColum
       priority: task?.priority ?? "medium",
       start_date: asDateInput(task?.start_date ?? null),
       due_date: asDateInput(task?.due_date ?? null),
-      tags: task?.tags.join(", ") ?? "",
     },
   });
 
@@ -64,7 +62,6 @@ export function TaskDialog({ teamId, orgId, columns, members, task, defaultColum
       priority: values.priority,
       start_date: asIso(values.start_date),
       due_date: asIso(values.due_date),
-      tags: values.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
     };
     if (!patch.title) return;
     if (task) await update.mutateAsync({ taskId: task.id, patch });
@@ -113,15 +110,12 @@ export function TaskDialog({ teamId, orgId, columns, members, task, defaultColum
             </Field>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Starts" htmlFor="task-start">
               <Input id="task-start" type="date" {...register("start_date")} />
             </Field>
             <Field label="Due" htmlFor="task-due">
               <Input id="task-due" type="date" {...register("due_date")} />
-            </Field>
-            <Field label="Tags" htmlFor="task-tags" hint="Comma separated">
-              <Input id="task-tags" {...register("tags")} />
             </Field>
           </div>
 
