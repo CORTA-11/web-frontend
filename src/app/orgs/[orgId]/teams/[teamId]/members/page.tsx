@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { QueryBoundary } from "@/components/common/QueryBoundary";
 import { AddMemberForm } from "@/features/teams/components/AddMemberForm";
 import { MembersTable } from "@/features/teams/components/MembersTable";
-import { TeamNameForm } from "@/features/teams/components/TeamNameForm";
 import { useLeaveTeam, useMembers, useTeamContext } from "@/features/teams/queries";
 import { can } from "@/lib/rbac";
 
@@ -42,8 +41,6 @@ export default function MembersPage() {
           <MembersTable teamId={teamId} members={data} actor={actor} currentUserId={user?.id} />
         )}
       </QueryBoundary>
-
-      {can(actor, "team:rename") && team.data && <TeamNameForm orgId={orgId} team={team.data} />}
     </div>
   );
 }
