@@ -7,8 +7,6 @@ import { dayShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 
-const PRIORITY_RULE = { high: "border-l-danger", medium: "border-l-warn", low: "border-l-border" };
-
 export type TeamTask = Task & { teamName: string; teamId: string; columnTitle: string };
 
 export function AssignedTasks({ orgId, tasks }: { orgId: string; tasks: TeamTask[] }) {
@@ -17,17 +15,14 @@ export function AssignedTasks({ orgId, tasks }: { orgId: string; tasks: TeamTask
   }
 
   return (
-    <ul className="flex flex-col gap-px">
+    <ul className="overview-list flex flex-col">
       {tasks.map((task) => {
         const overdue = task.due_date && isPast(new Date(task.due_date));
         return (
           <li key={task.id}>
             <Link
               href={`/orgs/${orgId}/teams/${task.teamId}/board`}
-              className={cn(
-                "flex items-baseline gap-3 border-l-2 bg-card px-3 py-2 hover:bg-muted",
-                PRIORITY_RULE[task.priority]
-              )}
+              className="flex items-baseline gap-3 bg-card px-3 py-2 hover:bg-muted"
             >
               <span className="min-w-0 flex-1 truncate text-sm">{task.title}</span>
               <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
@@ -36,7 +31,7 @@ export function AssignedTasks({ orgId, tasks }: { orgId: string; tasks: TeamTask
               {task.due_date && (
                 <time
                   dateTime={task.due_date}
-                  className={cn("shrink-0 text-xs", overdue ? "font-medium text-danger" : "text-muted-foreground")}
+                  className={cn("data-mono shrink-0", overdue ? "font-medium text-danger" : "text-muted-foreground")}
                 >
                   {dayShort(task.due_date)}
                 </time>
