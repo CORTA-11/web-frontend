@@ -8,6 +8,7 @@ import { NativePushProvider } from "@/components/NativePushProvider";
 import { AiInboxProvider } from "@/features/ai/components/AiInboxProvider";
 import { MOCKS_ENABLED } from "@/lib/env";
 import { ApiError } from "@/lib/http";
+import { AccentPreference } from "@/features/appearance/components/AccentPreference";
 
 const makeClient = () =>
   new QueryClient({
@@ -39,6 +40,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
+      <AccentPreference />
       <NativePushProvider />
       {ready ? <><OrganizationEvents /><AiInboxProvider>{children}</AiInboxProvider></> : null}
       <Toaster position="bottom-right" toastOptions={{ className: "font-sans text-sm" }} />

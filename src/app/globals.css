@@ -97,6 +97,13 @@
   --sidebar-ring: var(--paper);
 }
 
+:root[data-accent="blue"] { --cobalt: #1637D6; }
+:root[data-accent="violet"] { --cobalt: #6441A5; }
+:root[data-accent="burgundy"] { --cobalt: #8C2946; }
+:root[data-accent="amber"] { --cobalt: #855500; }
+:root[data-accent="forest"] { --cobalt: #286044; }
+:root[data-accent="graphite"] { --cobalt: var(--muted-text); }
+
 @layer base {
   * { @apply border-border; }
   body {
