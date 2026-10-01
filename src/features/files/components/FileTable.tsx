@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EmptyState } from "@/components/common/EmptyState";
 import { useDeleteFile, useDownloadFile } from "@/features/files/queries";
 import { fileCrypto } from "@/lib/crypto";
+import { AccessControls } from "@/features/content-access/components/AccessControls";
+import { useContentAccess } from "@/features/content-access/queries";
 import { useFormat } from "@/lib/use-format";
 import type { StoredFile } from "@/lib/types";
 
@@ -21,6 +23,7 @@ export function FileTable({ teamId, orgId, files, currentUserId, canDeleteAny }:
   const { dateTime, fileSize } = useFormat();
   const download = useDownloadFile(teamId, orgId);
   const remove = useDeleteFile(teamId, orgId);
+  const access = useContentAccess(orgId, teamId);
 
   if (!files.length) {
     return <EmptyState title="No files yet" hint="Drop files onto this page or use Upload." />;
@@ -34,6 +37,7 @@ export function FileTable({ teamId, orgId, files, currentUserId, canDeleteAny }:
           <TableHead className="hidden sm:table-cell">Size</TableHead>
           <TableHead className="hidden md:table-cell">Uploaded by</TableHead>
           <TableHead className="hidden lg:table-cell">When</TableHead>
+          <TableHead>Access</TableHead>
           <TableHead className="w-20" />
         </TableRow>
       </TableHeader>
@@ -60,12 +64,14 @@ export function FileTable({ teamId, orgId, files, currentUserId, canDeleteAny }:
             <TableCell className="hidden lg:table-cell text-muted-foreground" data-numeric>
               {dateTime(file.uploaded_at)}
             </TableCell>
+            <TableCell><AccessControls orgId={orgId} teamId={teamId} kind="file" resourceId={file.id} title={file.name} /></TableCell>
             <TableCell>
               <div className="flex items-center justify-end gap-0.5">
                 <Button
                   size="icon-xs"
                   variant="ghost"
                   aria-label={`Download ${file.name}`}
+                  disabled={download.isPending || !access.data?.items.some((entry) => entry.kind === "file" && entry.resource_id === file.id && entry.can_access)}
                   onClick={() => download.mutate(file)}
                 >
                   <DownloadIcon />

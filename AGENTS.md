@@ -54,7 +54,10 @@ a module is one person's diff.
   readable by team members only. Being an organisation admin or a platform
   operator grants administration rights, never read access to team content
   (SRS 3.5.4.2, 3.1.8.2). Enforced in `src/mocks/guard.ts` on the server side and
-  by `TeamMembersOnly` / `OrgGate` in the UI.
+  by `TeamMembersOnly` / `OrgGate` in the UI. Opening documents and downloading
+  files also requires an individual creator grant; `features/content-access`
+  owns those controls and the team header's SSE notifications. File grants
+  prepare the recipient's encryption-key wrap before recording permission.
 - `lib/rbac.ts` holds every permission rule, one line per SRS clause it enforces.
 - **File bytes are sealed in the browser.** `lib/crypto.ts` owns the AES-256-GCM
   envelope and the E2EE key material (PBKDF2-SHA256, RSA-OAEP, AES-GCM) and is the

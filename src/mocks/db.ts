@@ -1,5 +1,6 @@
 import * as seed from "@/mocks/seed";
 import type { NotificationPrefs } from "@/lib/types";
+import type { AccessRequest } from "@/features/content-access/api";
 
 /** Mutable in-memory copy of the seed, reset on page reload. */
 export const db = {
@@ -13,6 +14,8 @@ export const db = {
   resources: structuredClone(seed.resources),
   bookings: structuredClone(seed.bookings),
   requests: structuredClone(seed.requests),
+  contentOwners: {} as Record<string, string>,
+  contentRequests: [] as AccessRequest[],
   docs: structuredClone(seed.docs),
   files: structuredClone(seed.files),
   /** Uploaded bytes, keyed by file id — ciphertext, exactly as the browser sent it. */

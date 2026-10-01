@@ -167,7 +167,7 @@ async function unwrapTeamKey(view: TeamKeyView, privateKey: CryptoKey): Promise<
  * they rotated. Old versions become visible to that member only here — approve
  * must run after this succeeds, so approve just records the decision.
  */
-export async function grantMemberAccess(orgId: string, teamId: string, memberUserId: string): Promise<number> {
+export async function grantMemberAccess(orgId: string, teamId: string, memberUserId: string, onlyVersion?: number): Promise<number> {
   const privateKey = requireUnlockedPrivateKey();
   const members = await keysApi.getPublicKeysForTeam(orgId, teamId);
   const member = members.find((entry) => entry.user_id === memberUserId);
@@ -176,7 +176,11 @@ export async function grantMemberAccess(orgId: string, teamId: string, memberUse
 
   const versions = await keysApi.listTeamKeys(orgId, teamId);
   let count = 0;
+  if (onlyVersion !== undefined && !versions.some((entry) => entry.version === onlyVersion &&
+    (entry.wraps.length > 0 || entry.wrapped_user_ids.includes(memberUserId))))
+    throw new Error("The file's encryption key is unavailable. Unlock your keys and try again.");
   for (const version of versions) {
+    if (onlyVersion !== undefined && version.version !== onlyVersion) continue;
     if (version.wraps.length === 0 || version.wrapped_user_ids.includes(memberUserId)) continue;
     const raw = await E2EE.unwrap(privateKey, version.wraps[0].key);
     await keysApi.addTeamKeyMemberWrap(orgId, teamId, version.version, {

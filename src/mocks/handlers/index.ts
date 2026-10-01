@@ -1,4 +1,5 @@
 import { isLive } from "@/lib/env";
+import { contentAccessHandlers } from "@/mocks/handlers/content-access";
 import { teamAISettingsHandlers } from "@/mocks/handlers/team-ai-settings";
 import { aiHandlers } from "@/mocks/handlers/ai";
 import { authHandlers } from "@/mocks/handlers/auth";
@@ -18,6 +19,7 @@ import { teamHandlers } from "@/mocks/handlers/teams";
  * mock-to-live switch.
  */
 export const handlers = [
+  ...(isLive("docs") || isLive("files") ? [] : contentAccessHandlers),
   ...(isLive("auth") ? [] : authHandlers),
   ...(isLive("teams") ? [] : teamHandlers),
   ...(isLive("teams") ? [] : invitationHandlers),

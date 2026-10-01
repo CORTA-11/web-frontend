@@ -2,6 +2,7 @@ import { HttpResponse } from "msw";
 import { teamRoute } from "@/mocks/guard";
 import { db, now, uid } from "@/mocks/db";
 import { actorFrom } from "@/mocks/session";
+import { contentPermissions } from "@/mocks/content-permissions";
 import type { Doc, DocSummary } from "@/lib/types";
 
 const summary = (doc: Doc): DocSummary => ({
@@ -15,7 +16,11 @@ const summary = (doc: Doc): DocSummary => ({
 export const docHandlers = [
   teamRoute.post(
     "/api/v1/orgs/:orgId/teams/:teamId/documents/:docId/socket-ticket",
-    () => HttpResponse.json({ token: "mock-document-ticket-is-not-valid-outside-isolated-ui-tests" }),
+    ({ request, params }) => {
+      const actor = actorFrom(request);
+      const allowed = actor && contentPermissions.snapshot(String(params.teamId), actor.id).items.some((entry) => entry.kind === "document" && entry.resource_id === params.docId && entry.can_access);
+      return allowed ? HttpResponse.json({ token: "mock-document-ticket-is-not-valid-outside-isolated-ui-tests" }) : new HttpResponse("Permission required", { status: 404 });
+    },
   ),
 
   teamRoute.get("/api/teams/:teamId/docs", ({ params }) =>
@@ -40,16 +45,23 @@ export const docHandlers = [
       content: "",
     };
     db.docs.unshift(doc);
+    contentPermissions.register("document", doc.id, actor.id);
     return HttpResponse.json(doc, { status: 201 });
   }),
 
-  teamRoute.get("/api/teams/:teamId/docs/:docId", ({ params }) => {
-    const doc = db.docs.find((d) => d.id === params.docId);
+  teamRoute.get("/api/teams/:teamId/docs/:docId", ({ request, params }) => {
+    const actor = actorFrom(request);
+    const allowed = actor && contentPermissions.snapshot(String(params.teamId), actor.id).items.some((entry) => entry.kind === "document" && entry.resource_id === params.docId && entry.can_access);
+    if (!allowed) return new HttpResponse("Permission required", { status: 404 });
+    const doc = db.docs.find((d) => d.id === params.docId && d.team_public_id === params.teamId);
     return doc ? HttpResponse.json(doc) : new HttpResponse("Document not found", { status: 404 });
   }),
 
   teamRoute.patch("/api/teams/:teamId/docs/:docId", async ({ request, params }) => {
-    const doc = db.docs.find((d) => d.id === params.docId);
+    const actor = actorFrom(request);
+    const allowed = actor && contentPermissions.snapshot(String(params.teamId), actor.id).items.some((entry) => entry.kind === "document" && entry.resource_id === params.docId && entry.can_access);
+    if (!allowed) return new HttpResponse("Permission required", { status: 404 });
+    const doc = db.docs.find((d) => d.id === params.docId && d.team_public_id === params.teamId);
     if (!doc) return new HttpResponse("Document not found", { status: 404 });
     const body = (await request.json()) as { title?: string; content?: string };
     if (body.title !== undefined) doc.title = body.title.trim() || "Untitled document";

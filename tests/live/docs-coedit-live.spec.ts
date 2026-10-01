@@ -148,6 +148,12 @@ async function createDocument(playwright: Playwright): Promise<CreatedDocument> 
   });
   expect(created.ok()).toBeTruthy();
   const { id: documentID } = (await created.json()) as { id: string };
+  const { user_id: collaboratorID } = await added.json() as { user_id: string };
+  const grant = await member.context.post(`/api/v1/orgs/${organizationID}/teams/${teamID}/content-access/grants`, {
+    data: { kind: "document", resource_id: documentID, member_id: collaboratorID },
+    headers: { "X-CSRF-Token": member.csrfToken },
+  });
+  expect(grant.status()).toBe(204);
   await member.context.dispose();
   return { documentID, teamID };
 }

@@ -3,6 +3,7 @@ import { teamRoute } from "@/mocks/guard";
 import { db, now, uid } from "@/mocks/db";
 import { actorFrom, teamRoleOf } from "@/mocks/session";
 import type { StoredFile } from "@/lib/types";
+import { contentPermissions } from "@/mocks/content-permissions";
 
 const shelfOf = (teamId: string) => (db.files[teamId] ??= []);
 
@@ -29,12 +30,16 @@ export const fileHandlers = [
       uploaded_at: now(),
     };
     shelfOf(String(params.teamId)).unshift(entry);
+    contentPermissions.register("file", entry.id, actor.id);
     // Kept verbatim so a download round-trips the real ciphertext, not a stand-in.
     db.fileBlobs[entry.id] = await upload.arrayBuffer();
     return HttpResponse.json(entry, { status: 201 });
   }),
 
-  teamRoute.get("/api/teams/:teamId/files/download/:fileId", ({ params }) => {
+  teamRoute.get("/api/teams/:teamId/files/download/:fileId", ({ request, params }) => {
+    const actor = actorFrom(request);
+    const allowed = actor && contentPermissions.snapshot(String(params.teamId), actor.id).items.some((entry) => entry.kind === "file" && entry.resource_id === params.fileId && entry.can_access);
+    if (!allowed) return new HttpResponse("Permission required", { status: 404 });
     const entry = shelfOf(String(params.teamId)).find((f) => f.id === params.fileId);
     if (!entry) return new HttpResponse("File not found", { status: 404 });
     // Seeded files were never uploaded through the browser, so they have no

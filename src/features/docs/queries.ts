@@ -9,11 +9,12 @@ import { notifyError } from "@/lib/query";
 export const useDocs = (orgId: string, teamId: string) =>
   useQuery({ queryKey: qk.docs(teamId), queryFn: () => docsApi.list(orgId, teamId) });
 
-export const useDoc = (orgId: string, teamId: string, docId: string) =>
+export const useDoc = (orgId: string, teamId: string, docId: string, enabled = true) =>
   useQuery({
     queryKey: qk.doc(teamId, docId),
     queryFn: () => docsApi.get(orgId, teamId, docId),
     staleTime: 0,
+    enabled,
   });
 
 export function useCreateDoc(orgId: string, teamId: string) {
@@ -22,6 +23,7 @@ export function useCreateDoc(orgId: string, teamId: string) {
     mutationFn: (title: string) => docsApi.create(orgId, teamId, title),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: qk.docs(teamId) });
+      void client.invalidateQueries({ queryKey: qk.contentAccessTeam(orgId, teamId) });
     },
     onError: notifyError,
   });
@@ -33,6 +35,7 @@ export function useDeleteDoc(orgId: string, teamId: string) {
     mutationFn: (docId: string) => docsApi.remove(orgId, teamId, docId),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: qk.docs(teamId) });
+      void client.invalidateQueries({ queryKey: qk.contentAccessTeam(orgId, teamId) });
       toast.success("Document deleted");
     },
     onError: notifyError,

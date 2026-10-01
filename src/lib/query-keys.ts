@@ -17,6 +17,8 @@ export const qk = {
   docs: (teamId: string) => ["teams", teamId, "docs"] as const,
   doc: (teamId: string, docId: string) => ["teams", teamId, "docs", docId] as const,
   files: (teamId: string) => ["teams", teamId, "files"] as const,
+  contentAccessTeam: (orgId: string, teamId: string) => ["orgs", orgId, "teams", teamId, "content-access"] as const,
+  contentAccess: (orgId: string, teamId: string, userId: string) => ["orgs", orgId, "teams", teamId, "content-access", userId] as const,
   keyAccessRequests: (teamId: string) => ["teams", teamId, "key-access-requests"] as const,
   userKeys: ["user-keys"] as const,
   notifications: ["notification-prefs"] as const,
