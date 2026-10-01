@@ -51,10 +51,11 @@ export function KeyAccessPanel({
     }
   };
 
-  const myLatest = requests.data?.filter((entry) => entry.requested_by === currentUserId).at(-1);
+  // The API lists requests newest first; older decisions must not hide a retry.
+  const myLatest = requests.data?.find((entry) => entry.requested_by === currentUserId);
   const pending = requests.data?.filter((entry) => entry.requested_by !== currentUserId && entry.status === "pending");
   const showStatus = !isLeader && myLatest !== undefined;
-  const showMemberRequest = !isLeader && myLatest === undefined && requests.data !== undefined;
+  const showMemberRequest = !isLeader && requests.data !== undefined && (myLatest === undefined || myLatest.status === "denied");
 
   if (!showStatus && !showMemberRequest && (pending?.length ?? 0) === 0) return null;
 
@@ -81,7 +82,7 @@ export function KeyAccessPanel({
             Files uploaded before you joined can only be opened after the team leader approves.
           </span>
           <Button size="sm" variant="outline" disabled={request.isPending} onClick={() => request.mutate()}>
-            {request.isPending ? "Requesting…" : "Request access to previous files"}
+            {request.isPending ? "Requesting…" : myLatest?.status === "denied" ? "Request access again" : "Request access to previous files"}
           </Button>
         </div>
       )}
