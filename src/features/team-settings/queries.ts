@@ -5,9 +5,19 @@ import { toast } from "sonner";
 import { teamSettingsApi, type TeamAISettingsInput } from "./api";
 import { qk } from "@/lib/query-keys";
 import { notifyError } from "@/lib/query";
+import { rotateTeamKey } from "@/features/files/rotate-team-key";
 
 export const useTeamAISettings = (orgId: string, teamId: string) =>
   useQuery({ queryKey: qk.teamAISettings(orgId, teamId), queryFn: () => teamSettingsApi.get(orgId, teamId) });
+
+export function useRotateTeamKey(orgId: string, teamId: string) {
+  return useMutation({
+    mutationFn: () => rotateTeamKey(orgId, teamId),
+    retry: false,
+    onSuccess: (key) => toast.success(`Team encryption key rotated to version ${key.version}`),
+    onError: notifyError,
+  });
+}
 
 export function useSaveTeamAISettings(orgId: string, teamId: string) {
   const client = useQueryClient();
