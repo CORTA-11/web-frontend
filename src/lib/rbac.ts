@@ -4,6 +4,8 @@ export type Actor = {
   orgRole: OrgRole;
   teamRole?: TeamRole | null;
   platformRole?: PlatformRole | null;
+  userId?: string;
+  creatorId?: string;
 };
 
 /**
@@ -26,6 +28,7 @@ const RULES = {
   "resource:request": (a) => a.teamRole === "TEAM_LEADER", // 3.1.3.4
   "resource:decide": (a) => a.orgRole === "ORG_ADMIN", // 3.1.3.5
   "chat:delete_any": (a) => a.teamRole === "TEAM_LEADER", // 3.1.4.4
+  "content:access_decide": (a) => !!a.teamRole && !!a.userId && a.userId === a.creatorId, // Individual creator permission, not team administration.
   "doc:delete": (a) => a.teamRole === "TEAM_LEADER", // 3.1.8.4
   "file:delete_any": (a) => a.teamRole === "TEAM_LEADER", // 3.1.6.3
 "file:access_decide": (a) => a.teamRole === "TEAM_LEADER", // 3.1.6.4 previous-file access

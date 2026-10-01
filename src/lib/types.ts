@@ -156,6 +156,7 @@ export type DocSummary = {
 export type Doc = DocSummary & { content: string };
 
 export type StoredFile = {
+  key_version?: number;
   id: string;
   name: string;
   size: number;

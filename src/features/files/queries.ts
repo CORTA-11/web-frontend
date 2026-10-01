@@ -16,6 +16,7 @@ export function useUploadFiles(teamId: string, orgId: string) {
     mutationFn: (files: File[]) => Promise.all(files.map((file) => filesApi.upload(teamId, orgId, file))),
     onSuccess: (uploaded) => {
       client.invalidateQueries({ queryKey: qk.files(teamId) });
+      void client.invalidateQueries({ queryKey: qk.contentAccessTeam(orgId, teamId) });
       toast.success(`${uploaded.length} file${uploaded.length === 1 ? "" : "s"} uploaded`);
     },
     onError: notifyError,
@@ -28,6 +29,7 @@ export function useDeleteFile(teamId: string, orgId: string) {
     mutationFn: (fileId: string) => filesApi.remove(teamId, orgId, fileId),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: qk.files(teamId) });
+      void client.invalidateQueries({ queryKey: qk.contentAccessTeam(orgId, teamId) });
       toast.success("File deleted");
     },
     onError: notifyError,

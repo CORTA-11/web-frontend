@@ -117,6 +117,7 @@ type LiveFileView = {
 
 const fromLive = (file: LiveFileView): StoredFile => ({
   id: file.id,
+  key_version: file.key_version,
   name: file.name,
   size: file.size,
   content_type: file.content_type,

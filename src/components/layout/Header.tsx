@@ -11,6 +11,7 @@ import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { CurrentTeam } from "@/components/layout/CurrentTeam";
 import { AiInboxIndicator } from "@/features/ai/components/AiInboxIndicator";
 import { KeyAccessIndicator } from "@/features/files/components/KeyAccessIndicator";
+import { AccessNotifications } from "@/features/content-access/components/AccessNotifications";
 import { useOrgSettings } from "@/features/settings/queries";
 import { useUserOrgs } from "@/features/auth/session";
 import {
@@ -98,6 +99,7 @@ export function Header() {
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
+        <AccessNotifications orgId={orgId} teamId={teamId} />
         <KeyAccessIndicator orgId={orgId} teamId={teamId} />
         <AiInboxIndicator orgId={orgId} />
         <ProfileMenu />
