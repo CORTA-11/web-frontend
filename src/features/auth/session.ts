@@ -11,7 +11,7 @@ import type { OrgRole, User } from "@/lib/types";
 import { notifyError } from "@/lib/query";
 import { ApiError } from "@/lib/http";
 import { keysApi } from "@/features/files/api";
-import { isUserKeyUnlocked, restoreUserKeysFromStorage, seedOrUnlockUserKeys } from "@/features/files/keystore";
+import { clearUserKeys, isUserKeyUnlocked, restoreUserKeysFromStorage, seedOrUnlockUserKeys } from "@/features/files/keystore";
 
 /** Where a signed-in account belongs: operators to the console, everyone else to their org. */
 export const homeFor = (user: User) =>
@@ -47,12 +47,13 @@ export function useLogin() {
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       authApi.login(email, password),
     onSuccess: async (user, { password }) => {
+      // Finish setup before mounting the session gate so restoration cannot
+      // race key creation. Failed setup is retried through the password gate.
+      if (keysAreLive() && user.public_id)
+        await seedOrUnlockUserKeys(password, user.public_id).catch(() => {});
+      void client.invalidateQueries({ queryKey: qk.userKeys });
       client.setQueryData<User>(qk.session, user);
       router.replace(safeNext(search.get("next"), homeFor(user)));
-      // Best-effort: a failed unlock surfaces again as the session gate on the
-      // destination page rather than blocking navigation here.
-      if (keysAreLive() && user.public_id)
-        seedOrUnlockUserKeys(password, user.public_id).catch(() => {});
     },
   });
 }
@@ -65,10 +66,11 @@ export function useRegister() {
   return useMutation({
     mutationFn: (input: RegisterInput) => authApi.register(input),
     onSuccess: async (user, input) => {
+      if (keysAreLive() && user.public_id)
+        await seedOrUnlockUserKeys(input.password, user.public_id).catch(() => {});
+      void client.invalidateQueries({ queryKey: qk.userKeys });
       client.setQueryData<User>(qk.session, user);
       router.replace(safeNext(search.get("next"), homeFor(user)));
-      if (keysAreLive() && user.public_id)
-        seedOrUnlockUserKeys(input.password, user.public_id).catch(() => {});
     },
   });
 }
@@ -80,6 +82,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => authApi.logout(),
     onSettled: () => {
+      clearUserKeys();
       setCSRFToken(null);
       client.clear();
       router.replace("/login");
@@ -95,7 +98,7 @@ export function useLogout() {
 export function useUserKeyLock() {
   const { user } = useSession();
   const applicable = keysAreLive();
-  const { data, isPending } = useQuery({
+  const { isPending } = useQuery({
     queryKey: [...qk.userKeys, user?.public_id],
     queryFn: async () => {
       if (user?.public_id && (await restoreUserKeysFromStorage(user.public_id))) return "restored" as const;
@@ -115,7 +118,7 @@ export function useUserKeyLock() {
   return {
     applicable,
     isPending,
-    locked: applicable && !!user && data !== undefined && !isUserKeyUnlocked(),
+    locked: applicable && !!user && !isPending && !isUserKeyUnlocked(),
   };
 }
 

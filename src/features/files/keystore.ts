@@ -8,13 +8,23 @@ const WRAP_ALGORITHM = "rsa-oaep-2048";
  * reload or new login unlock without the password being asked again. */
 /* This module keeps the memory copy; key-storage.ts handles the device copy. */
 let unlockedPrivateKey: CryptoKey | null = null;
+let unlockedAccountId: string | null = null;
+
+/** Forget plaintext material on logout or account changes, not the device copy. */
+export function clearUserKeys(): void {
+  unlockedPrivateKey = null;
+  unlockedAccountId = null;
+  teamKeyCache.clear();
+}
 
 /** Auto-unlocks from the device copy; false means the password is needed. */
 export async function restoreUserKeysFromStorage(accountId: string): Promise<boolean> {
-  if (unlockedPrivateKey) return true;
+  if (unlockedPrivateKey && unlockedAccountId === accountId) return true;
+  clearUserKeys();
   const jwk = deviceKeyStorage.read(accountId);
   if (!jwk) return false;
   unlockedPrivateKey = await E2EE.importPrivateJWK(jwk);
+  unlockedAccountId = accountId;
   return true;
 }
 
@@ -34,7 +44,8 @@ function requireUnlockedPrivateKey(): CryptoKey {
 /** Login/register path: unseal with the password just typed, or seed a fresh
  * pair when the server has none; persist the result for this device. */
 export async function seedOrUnlockUserKeys(password: string, accountId: string): Promise<void> {
-  if (unlockedPrivateKey) return;
+  if (unlockedPrivateKey && unlockedAccountId === accountId) return;
+  clearUserKeys();
 
   let row: UserKeyView | null = null;
   try {
@@ -56,6 +67,7 @@ export async function seedOrUnlockUserKeys(password: string, accountId: string):
   );
   deviceKeyStorage.persist(accountId, jwk);
   unlockedPrivateKey = await E2EE.importPrivateJWK(jwk);
+  unlockedAccountId = accountId;
 }
 
 async function seedUserKeys(password: string, accountId: string): Promise<void> {
@@ -75,6 +87,7 @@ async function seedUserKeys(password: string, accountId: string): Promise<void> 
   });
   deviceKeyStorage.persist(accountId, jwk);
   unlockedPrivateKey = await E2EE.importPrivateJWK(jwk);
+  unlockedAccountId = accountId;
 }
 
 /** The team symmetric key for the next upload — reuse the active version while
@@ -158,7 +171,7 @@ export async function grantMemberAccess(orgId: string, teamId: string, memberUse
   const privateKey = requireUnlockedPrivateKey();
   const members = await keysApi.getPublicKeysForTeam(orgId, teamId);
   const member = members.find((entry) => entry.user_id === memberUserId);
-  if (!member) throw new Error("That member has no recorded encryption key");
+  if (!member) throw new Error("This member needs to sign in and unlock their encryption keys before you can approve access. Their request will remain pending.");
   const publicKey = await E2EE.importPublicKey(member.public_key);
 
   const versions = await keysApi.listTeamKeys(orgId, teamId);
