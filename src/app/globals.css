@@ -128,6 +128,10 @@
     outline: 2px solid var(--sidebar-ring);
     outline-offset: -2px;
   }
+  header [data-tour-active="true"] {
+    outline-color: var(--primary);
+    outline-offset: 4px;
+  }
   .label-eyebrow {
     @apply font-mono text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase;
   }

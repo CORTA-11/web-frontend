@@ -15,9 +15,16 @@ export function GuidedTour({ steps, disabled = false }: { steps: TourStep[]; dis
   const step = steps[index];
   const selectStep = (next: number) => {
     const target = steps[next]?.target;
-    setAnchor(target
-      ? trigger.current?.closest("nav")?.querySelector<HTMLElement>(`[data-tour="${target}"]`) ?? trigger.current
-      : trigger.current);
+    const nav = trigger.current?.closest("nav");
+    // The mobile navigation is modal: its header is covered by the drawer.
+    const organisationAnchor = target === "organisation-switcher"
+      ? nav?.closest('[role="dialog"]')
+        ? nav.querySelector<HTMLElement>('[data-tour="workspace"]')
+        : document.querySelector<HTMLElement>('[data-tour="organisation-switcher"]')
+      : null;
+    setAnchor(organisationAnchor ?? (target
+      ? nav?.querySelector<HTMLElement>(`[data-tour="${target}"]`) ?? trigger.current
+      : trigger.current));
     setIndex(next);
   };
 
@@ -38,7 +45,7 @@ export function GuidedTour({ steps, disabled = false }: { steps: TourStep[]; dis
         <CompassIcon className="size-4 shrink-0" /> Guided tour
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Positioner anchor={anchor} side="right" align="start" sideOffset={12} collisionPadding={12} className="z-50">
+        <Popover.Positioner anchor={anchor} side={step?.target === "organisation-switcher" && !anchor?.closest("nav") ? "bottom" : "right"} align="start" sideOffset={12} collisionPadding={12} className="z-50">
           <Popover.Popup data-testid="guided-tour" className="flex w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-4 border-2 border-border bg-popover p-5 text-popover-foreground shadow-md outline-none">
             <p className="label-eyebrow tabular-nums" aria-live="polite">
               {complete ? "Tour complete" : `Step ${index + 1} of ${steps.length}`}

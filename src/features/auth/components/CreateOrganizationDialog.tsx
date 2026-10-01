@@ -16,8 +16,13 @@ import { useCreateOrganization } from "@/features/auth/session";
 
 const schema = z.object({ name: z.string().trim().min(2, "Give your organisation a name") });
 
-export function CreateOrganizationDialog() {
-  const [open, setOpen] = useState(false);
+export function CreateOrganizationDialog({ open: controlledOpen, onOpenChange }: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+} = {}) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const create = useCreateOrganization();
   const { register, handleSubmit, formState, reset } = useForm({
     resolver: zodResolver(schema),
@@ -26,10 +31,12 @@ export function CreateOrganizationDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" />}>
-        <PlusIcon />
-        Create organisation
-      </DialogTrigger>
+      {controlledOpen === undefined && (
+        <DialogTrigger render={<Button size="sm" />}>
+          <PlusIcon />
+          Create organisation
+        </DialogTrigger>
+      )}
       <DialogContent>
         <form
           className="flex flex-col gap-4"

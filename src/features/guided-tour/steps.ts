@@ -25,7 +25,7 @@ export function tourSteps(context: Context): TourStep[] {
     return steps;
   }
   const steps = [
-    step("workspace", "Your organisation", "You are browsing your current organisation. The header shows its name and lets you switch when you belong to multiple organisations."),
+    step("organisation-switcher", "Your organisation", "Use the organisation dropdown in the header to switch organisations, create a new organisation, or view all your organisations."),
     step("Overview", "Start with the overview", "The Overview is your organisation's starting page."),
     step("Teams", "Find your team", context.hasTeams ? "Browse teams here, or use your team links in the sidebar to enter a team workspace." : "You are not in a team yet. Browse Teams to find a team and ask its leader about joining."),
     step("Resources", "Plan shared resources", "Find shared resources and manage their bookings here."),

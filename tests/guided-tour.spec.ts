@@ -22,7 +22,16 @@ for (const viewport of [
     await nav.getByRole("button", { name: "Guided tour" }).click();
     const tour = page.getByTestId("guided-tour");
     await expect(tour.getByText("Step 1 of 4")).toBeVisible();
-    await expect(nav.locator('[data-tour="workspace"]')).toHaveAttribute("data-tour-active", "true");
+    const firstTarget = viewport.name === "desktop"
+      ? page.getByRole("button", { name: /^Select organisation:/ })
+      : nav.locator('[data-tour="workspace"]');
+    await expect(firstTarget).toHaveAttribute("data-tour-active", "true");
+    if (viewport.name === "desktop") {
+      await expect(nav.locator('[data-tour="workspace"]')).not.toHaveAttribute("data-tour-active", "true");
+      const bounds = await tour.boundingBox();
+      const targetBounds = await firstTarget.boundingBox();
+      expect(bounds!.y).toBeGreaterThan(targetBounds!.y + targetBounds!.height);
+    }
     await expect(tour.getByRole("button", { name: "Back", exact: true })).toBeDisabled();
     await tour.getByRole("button", { name: "Next", exact: true }).click();
     await expect(nav.getByRole("link", { name: "Overview", exact: true })).toHaveAttribute("data-tour-active", "true");

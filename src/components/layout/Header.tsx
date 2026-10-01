@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { useParams } from "next/navigation";
-import { BuildingIcon, ChevronDownIcon, MenuIcon } from "lucide-react";
+import { BuildingIcon, ChevronDownIcon, MenuIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -14,6 +14,7 @@ import { KeyAccessIndicator } from "@/features/files/components/KeyAccessIndicat
 import { AccessNotifications } from "@/features/content-access/components/AccessNotifications";
 import { useOrgSettings } from "@/features/settings/queries";
 import { useUserOrgs } from "@/features/auth/session";
+import { CreateOrganizationDialog } from "@/features/auth/components/CreateOrganizationDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ export function Header() {
   const org = useOrgSettings(orgId);
   const { data: orgsPage } = useUserOrgs();
   const [open, setOpen] = useState(false);
+  const [createOrgOpen, setCreateOrgOpen] = useState(false);
   const isMounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -55,9 +57,8 @@ export function Header() {
           <span className="label-eyebrow shrink-0">
             <span className="sm:hidden">Org</span><span className="hidden sm:inline">Organisation</span>
           </span>
-          {orgs.length > 1 ? (
             <DropdownMenu>
-              <DropdownMenuTrigger title={orgName} className="flex min-w-0 max-w-full items-center gap-1 px-1 py-0.5 outline-none hover:bg-muted text-sm font-bold">
+              <DropdownMenuTrigger data-tour="organisation-switcher" aria-label={`Select organisation: ${orgName}`} title={orgName} className="flex min-w-0 max-w-full items-center gap-1 px-1 py-0.5 outline-none hover:bg-muted text-sm font-bold">
                 <span className="truncate">{orgName}</span>
                 <ChevronDownIcon className="size-3.5 text-muted-foreground shrink-0" />
               </DropdownMenuTrigger>
@@ -81,19 +82,16 @@ export function Header() {
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setCreateOrgOpen(true)} className="flex items-center gap-2">
+                  <PlusIcon className="size-3.5 shrink-0" />
+                  Create organisation
+                </DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/orgs" />} className="flex items-center gap-2">
                   <span className="truncate">View all organisations</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <div className="flex min-w-0 items-baseline gap-2 px-1">
-              <span className="truncate text-sm font-bold" title={orgName}>{orgName}</span>
-              {org.data?.public_id && (
-                <span className="data-mono hidden text-muted-foreground sm:inline">{org.data.public_id}</span>
-              )}
-            </div>
-          )}
+          <CreateOrganizationDialog open={createOrgOpen} onOpenChange={setCreateOrgOpen} />
         </div>
         <CurrentTeam orgId={orgId} teamId={teamId} />
       </div>
