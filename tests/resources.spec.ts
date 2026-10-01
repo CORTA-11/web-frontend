@@ -32,8 +32,13 @@ test("a team leader requests a slot", async ({ page }) => {
     .getByRole("row", { name: /A100 node 2/ })
     .getByRole("button", { name: "Request" })
     .click();
-  await page.getByLabel("From").fill(nextUtcMondayAt(10));
-  await page.getByRole("textbox", { name: "To" }).fill(nextUtcMondayAt(12));
+  const [startDate, startTime] = nextUtcMondayAt(10).split("T");
+  const [endDate, endTime] = nextUtcMondayAt(12).split("T");
+  await expect(page.locator('input[type="datetime-local"]')).toHaveCount(0);
+  await page.getByRole("textbox", { name: "From date", exact: true }).fill(startDate);
+  await page.getByRole("textbox", { name: "From time", exact: true }).fill(startTime);
+  await page.getByRole("textbox", { name: "To date", exact: true }).fill(endDate);
+  await page.getByRole("textbox", { name: "To time", exact: true }).fill(endTime);
   await page.getByLabel("Purpose").fill("Overnight segmentation batch 05");
   await page.getByRole("button", { name: "Send request" }).click();
 
@@ -83,6 +88,29 @@ test("inventory reveals availability only after clicking Available times", async
   await expect(dialog.getByRole("listitem").first()).toContainText("Mon 1:30 PM–Tue 3:30 AM");
   await expect(dialog).not.toContainText("UTC");
   await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
+
+test("resource editor displays availability in the selected timezone without a verbose summary", async ({ page }) => {
+  await signIn(page, ACCOUNTS.admin);
+  await page.getByRole("link", { name: /Aratuwa Research Lab/ }).click();
+  await page.getByRole("navigation").getByRole("link", { name: "Settings", exact: true }).click();
+  await page.getByLabel("Time zone", { exact: true }).selectOption("Asia/Colombo");
+  await page.getByRole("navigation").getByRole("link", { name: "Resources" }).click();
+  await page.getByRole("button", { name: "Add resource" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Available windows (Asia/Colombo)");
+  await expect(dialog.locator('input[type="time"]').first()).toHaveValue("14:30");
+  await expect(dialog.locator('input[type="time"]').nth(1)).toHaveValue("22:30");
+  await expect(dialog).not.toContainText("In Asia/Colombo:");
+  await expect(dialog).not.toContainText("UTC");
+  await dialog.getByLabel("Name", { exact: true }).fill("Timezone test room");
+  await dialog.getByLabel("Code", { exact: true }).fill("TZ-ROOM");
+  await dialog.getByRole("checkbox", { name: "Mon", exact: true }).check();
+  await dialog.getByLabel("Mon opens").fill("15:30");
+  const saved = page.waitForRequest((request) => request.method() === "POST" && request.url().includes("/resources"));
+  await dialog.getByRole("button", { name: "Add resource" }).click();
+  expect((await saved).postDataJSON().availability).toEqual([{ weekday: 1, start: "10:00", end: "17:00" }]);
   await expect(dialog).toHaveCount(0);
 });
 

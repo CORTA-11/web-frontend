@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { BookingTimeInput } from "@/features/resources/components/BookingTimeInput";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/common/Field";
 import { findClash, fitsAvailability } from "@/features/resources/availability";
@@ -86,25 +86,23 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
             </select>
           </Field>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={`From (${zone})`} htmlFor="request-start" error={invalid ? "Choose a valid future time before the end" : undefined}>
-              <Input
-                id="request-start"
-                type="datetime-local"
-                required
-                value={form.start}
-                onChange={(event) => setForm({ ...form, start: event.target.value })}
-              />
-            </Field>
-            <Field label={`To (${zone})`} htmlFor="request-end">
-              <Input
-                id="request-end"
-                type="datetime-local"
-                required
-                value={form.end}
-                onChange={(event) => setForm({ ...form, end: event.target.value })}
-              />
-            </Field>
+          <div className="flex flex-col gap-4">
+            <BookingTimeInput
+              id="request-start"
+              label="From"
+              zone={zone}
+              value={form.start}
+              error={invalid ? "Enter a valid future time before the end" : undefined}
+              onChange={(start) => setForm({ ...form, start })}
+            />
+            <BookingTimeInput
+              id="request-end"
+              label="To"
+              zone={zone}
+              value={form.end}
+              onChange={(end) => setForm({ ...form, end })}
+            />
+            <p className="text-xs text-muted-foreground">YYYY-MM-DD · HH:mm (24-hour)</p>
           </div>
 
           {outsideAvailability && (
