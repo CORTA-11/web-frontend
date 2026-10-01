@@ -15,7 +15,9 @@ Events are all-day. A start and due date create a range including both days; a s
 
 ## Scope and setup
 
-This uses Google's event-template URL. It requires no OAuth client, API key, backend changes or environment configuration. Nothing is sent to Google until the user chooses **Open Google Calendar**.
+This uses Google's event-template URL. It requires no OAuth client, API key or Google-specific environment configuration. Nothing is sent to Google until the user chooses **Open Google Calendar**.
+
+Live task dates require core-api's task-date support and tenant migration `000018_add_task_dates`. Reconcile existing tenant schemas with the updated provisioner and verify every tenant is current before deploying the updated API, then deploy this frontend. Older backend versions do not persist dates; dates previously discarded must be entered and saved again.
 
 This is a one-time copy, not synchronization. Editing or deleting a task does not update the event. Users must make subsequent changes in Google Calendar; repeated exports may create duplicate events. The app cannot determine whether the event was saved. This creates Calendar events, not Google Tasks entries.
 
