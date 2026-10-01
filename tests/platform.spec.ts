@@ -46,12 +46,15 @@ test("a member cannot open the platform console", async ({ page }) => {
 
 test("a new organisation waits for approval before it can be used", async ({ page }) => {
   await page.goto("/register");
-  await page.getByRole("tab", { name: "Create organisation" }).click();
-  await page.getByLabel("Organisation name").fill("Jaffna Coastal Lab");
   await page.getByLabel("Full name").fill("Anusha Selvarajah");
   await page.getByLabel("Email").fill("anusha@jfn.ac.lk");
   await page.getByLabel("Password").fill("synodus-demo-password");
   await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Your organisations");
+  await page.getByRole("button", { name: "Create organisation", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Organisation name").fill("Jaffna Coastal Lab");
+  await dialog.getByRole("button", { name: "Create organisation", exact: true }).click();
 
   const pendingOrg = page.locator('[aria-disabled="true"]').filter({ hasText: "Jaffna Coastal Lab" });
   await expect(pendingOrg).toContainText("Pending");
