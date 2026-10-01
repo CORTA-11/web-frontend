@@ -11,6 +11,8 @@ import { useTeams } from "@/features/teams/queries";
 import { useSession } from "@/features/auth/session";
 import { can } from "@/lib/rbac";
 import { useAiInbox } from "@/features/ai/useAiInbox";
+import { GuidedTour } from "@/features/guided-tour/components/GuidedTour";
+import { tourSteps } from "@/features/guided-tour/steps";
 
 const TEAM_SECTIONS = [
   { slug: "board", label: "Board", icon: LayoutGridIcon },
@@ -36,7 +38,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav
       className="flex h-full flex-col gap-6 overflow-y-auto py-6"
-      onClick={onNavigate}
+      onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest("a")) onNavigate?.();
+      }}
       aria-label="Main"
     >
       <div className="px-5"><Wordmark /></div>
@@ -44,7 +48,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <>
           <NavItem href={base} label="Back to organisation" icon={ArrowLeftIcon} exact />
           <section className="flex flex-col gap-0.5">
-            <div className="flex min-w-0 flex-col gap-2 px-5 pb-4">
+            <div data-tour="workspace" className="flex min-w-0 flex-col gap-2 px-5 pb-4">
               <p className="label-eyebrow">Team</p>
               <p className="break-words text-lg font-extrabold">
                 {activeTeam?.name ?? (teams.isPending ? "Loading team…" : "Team workspace")}
@@ -70,7 +74,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       ) : (
         <>
           <section className="flex flex-col gap-0.5">
-            <p className="label-eyebrow px-5 pb-3">Organisation</p>
+            <p data-tour="workspace" className="label-eyebrow px-5 pb-3">Organisation</p>
             <NavItem href={base} label="Overview" icon={BoxesIcon} exact />
             <NavItem href={`${base}/teams`} label="Teams" icon={UsersRoundIcon} exact />
             <NavItem href={`${base}/resources`} label="Resources" icon={CalendarClockIcon} />
@@ -89,6 +93,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </section>
         </>
       )}
+      <div className="mt-auto shrink-0 border-t border-sidebar-border pt-4">
+        <GuidedTour key={`${orgId}:${teamId ?? "organisation"}`} disabled={teams.isPending || teams.isError} steps={tourSteps({
+          team: Boolean(teamId),
+          member: Boolean(activeTeam),
+          hasTeams: myTeams.length > 0,
+          orgAdmin: isAdmin,
+          teamSettings: can(user && { orgRole: user.org_role, teamRole: activeTeam?.my_role }, "team:settings"),
+        })} />
+      </div>
     </nav>
   );
 }
