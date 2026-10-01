@@ -33,7 +33,7 @@ export function Header() {
   const orgs = isMounted ? (orgsPage?.items ?? []) : [];
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4 sm:px-6">
+    <header className="flex h-20 shrink-0 items-center gap-4 border-b-3 border-border px-6 md:px-12">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger
           render={<Button variant="ghost" size="icon-sm" aria-label="Open navigation" className="lg:hidden" />}
@@ -49,7 +49,7 @@ export function Header() {
       <div className="flex min-w-0 items-center gap-2">
         {orgs.length > 1 ? (
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-1 py-0.5 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 text-sm font-medium">
+            <DropdownMenuTrigger className="flex items-center gap-1 rounded-sm px-1 py-0.5 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 text-sm font-bold">
               <span className="truncate">{org.data?.name ?? "Organisation"}</span>
               <ChevronDownIcon className="size-3.5 text-muted-foreground shrink-0" />
             </DropdownMenuTrigger>
@@ -80,7 +80,7 @@ export function Header() {
           </DropdownMenu>
         ) : (
           <div className="flex min-w-0 items-baseline gap-2 px-1">
-            <span className="truncate text-sm font-medium">{org.data?.name ?? "Organisation"}</span>
+            <span className="truncate text-sm font-bold">{org.data?.name ?? "Organisation"}</span>
             {org.data?.public_id && (
               <span className="data-mono hidden text-muted-foreground sm:inline">{org.data.public_id}</span>
             )}

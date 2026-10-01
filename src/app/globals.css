@@ -1,18 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./swiss.css";
 
-/* Type scale is deliberately one step tighter than stock: 13px body, 32px rows.
-   Density is the point — this is an instrument panel, not a marketing page. */
 @theme inline {
-  --text-2xs: 0.6875rem;
+  --text-2xs: 0.75rem;
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.5rem;
-  --text-2xl: 1.875rem;
-
+  --text-base: 0.8125rem;
+  --text-lg: 0.875rem;
+  --text-xl: 1rem;
+  --text-2xl: 1.5rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -45,115 +43,92 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 3px;
-  --radius-xl: 4px;
-  --radius-2xl: 6px;
-  --radius-3xl: 8px;
-  --radius-4xl: 10px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.21 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0 0);
-  --primary: oklch(0.5 0.1 232);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.3 0 0);
-  --muted: oklch(0.975 0 0);
-  --muted-foreground: oklch(0.52 0 0);
-  --accent: oklch(0.955 0.012 232);
-  --accent-foreground: oklch(0.33 0.05 232);
-  --destructive: oklch(0.55 0.14 25);
-  --ok: oklch(0.58 0.09 155);
-  --warn: oklch(0.66 0.1 75);
-  --danger: oklch(0.55 0.14 25);
-  --presence-1: #2563eb;
-  --presence-2: #7c3aed;
-  --presence-3: #c026d3;
-  --presence-4: #db2777;
-  --presence-5: #ea580c;
-  --presence-6: #0d9488;
-  --border: oklch(0.915 0 0);
-  --input: oklch(0.89 0 0);
-  --ring: oklch(0.5 0.1 232);
-  --radius: 3px;
-  --sidebar: oklch(0.988 0 0);
-  --sidebar-foreground: oklch(0.3 0 0);
-  --sidebar-primary: oklch(0.5 0.1 232);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.955 0 0);
-  --sidebar-accent-foreground: oklch(0.21 0 0);
-  --sidebar-border: oklch(0.915 0 0);
-  --sidebar-ring: oklch(0.5 0.1 232);
+  --ink: #0B0F14;
+  --paper: #FFFFFF;
+  --cobalt: #0F6668;
+  --muted-text: #4A5360;
+  --muted-dark: #AEB6C2;
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--cobalt);
+  --primary-foreground: var(--paper);
+  --secondary: var(--paper);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper);
+  --muted-foreground: var(--muted-text);
+  --accent: var(--cobalt);
+  --accent-foreground: var(--paper);
+  /* State is conveyed by words and rules rather than a second accent palette. */
+  --destructive: var(--ink);
+  --ok: var(--ink);
+  --warn: var(--ink);
+  --danger: var(--ink);
+  --presence-1: var(--cobalt);
+  --presence-2: var(--ink);
+  --presence-3: var(--muted-text);
+  --presence-4: var(--cobalt);
+  --presence-5: var(--ink);
+  --presence-6: var(--muted-text);
+  --border: var(--ink);
+  --input: var(--ink);
+  --ring: var(--cobalt);
+  --radius: 0px;
+  --sidebar: var(--ink);
+  --sidebar-foreground: var(--paper);
+  --sidebar-primary: var(--cobalt);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--cobalt);
+  --sidebar-accent-foreground: var(--paper);
+  --sidebar-border: var(--ink);
+  --sidebar-ring: var(--paper);
 }
 
-
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
+  * { @apply border-border; }
   body {
-    @apply bg-background font-sans text-sm text-foreground antialiased;
-    line-height: 1.45;
+    @apply bg-background font-sans text-base text-foreground antialiased;
+    line-height: 1.5;
   }
-  ::selection {
-    background: color-mix(in oklch, var(--primary) 22%, transparent);
-  }
-  /* Digits that sit in columns must not shuffle width — SRS 3.3.4. */
-  time,
-  [data-numeric] {
-    font-variant-numeric: tabular-nums;
-  }
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
+  ::selection { background: var(--cobalt); color: var(--paper); }
+  time, [data-numeric] { font-variant-numeric: tabular-nums; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border: 3px solid transparent;
-    background-clip: content-box;
-    border-radius: 6px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--input);
-    background-clip: content-box;
+    background: var(--ink);
+    border: 3px solid var(--paper);
   }
 }
 
 @layer components {
-  /* Section eyebrow used across headers, table heads and panel titles. */
   .label-eyebrow {
-    @apply text-2xs font-medium tracking-[0.08em] text-muted-foreground uppercase;
+    @apply font-mono text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase;
   }
-  /* Identifiers, codes and timestamps read as data, not prose. */
-  .data-mono {
-    @apply font-mono text-xs tabular-nums;
-  }
-
-  /* Native select, dressed to match Input: the browser widget is kept for its
-     built-in keyboard and mobile behaviour, only the chrome is replaced. */
+  .data-mono { @apply font-mono text-xs font-semibold tabular-nums; }
   .select-field {
-    @apply h-8 w-full appearance-none rounded-lg border border-input bg-transparent py-1 pr-7 pl-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50;
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23767676' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5 8 10.5 12 6.5'/%3E%3C/svg%3E");
+    @apply h-10 w-full appearance-none border border-input bg-background py-2 pr-8 pl-3 text-sm outline-none disabled:opacity-50;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230B0F14' stroke-width='2'%3E%3Cpath d='M4 6 8 10 12 6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 0.4rem center;
-    background-size: 0.85rem;
+    background-position: right 0.5rem center;
+    background-size: 1rem;
   }
-  .select-field-sm {
-    @apply h-7 text-xs;
-  }
+  .select-field-sm { @apply h-8 text-xs; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }

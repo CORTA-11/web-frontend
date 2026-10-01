@@ -1,0 +1,114 @@
+/* Unlayered constraints also cover generated primitives and third-party chrome.
+   Keep these here rather than hand-editing the shadcn source files. */
+*, *::before, *::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transition-duration: 120ms;
+  transition-property: opacity, transform;
+}
+[class*="blur"] { filter: none !important; }
+[class*="gradient"] { background-image: none !important; }
+:focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 3px;
+}
+
+/* Legacy translucent surfaces become paper, never a tinted accent. */
+[class*="bg-muted/"], [class*="bg-background/"],
+[class*="bg-danger/"], [class*="bg-warn/"],
+/* Match actual classes, not conditional menu variants inside the class string. */
+[class~="bg-destructive/10"], [class~="bg-destructive/20"] {
+  background-color: var(--paper);
+}
+[class*="bg-accent/"] {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+[class*="border-primary/"] { border-color: var(--cobalt); }
+[class*="border-danger/"], [class*="border-destructive/"] { border-color: var(--ink); }
+[class*="text-foreground/"] { color: var(--ink); }
+[class*="bg-muted/"]:hover, [class*="bg-background/"]:hover {
+  background-color: var(--paper);
+}
+[data-slot="skeleton"] { background: var(--ink); }
+
+h1 { font-weight: 900; letter-spacing: -0.02em; }
+h2 { font-weight: 800; }
+main > .flex.flex-col.gap-6 { gap: 40px; }
+main section > h2 {
+  padding-bottom: 16px;
+  border-bottom: 3px solid var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+[data-slot="button"] { font-weight: 700; min-height: 36px; }
+[data-slot="button"][class*="bg-primary"] {
+  background: var(--cobalt);
+  color: var(--paper);
+}
+[data-slot="button"][class*="bg-secondary"],
+[data-slot="button"][class*="bg-destructive"] {
+  background: var(--paper);
+  color: var(--ink);
+}
+[data-slot="button"]:hover { text-decoration: underline; text-underline-offset: 4px; }
+[data-slot="input"], [data-slot="select-trigger"] { min-height: 40px; }
+[data-slot="label"], [data-slot="table-head"] {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+[data-slot="table-head"] { border-bottom: 3px solid var(--ink); padding-block: 16px; }
+[data-slot="table-cell"] { padding-block: 16px; }
+[data-slot="card"], [data-slot="dialog-content"],
+[data-slot="popover-content"], [data-slot="dropdown-menu-content"],
+[data-slot="dropdown-menu-sub-content"], [data-slot="select-content"] {
+  border: 3px solid var(--ink);
+}
+[data-slot="card-title"] { font-weight: 800; }
+[data-slot="badge"] {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.auth-panel h1 {
+  font-size: 24px;
+  line-height: 1.05;
+  padding-bottom: 24px;
+  border-bottom: 3px solid var(--ink);
+}
+[data-slot="tooltip-content"] {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+}
+[data-slot="avatar"], [data-slot="avatar-fallback"] {
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 800;
+}
+[data-slot="dialog-overlay"], [data-slot="sheet-overlay"] {
+  background: var(--ink);
+  opacity: 0.7;
+}
+[data-slot="tabs-trigger"][data-active] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.bg-sidebar {
+  --muted-foreground: var(--muted-dark);
+  --ring: var(--paper);
+  color: var(--paper);
+}
