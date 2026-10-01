@@ -26,17 +26,17 @@ export function NavItem({ href, label, icon: Icon, exact, match, indent, trailin
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-7 items-center gap-2 border-l-2 border-transparent pr-2 text-sm transition-colors",
-        indent ? "pl-6" : "pl-2.5",
+        "flex min-h-9 items-center gap-2 pr-5 text-sm font-bold",
+        indent ? "pl-8" : "pl-5",
         active
-          ? "border-primary bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-sidebar-foreground hover:underline underline-offset-4"
       )}
     >
-      {Icon && <Icon className="size-3.5 shrink-0" />}
+      {Icon && <Icon className="size-4 shrink-0" />}
       <span className="truncate">{label}</span>
       {trailing !== undefined && (
-        <span className="ml-auto data-mono text-muted-foreground" data-numeric>
+        <span className="ml-auto data-mono" data-numeric>
           {trailing}
         </span>
       )}
