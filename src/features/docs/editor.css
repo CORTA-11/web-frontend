@@ -20,7 +20,7 @@
   min-height: 20rem;
   border: 1px solid var(--border);
   padding: 16px;
-  font-size: 16px;
+  font-size: inherit;
   line-height: 1.6;
   overflow-wrap: anywhere;
   color: var(--foreground);

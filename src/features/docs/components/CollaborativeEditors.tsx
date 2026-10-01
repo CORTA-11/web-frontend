@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Collaboration } from "@tiptap/extension-collaboration";
 import { CollaborationCaret } from "@tiptap/extension-collaboration-caret";
 import Document from "@tiptap/extension-document";
@@ -14,6 +15,7 @@ type Props = { document: HocuspocusProvider["document"]; provider: HocuspocusPro
 const TitleDocument = Document.extend({ content: "paragraph" });
 
 export function CollaborativeEditors({ document, provider, user }: Props) {
+  const [textSize, setTextSize] = useState(16);
   const caret = () => CollaborationCaret.configure({
     provider,
     user,
@@ -38,7 +40,7 @@ export function CollaborativeEditors({ document, provider, user }: Props) {
   const bodyEditor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ undoRedo: false }),
+      StarterKit.configure({ undoRedo: false, link: { openOnClick: false } }),
       Collaboration.configure({ document, field: "body" }),
       caret(),
       Placeholder.configure({ placeholder: "Start writing…" }),
@@ -52,8 +54,8 @@ export function CollaborativeEditors({ document, provider, user }: Props) {
   return (
     <>
       <EditorContent editor={titleEditor} />
-      <EditorToolbar editor={bodyEditor} />
-      <EditorContent editor={bodyEditor} />
+      <EditorToolbar editor={bodyEditor} textSize={textSize} onTextSizeChange={setTextSize} />
+      <EditorContent editor={bodyEditor} style={{ fontSize: `${textSize}px` }} />
     </>
   );
 }
