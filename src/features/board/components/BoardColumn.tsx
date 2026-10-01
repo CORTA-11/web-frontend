@@ -20,10 +20,10 @@ export function BoardColumn({ column, tasks, members, onOpen, onAdd }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   return (
-    <section className="flex w-72 shrink-0 flex-col gap-2" aria-label={column.title}>
-      <header className="flex items-center justify-between border-b border-border pb-1.5">
+    <section className="flex w-80 shrink-0 flex-col gap-4" aria-label={column.title}>
+      <header className="flex items-center justify-between border-b-3 border-border pb-4">
         <div className="flex items-baseline gap-2">
-          <h2 className="label-eyebrow">{column.title}</h2>
+          <h2 className="text-xl font-extrabold uppercase tracking-[0.04em]">{column.title}</h2>
           <span className="data-mono text-muted-foreground" data-numeric>
             {tasks.length}
           </span>
@@ -41,8 +41,8 @@ export function BoardColumn({ column, tasks, members, onOpen, onAdd }: Props) {
       <div
         ref={setNodeRef}
         className={cn(
-          "flex min-h-24 flex-1 flex-col gap-2 rounded-sm p-0.5 transition-colors",
-          isOver && "bg-accent/60"
+          "flex min-h-24 flex-1 flex-col gap-4 p-0.5",
+          isOver && "outline-3 outline-primary"
         )}
       >
         <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>

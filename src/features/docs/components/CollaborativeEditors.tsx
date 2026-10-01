@@ -74,7 +74,7 @@ function renderSelection(user: Record<string, unknown>) {
   return {
     nodeName: "span",
     class: "collaboration-selection",
-    style: `background-color: ${text(user.color)}70`,
+    style: "border-bottom: 2px solid var(--cobalt)",
     "data-user-id": text(user.id),
     "data-session-id": text(user.sessionId),
   };

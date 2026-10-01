@@ -1,7 +1,8 @@
 /* Reading layout for document content — narrow measure, quiet rules. */
 .doc-title {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 .doc-title p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
@@ -18,9 +19,11 @@
   margin-top: 0.75rem;
 }
 .doc-body h2 {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  margin-top: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2.5rem;
 }
 .doc-body h3 {
   font-size: 0.8125rem;
@@ -39,7 +42,7 @@
 .doc-body li::marker { color: var(--muted-foreground); }
 .doc-body li + li { margin-top: 0.25rem; }
 .doc-body blockquote {
-  border-left: 2px solid var(--border);
+  border-left: 3px solid var(--border);
   padding-left: 0.75rem;
   color: var(--muted-foreground);
 }
@@ -48,7 +51,7 @@
   font-size: 0.75rem;
   background: var(--muted);
   padding: 0.05rem 0.25rem;
-  border-radius: 2px;
+  border-radius: 0;
 }
 .doc-body p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
@@ -58,6 +61,7 @@
   pointer-events: none;
 }
 .collaboration-caret {
+  border-color: var(--cobalt) !important;
   border-left: 2px solid;
   border-right: 2px solid transparent;
   margin-left: -1px;
@@ -65,7 +69,8 @@
   position: relative;
 }
 .collaboration-caret-label {
-  border-radius: 2px 2px 2px 0;
+  background: var(--ink) !important;
+  border-radius: 0;
   color: var(--primary-foreground);
   font-size: 0.6875rem;
   left: -2px;
