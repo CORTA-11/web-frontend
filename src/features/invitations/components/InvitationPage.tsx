@@ -9,10 +9,11 @@ import { useSession } from "@/features/auth/session";
 import { invitationsApi } from "@/features/invitations/api";
 import { Button } from "@/components/ui/button";
 import { qk } from "@/lib/query-keys";
-import { dateTime } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import { errorMessage } from "@/lib/http";
 
 export function InvitationPage() {
+  const { dateTime } = useFormat();
   const token = useSearchParams().get("token") ?? "";
   const invitePath = `/invite?token=${encodeURIComponent(token)}`;
   const { user, isPending: sessionPending } = useSession();

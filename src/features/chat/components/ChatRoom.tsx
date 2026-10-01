@@ -9,7 +9,8 @@ import { MessageItem } from "@/features/chat/components/MessageItem";
 import { useChatHistory, useDeleteMessage, useSendMessage } from "@/features/chat/queries";
 import { useChatSocket } from "@/features/chat/socket";
 import { useMembers, useTeamContext } from "@/features/teams/queries";
-import { day } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
+import { zonedDate } from "@/lib/time-zone";
 import { isLive } from "@/lib/env";
 import { can } from "@/lib/rbac";
 import type { ChatMessage } from "@/lib/types";
@@ -23,6 +24,7 @@ const grouped = (message: ChatMessage, previous?: ChatMessage) =>
   );
 
 export function ChatRoom({ teamId }: { teamId: string }) {
+  const { day } = useFormat();
   const { orgId } = useParams<{ orgId: string }>();
   const history = useChatHistory(orgId, teamId);
   const members = useMembers(teamId, orgId);
@@ -48,7 +50,7 @@ export function ChatRoom({ teamId }: { teamId: string }) {
               {messages.map((message, index) => {
                 const previous = messages[index - 1];
                 const newDay =
-                  !previous || !isSameDay(new Date(previous.created_at), new Date(message.created_at));
+                  !previous || !isSameDay(zonedDate(previous.created_at), zonedDate(message.created_at));
                 return (
                   <div key={message.id}>
                     {newDay && (

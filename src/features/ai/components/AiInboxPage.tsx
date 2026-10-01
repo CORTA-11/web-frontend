@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { useFormat } from "@/lib/use-format";
 import { Button } from "@/components/ui/button";
 import { ExtractedTasks } from "@/features/ai/components/ExtractedTasks";
 import { SummaryView } from "@/features/ai/components/SummaryView";
@@ -11,9 +11,8 @@ import { useMembers, useTeamContext } from "@/features/teams/queries";
 import { can } from "@/lib/rbac";
 import type { ExtractedTask } from "@/lib/types";
 
-const date = (value: string) => format(new Date(value), "MMM d, yyyy");
-
 export function AiInboxPage({ orgId, teamId }: { orgId: string; teamId: string }) {
+  const { day: date } = useFormat();
   const inbox = useAiInbox();
   const members = useMembers(teamId, orgId);
   const { actor } = useTeamContext(teamId);

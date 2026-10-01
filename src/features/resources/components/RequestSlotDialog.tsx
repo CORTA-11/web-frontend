@@ -14,11 +14,9 @@ import {
   findClash, fitsAvailability, localTimeZone, summariseAvailability, summariseAvailabilityLocal,
 } from "@/features/resources/availability";
 import { useRequestResource } from "@/features/resources/queries";
-import { slot } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
+import { dateTimeInput, fromDateTimeInput } from "@/lib/time-zone";
 import type { Booking, Resource, Team } from "@/lib/types";
-
-const toLocalInput = (date: Date) =>
-  new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 
 type Props = {
   orgId: string;
@@ -30,16 +28,17 @@ type Props = {
 };
 
 export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, onClose }: Props) {
+  const { slot } = useFormat();
   const request = useRequestResource(orgId);
   const [form, setForm] = useState({
     team_public_id: teams[0]?.public_id ?? "",
-    start: toLocalInput(initial?.start ?? new Date()),
-    end: toLocalInput(initial?.end ?? addHours(new Date(), 2)),
+    start: dateTimeInput(initial?.start ?? new Date()),
+    end: dateTimeInput(initial?.end ?? addHours(new Date(), 2)),
     purpose: "",
   });
 
-  const start = new Date(form.start);
-  const end = new Date(form.end);
+  const start = fromDateTimeInput(form.start);
+  const end = fromDateTimeInput(form.end);
   const validDates = Number.isFinite(start.getTime()) && Number.isFinite(end.getTime());
   const startIso = validDates ? start.toISOString() : "";
   const endIso = validDates ? end.toISOString() : "";
@@ -95,7 +94,7 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="From" htmlFor="request-start" error={invalid ? "Must be before the end" : undefined}>
+            <Field label={`From (${localTimeZone()})`} htmlFor="request-start" error={invalid ? "Choose a valid future time before the end" : undefined}>
               <Input
                 id="request-start"
                 type="datetime-local"
@@ -104,7 +103,7 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
                 onChange={(event) => setForm({ ...form, start: event.target.value })}
               />
             </Field>
-            <Field label="To" htmlFor="request-end">
+            <Field label={`To (${localTimeZone()})`} htmlFor="request-end">
               <Input
                 id="request-end"
                 type="datetime-local"

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCreateTask } from "@/features/board/queries";
-import { dayShort } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import type { ExtractedTask, TeamMember } from "@/lib/types";
 
 
@@ -18,6 +18,7 @@ type Props = {
 
 /** Suggestions stay editable until someone accepts them — SRS 3.1.9.3. */
 export function ExtractedTasks({ teamId, orgId, members, tasks, onAdded }: Props) {
+  const { dayShort } = useFormat();
   const [draft, setDraft] = useState(tasks);
   const [chosen, setChosen] = useState(() => new Set(tasks.map((_, index) => index)));
   const create = useCreateTask(teamId, orgId, members);

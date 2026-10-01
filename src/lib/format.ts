@@ -1,4 +1,5 @@
-import { differenceInMinutes, format, formatDistanceToNowStrict } from "date-fns";
+import { differenceInMinutes, formatDistanceToNowStrict } from "date-fns";
+import { getTimeZone } from "@/lib/time-zone";
 
 /** Display precision rules from SRS 3.3.4 live here and nowhere else. */
 
@@ -16,18 +17,25 @@ export const fileSize = (bytes: number) => {
   return kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(1)} MB`;
 };
 
-export const clock = (value: string | Date) => format(asDate(value), "HH:mm:ss");
-export const time = (value: string | Date) => format(asDate(value), "HH:mm");
-export const day = (value: string | Date) => format(asDate(value), "d MMM yyyy");
-export const dayShort = (value: string | Date) => format(asDate(value), "d MMM");
-export const dateTime = (value: string | Date) =>
-  format(asDate(value), "d MMM yyyy, HH:mm");
+const display = (value: string | Date, options: Intl.DateTimeFormatOptions, zone = getTimeZone()) =>
+  new Intl.DateTimeFormat("en-GB", { ...options, timeZone: zone, hourCycle: "h23" }).format(asDate(value));
+
+export const clock = (value: string | Date, zone?: string) =>
+  display(value, { hour: "2-digit", minute: "2-digit", second: "2-digit" }, zone);
+export const time = (value: string | Date, zone?: string) =>
+  display(value, { hour: "2-digit", minute: "2-digit" }, zone);
+export const day = (value: string | Date, zone?: string) =>
+  display(value, { day: "numeric", month: "short", year: "numeric" }, zone);
+export const dayShort = (value: string | Date, zone?: string) =>
+  display(value, { day: "numeric", month: "short" }, zone);
+export const dateTime = (value: string | Date, zone?: string) =>
+  `${day(value, zone)}, ${time(value, zone)}`;
 
 export const relative = (value: string | Date) =>
   formatDistanceToNowStrict(asDate(value), { addSuffix: true });
 
-export const slot = (start: string | Date, end: string | Date) =>
-  `${dayShort(start)}, ${time(start)}–${time(end)}`;
+export const slot = (start: string | Date, end: string | Date, zone?: string) =>
+  `${dayShort(start, zone)}, ${time(start, zone)}–${time(end, zone)}`;
 
 export const duration = (start: string | Date, end: string | Date) => {
   const minutes = differenceInMinutes(asDate(end), asDate(start));

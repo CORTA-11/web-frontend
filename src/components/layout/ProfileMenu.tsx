@@ -10,6 +10,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useLogout, useSession } from "@/features/auth/session";
 import { initials } from "@/lib/format";
+import { TimeZoneSelector } from "@/components/common/TimeZoneSelector";
 import { AccentMenu } from "@/features/appearance/components/AccentMenu";
 
 const ROLE_LABEL = { ORG_ADMIN: "Organisation admin", ORG_MEMBER: "Member" };
@@ -51,6 +52,8 @@ export function ProfileMenu() {
             <DropdownMenuSeparator />
           </>
         )}
+        <TimeZoneSelector />
+        <DropdownMenuSeparator />
         <AccentMenu />
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => logout.mutate()}>

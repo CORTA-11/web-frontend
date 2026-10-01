@@ -3,10 +3,11 @@
 import { XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QueryBoundary } from "@/components/common/QueryBoundary";
-import { dateTime } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import { useInvitations, useRevokeInvitation } from "@/features/invitations/queries";
 
 export function PendingInvitations({ orgId }: { orgId: string }) {
+  const { dateTime } = useFormat();
   const invitations = useInvitations(orgId);
   const revoke = useRevokeInvitation(orgId);
 

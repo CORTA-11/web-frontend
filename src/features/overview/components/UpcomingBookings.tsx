@@ -1,7 +1,7 @@
 "use client";
 
 import { EmptyState } from "@/components/common/EmptyState";
-import { duration, slot } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import type { Booking, Resource } from "@/lib/types";
 
 export function UpcomingBookings({
@@ -10,6 +10,7 @@ export function UpcomingBookings({
   bookings: Booking[];
   resources: Resource[];
 }) {
+  const { duration, slot } = useFormat();
   if (!bookings.length) {
     return <EmptyState title="No bookings coming up" hint="Approved resource slots appear here." />;
   }

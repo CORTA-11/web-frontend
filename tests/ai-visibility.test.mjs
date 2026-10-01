@@ -36,6 +36,8 @@ async function renderDialog(live, enabled = false) {
   const shell = ({ children }) => React.createElement('div', null, children);
   const { ChatSummaryDialog } = load('src/features/ai/components/ChatSummaryDialog.tsx', {
     'next/navigation': { useParams: () => ({ orgId: 'org' }) },
+    '@/lib/time-zone': load('src/lib/time-zone.ts', {}),
+    '@/lib/use-time-zone': { useTimeZone: () => 'UTC' },
     '@/lib/env': env,
     '@/components/ui/button': { Button: shell, buttonVariants: () => '' },
     '@/components/ui/dialog': Object.fromEntries(

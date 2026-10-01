@@ -4,7 +4,7 @@ import { ReplyIcon, Trash2Icon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { renderMessage } from "@/features/chat/mentions";
-import { initials, time } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import { cn } from "@/lib/utils";
 import type { ChatMessage, TeamMember } from "@/lib/types";
 
@@ -22,6 +22,7 @@ type Props = {
 export function MessageItem({
   message, members, repliedTo, grouped, canDelete, self, onReply, onDelete,
 }: Props) {
+  const { initials, time } = useFormat();
   if (message.deleted_at) {
     return (
       <p

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusDot, type Tone } from "@/components/common/StatusDot";
 import { useSetOrgStatus } from "@/features/platform/queries";
-import { day, relative } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import type { Organization, OrgStatus } from "@/lib/types";
 
 const TONE: Record<OrgStatus, Tone> = {
@@ -16,6 +16,7 @@ const TONE: Record<OrgStatus, Tone> = {
 };
 
 export function OrgTable({ orgs }: { orgs: Organization[] }) {
+  const { day, relative } = useFormat();
   const setStatus = useSetOrgStatus();
 
   const ordered = [...orgs].sort((a, b) =>

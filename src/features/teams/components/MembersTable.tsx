@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusDot } from "@/components/common/StatusDot";
 import { useRemoveMember, useSetLeader } from "@/features/teams/queries";
-import { day, initials } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import type { Actor } from "@/lib/rbac";
 import { can } from "@/lib/rbac";
 import type { TeamMember } from "@/lib/types";
@@ -17,6 +17,7 @@ import type { TeamMember } from "@/lib/types";
 type Props = { teamId: string; members: TeamMember[]; actor: Actor | null; currentUserId?: number };
 
 export function MembersTable({ teamId, members, actor, currentUserId }: Props) {
+  const { day, initials } = useFormat();
   const remove = useRemoveMember(teamId);
   const setLeader = useSetLeader(teamId);
   const canManage = can(actor, "team:manage_members");

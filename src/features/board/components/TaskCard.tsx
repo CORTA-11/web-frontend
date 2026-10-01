@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { isPast } from "date-fns";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { dayShort, initials } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import { cn } from "@/lib/utils";
 import type { Task, TeamMember } from "@/lib/types";
 
@@ -22,6 +22,7 @@ type Props = {
 };
 
 export function TaskCard({ task, member, onOpen, dragging }: Props) {
+  const { dayShort, initials } = useFormat();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id });
   const overdue = task.due_date && task.column_id !== "done" && isPast(new Date(task.due_date));

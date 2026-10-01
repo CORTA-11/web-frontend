@@ -1,7 +1,11 @@
+"use client";
+
 import type { AiProcessResponse, AiSummary } from "@/lib/types";
-import { clock } from "@/lib/format";
+
+import { useFormat } from "@/lib/use-format";
 
 export function SummaryView({ summary }: { summary: AiSummary | AiProcessResponse["summary"] }) {
+  const { clock } = useFormat();
   const processSummary = "overview" in summary;
   const headline = processSummary ? summary.overview : summary.headline;
   const bullets = processSummary ? summary.key_points : summary.bullets;

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { format, subDays } from "date-fns";
+import { subDays } from "date-fns";
+import { dateTimeInput, fromDateTimeInput } from "@/lib/time-zone";
+import { useTimeZone } from "@/lib/use-time-zone";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
@@ -12,20 +14,23 @@ import { Input } from "@/components/ui/input";
 import { Field } from "@/components/common/Field";
 import { useAiInbox } from "@/features/ai/useAiInbox";
 
-const asDate = (date: Date) => format(date, "yyyy-MM-dd");
+const asDate = (date: Date) => dateTimeInput(date).slice(0, 10);
 
 export function ChatSummaryDialog({ teamId }: { teamId: string }) {
+  const zone = useTimeZone();
   const { orgId } = useParams<{ orgId: string }>();
   const inbox = useAiInbox();
   const [open, setOpen] = useState(false);
   const [range, setRange] = useState({ from: asDate(subDays(new Date(), 7)), to: asDate(new Date()) });
 
-  const validRange = Boolean(range.from && range.to && range.from <= range.to);
+  const from = fromDateTimeInput(`${range.from}T00:00:00`, zone);
+  const to = fromDateTimeInput(`${range.to}T23:59:59.999`, zone);
+  const validRange = Number.isFinite(from.getTime()) && Number.isFinite(to.getTime()) && from <= to;
   const submit = () => {
     if (!validRange) return;
     inbox.submit({ orgId, teamId,
-      from: new Date(`${range.from}T00:00:00`).toISOString(),
-      to: new Date(`${range.to}T23:59:59.999`).toISOString(),
+      from: from.toISOString(),
+      to: to.toISOString(),
     });
     setOpen(false);
   };
@@ -38,7 +43,7 @@ export function ChatSummaryDialog({ teamId }: { teamId: string }) {
           <DialogHeader>
             <DialogTitle>Summarise chat</DialogTitle>
             <DialogDescription>
-              Only messages in this team and date range are sent to the context service.
+              Only messages in this team and date range ({zone}) are sent to the context service.
               The result will appear in your AI inbox; you can close this dialog while it runs.
             </DialogDescription>
           </DialogHeader>

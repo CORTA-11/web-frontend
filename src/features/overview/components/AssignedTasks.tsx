@@ -4,13 +4,14 @@ import Link from "next/link";
 import { isPast } from "date-fns";
 import { AddToGoogleCalendar } from "@/features/board/components/AddToGoogleCalendar";
 import { EmptyState } from "@/components/common/EmptyState";
-import { dayShort } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 
 export type TeamTask = Task & { teamName: string; teamId: string; columnTitle: string };
 
 export function AssignedTasks({ orgId, tasks }: { orgId: string; tasks: TeamTask[] }) {
+  const { dayShort } = useFormat();
   if (!tasks.length) {
     return <EmptyState title="Nothing assigned to you" hint="Tasks you are assigned show up here." />;
   }

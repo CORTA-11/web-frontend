@@ -5,6 +5,8 @@ import { Calendar, dateFnsLocalizer, Views, type View } from "react-big-calendar
 import { format, getDay, parse, startOfWeek } from "date-fns";
 import { enGB } from "date-fns/locale";
 import type { Booking, Resource } from "@/lib/types";
+import { dateTimeInput, fromDateTimeInput, zonedDate } from "@/lib/time-zone";
+import { useTimeZone } from "@/lib/use-time-zone";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "@/features/resources/calendar.css";
 
@@ -24,35 +26,34 @@ type Props = {
   onPickSlot?: (slot: Slot) => void;
 };
 
-const hourFrom = (times: string[], fallback: number, pick: (values: number[]) => number) =>
-  times.length ? pick(times.map((time) => Number(time.slice(0, 2)))) : fallback;
-
 export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
+  const zone = useTimeZone();
   const [view, setView] = useState<View>(Views.DAY);
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState<Date | null>(null);
 
   const bookable = resources.filter((resource) => resource.enabled);
-  const windows = bookable.flatMap((resource) => resource.availability);
 
   const events = useMemo(
     () =>
       bookings.map((booking) => ({
         id: booking.id,
         title: booking.details_visible ? `${booking.team_name} · ${booking.purpose}` : "Reserved",
-        start: new Date(booking.start_time),
-        end: new Date(booking.end_time),
+        start: zonedDate(booking.start_time, zone),
+        end: zonedDate(booking.end_time, zone),
         resourceId: booking.resource_id,
       })),
-    [bookings]
+    [bookings, zone]
   );
 
   const dayStart = new Date();
-  dayStart.setHours(hourFrom(windows.map((w) => w.start), 7, (values) => Math.min(...values)), 0, 0, 0);
+  dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date();
-  dayEnd.setHours(hourFrom(windows.map((w) => w.end), 22, (values) => Math.max(...values)), 0, 0, 0);
+  dayEnd.setHours(23, 59, 59, 999);
 
   return (
-    <div className="h-[32rem] min-w-0">
+    <div className="min-w-0">
+      <p className="data-mono mb-2 text-muted-foreground">Time zone: {zone}</p>
+      <div className="h-[32rem]">
       <Calendar
         localizer={localizer}
         culture="en-GB"
@@ -62,7 +63,8 @@ export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
         resourceTitleAccessor="title"
         view={view}
         onView={setView}
-        date={date}
+        date={date ?? zonedDate(new Date(), zone)}
+        getNow={() => zonedDate(new Date(), zone)}
         onNavigate={setDate}
         views={[Views.DAY, Views.WEEK, Views.AGENDA]}
         step={30}
@@ -71,10 +73,15 @@ export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
         max={dayEnd}
         selectable={Boolean(onPickSlot)}
         onSelectSlot={(slot) =>
-          onPickSlot?.({ start: slot.start, end: slot.end, resourceId: slot.resourceId as string })
+          onPickSlot?.({
+            start: fromDateTimeInput(dateTimeInput(slot.start, Intl.DateTimeFormat().resolvedOptions().timeZone), zone),
+            end: fromDateTimeInput(dateTimeInput(slot.end, Intl.DateTimeFormat().resolvedOptions().timeZone), zone),
+            resourceId: slot.resourceId as string,
+          })
         }
         popup
       />
+      </div>
     </div>
   );
 }

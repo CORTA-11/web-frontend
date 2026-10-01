@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EmptyState } from "@/components/common/EmptyState";
 import { useDeleteFile, useDownloadFile } from "@/features/files/queries";
 import { fileCrypto } from "@/lib/crypto";
-import { dateTime, fileSize } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import type { StoredFile } from "@/lib/types";
 
 type Props = {
@@ -18,6 +18,7 @@ type Props = {
 };
 
 export function FileTable({ teamId, orgId, files, currentUserId, canDeleteAny }: Props) {
+  const { dateTime, fileSize } = useFormat();
   const download = useDownloadFile(teamId, orgId);
   const remove = useDeleteFile(teamId, orgId);
 

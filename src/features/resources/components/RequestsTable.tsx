@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusDot, type Tone } from "@/components/common/StatusDot";
 import { useDecideRequest } from "@/features/resources/queries";
-import { duration, relative, slot } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import type { RequestStatus, ResourceRequest } from "@/lib/types";
 
 const TONE: Record<RequestStatus, Tone> = {
@@ -23,6 +23,7 @@ export function RequestsTable({
   requests: ResourceRequest[];
   canDecide: boolean;
 }) {
+  const { duration, relative, slot } = useFormat();
   const decide = useDecideRequest(orgId);
 
   if (!requests.length) {

@@ -10,12 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusDot } from "@/components/common/StatusDot";
 import { useDeleteTeam } from "@/features/teams/queries";
-import { day } from "@/lib/format";
+import { useFormat } from "@/lib/use-format";
 import type { Team } from "@/lib/types";
 
 const ROLE_LABEL = { TEAM_LEADER: "Leader", TEAM_MEMBER: "Member" };
 
 export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: Team[]; canDelete: boolean }) {
+  const { day } = useFormat();
   const remove = useDeleteTeam(orgId);
 
   if (!teams.length) {

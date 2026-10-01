@@ -1,4 +1,5 @@
 import type { AvailabilityWindow, Booking } from "@/lib/types";
+import { getTimeZone, zonedDate } from "@/lib/time-zone";
 
 const LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -28,16 +29,16 @@ export function summariseAvailability(windows: AvailabilityWindow[]) {
 
 const clockParts = (clock: string) => clock.split(":").map(Number) as [number, number];
 
-/** Converts the UTC recurrence into the browser's timezone for the selected week. */
+/** Converts the UTC recurrence into the selected timezone for the selected week. */
 export function summariseAvailabilityLocal(windows: AvailabilityWindow[], anchor = new Date()) {
   if (!windows.length) return "Not bookable";
   const weekStart = new Date(Date.UTC(
     anchor.getUTCFullYear(), anchor.getUTCMonth(), anchor.getUTCDate() - anchor.getUTCDay()
   ));
   const formatter = new Intl.DateTimeFormat(undefined, {
-    weekday: "short", hour: "numeric", minute: "2-digit",
+    timeZone: getTimeZone(), weekday: "short", hour: "numeric", minute: "2-digit",
   });
-  const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+  const timeFormatter = new Intl.DateTimeFormat(undefined, { timeZone: getTimeZone(), hour: "numeric", minute: "2-digit" });
   return [...windows]
     .sort((a, b) => a.weekday - b.weekday)
     .map((window) => {
@@ -49,13 +50,13 @@ export function summariseAvailabilityLocal(windows: AvailabilityWindow[], anchor
       const end = new Date(weekStart);
       end.setUTCDate(weekStart.getUTCDate() + window.weekday);
       end.setUTCHours(endHour, endMinute, 0, 0);
-      const endLabel = start.getDay() === end.getDay() ? timeFormatter.format(end) : formatter.format(end);
+      const endLabel = zonedDate(start).getDate() === zonedDate(end).getDate() ? timeFormatter.format(end) : formatter.format(end);
       return `${formatter.format(start)}–${endLabel}`;
     })
     .join(" · ");
 }
 
-export const localTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "Local time";
+export const localTimeZone = getTimeZone;
 
 /** Advisory only — the server rejects the real clash (SRS 2.4). */
 export const findClash = (bookings: Booking[], resourceId: string, start: string, end: string) =>
