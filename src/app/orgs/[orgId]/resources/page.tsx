@@ -54,10 +54,10 @@ export default function ResourcesPage() {
         }
       />
 
-      <Tabs defaultValue="schedule">
+      <Tabs defaultValue="inventory">
         <TabsList>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
           <TabsTrigger value="requests">
             Requests
             {pending > 0 && (

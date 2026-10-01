@@ -13,9 +13,11 @@ test("time zone defaults to the device, updates dates, and persists across reloa
   await expect(selector).toHaveValue("America/New_York");
   await page.keyboard.press("Escape");
   await page.getByRole("navigation").getByRole("link", { name: "Resources", exact: true }).click();
+  await page.getByRole("tab", { name: "Schedule", exact: true }).click();
   const schedule = page.getByRole("tabpanel", { name: "Schedule", exact: true });
   await expect(schedule.getByText("America/New_York", { exact: true })).toBeVisible();
   await page.reload();
+  await page.getByRole("tab", { name: "Schedule", exact: true }).click();
   await expect(schedule.getByText("America/New_York", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Account menu" }).click();
   await expect(selector).toHaveValue("America/New_York");

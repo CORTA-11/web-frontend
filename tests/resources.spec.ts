@@ -36,7 +36,19 @@ test("a team leader requests a slot", async ({ page }) => {
   const [endDate, endTime] = nextUtcMondayAt(12).split("T");
   await expect(page.locator('input[type="datetime-local"]')).toHaveCount(0);
   await page.getByRole("textbox", { name: "From date", exact: true }).fill(startDate);
-  await page.getByRole("textbox", { name: "From time", exact: true }).fill(startTime);
+  const fromTime = page.getByRole("textbox", { name: "From time", exact: true });
+  await fromTime.fill("");
+  await fromTime.pressSequentially("15");
+  await expect(fromTime).toHaveValue("15:");
+  await fromTime.pressSequentially("00");
+  await expect(fromTime).toHaveValue("15:00");
+  await fromTime.press("Backspace");
+  await fromTime.press("Backspace");
+  await fromTime.press("Backspace");
+  await expect(fromTime).toHaveValue("15");
+  await fromTime.fill("");
+  await fromTime.pressSequentially(startTime.replace(":", ""));
+  await expect(fromTime).toHaveValue(startTime);
   await page.getByRole("textbox", { name: "To date", exact: true }).fill(endDate);
   await page.getByRole("textbox", { name: "To time", exact: true }).fill(endTime);
   await page.getByLabel("Purpose").fill("Overnight segmentation batch 05");
@@ -49,8 +61,10 @@ test("schedule shows only the resource selected by its inventory tag", async ({ 
   await signIn(page, ACCOUNTS.admin);
   await page.getByRole("link", { name: /Aratuwa Research Lab/ }).click();
   await page.getByRole("navigation").getByRole("link", { name: "Resources" }).click();
+  await expect(page.getByRole("tab", { name: "Inventory" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab").nth(0)).toHaveText("Inventory");
+  await expect(page.getByRole("tab").nth(1)).toHaveText("Schedule");
   await expect(page.locator(".rbc-calendar")).toHaveCount(0);
-  await page.getByRole("tab", { name: "Inventory" }).click();
   const row = page.getByRole("row", { name: /A100 node 2/ });
   const tag = (await row.getByRole("cell").nth(2).innerText()).trim();
   await page.getByRole("tab", { name: "Schedule" }).click();
@@ -67,8 +81,10 @@ test("organisation settings offer a display-only timezone preference", async ({ 
   await page.getByRole("navigation").getByRole("link", { name: "Settings", exact: true }).click();
   await page.getByLabel("Time zone", { exact: true }).selectOption("Asia/Colombo");
   await page.getByRole("navigation").getByRole("link", { name: "Resources" }).click();
+  await page.getByRole("tab", { name: "Schedule", exact: true }).click();
   await expect(page.getByText("Asia/Colombo", { exact: true })).toBeVisible();
   await page.reload();
+  await page.getByRole("tab", { name: "Schedule", exact: true }).click();
   await expect(page.getByText("Asia/Colombo", { exact: true })).toBeVisible();
 });
 

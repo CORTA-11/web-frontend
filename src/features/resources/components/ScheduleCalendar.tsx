@@ -50,7 +50,7 @@ export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
 
   return (
     <div className="min-w-0">
-      <div className="mb-4 flex flex-wrap items-end gap-4">
+      <div className="mb-4 flex flex-wrap items-end gap-x-6 gap-y-3">
         <label className="flex flex-col gap-1">
           <span className="label-eyebrow">Resource tag</span>
           <select className="select-field" aria-label="Resource tag" value={tag} onChange={(event) => setTag(event.target.value)}>
@@ -58,10 +58,14 @@ export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
             {resources.map((item) => <option key={item.id} value={item.code}>{item.code}</option>)}
           </select>
         </label>
-        {resource && <span className="text-sm">{resource.name}</span>}
-        <span className="data-mono text-xs text-muted-foreground">{zone}</span>
-        <span className="schedule-available-key text-xs">Available</span>
-        <span className="schedule-booked-key text-xs">Booked</span>
+        <div className="flex min-h-10 flex-wrap items-center gap-x-5 gap-y-2">
+          {resource && <span className="text-sm">{resource.name}</span>}
+          <span className="data-mono text-xs text-muted-foreground">{zone}</span>
+          <div className="flex items-center gap-4" aria-label="Schedule legend">
+            <span className="schedule-available-key text-xs">Available</span>
+            <span className="schedule-booked-key text-xs">Booked</span>
+          </div>
+        </div>
       </div>
       {resource && <div className="h-[32rem]">
       <Calendar

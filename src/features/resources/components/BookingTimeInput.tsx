@@ -37,9 +37,20 @@ export function BookingTimeInput({ id, label, zone, value, onChange, error }: Pr
           pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
           className="min-w-0 flex-[2] tabular-nums"
           autoComplete="off"
+          inputMode="numeric"
+          maxLength={5}
           required
           value={time}
-          onChange={(event) => onChange(`${date}T${event.target.value}`)}
+          onChange={(event) => {
+            const raw = event.target.value;
+            const digits = raw.replace(/\D/g, "").slice(0, 4);
+            // Let backspace remove the separator rather than immediately reinserting it.
+            const deletingSeparator = time.endsWith(":") && raw.length < time.length;
+            const formatted = digits.length >= 2 && !deletingSeparator
+              ? `${digits.slice(0, 2)}:${digits.slice(2)}`
+              : digits;
+            onChange(`${date}T${formatted}`);
+          }}
         />
       </div>
     </Field>

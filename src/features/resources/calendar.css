@@ -68,13 +68,38 @@
 .rbc-off-range { color: var(--muted-text); }
 .rbc-current-time-indicator { background: var(--cobalt); height: 3px; }
 .rbc-slot-selection { background: var(--cobalt); color: var(--paper); font-size: 12px; }
-.rbc-background-event {
-  background: var(--schedule-available);
-  opacity: 0.25;
-  border: 1px solid var(--schedule-available);
+/* Match the vendor's day-slot specificity so its opacity and wrapping cannot win. */
+.rbc-day-slot .rbc-background-event {
+  background: var(--schedule-available-bg);
+  color: var(--schedule-available);
+  opacity: 1;
+  border: 0;
+  border-left: 2px solid var(--schedule-available);
+  border-radius: 0;
+  padding: 4px 8px;
 }
 .rbc-event.schedule-booked,
 .rbc-event.schedule-booked.rbc-selected,
-.rbc-event.schedule-booked:focus-visible { background: var(--schedule-booked); }
-.schedule-available-key { border-left: 2px solid var(--schedule-available); padding-left: 6px; }
-.schedule-booked-key { border-left: 2px solid var(--schedule-booked); padding-left: 6px; }
+.rbc-event.schedule-booked:focus-visible {
+  background: var(--schedule-booked-bg);
+  color: var(--schedule-booked);
+  border: 0;
+  border-left: 2px solid var(--schedule-booked);
+  border-radius: 0;
+}
+.rbc-day-slot .rbc-event,
+.rbc-day-slot .rbc-background-event { flex-flow: column nowrap; }
+.rbc-day-slot .rbc-event-label,
+.rbc-day-slot .rbc-event-content {
+  width: 100%;
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rbc-day-slot .rbc-event-content { flex: 1 1 auto; min-height: 0; }
+.schedule-available-key,
+.schedule-booked-key { display: inline-flex; align-items: center; min-height: 20px; padding-left: 8px; }
+.schedule-available-key { border-left: 2px solid var(--schedule-available); }
+.schedule-booked-key { border-left: 2px solid var(--schedule-booked); }

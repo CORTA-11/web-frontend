@@ -77,8 +77,10 @@
   --ok: var(--ink);
   --warn: var(--ink);
   --danger: var(--ink);
-  --schedule-available: #16803C;
-  --schedule-booked: #C62828;
+  --schedule-available: #15803D;
+  --schedule-available-bg: #ECFDF3;
+  --schedule-booked: #B91C1C;
+  --schedule-booked-bg: #FEF2F2;
   --presence-1: var(--cobalt);
   --presence-2: var(--ink);
   --presence-3: var(--muted-text);
