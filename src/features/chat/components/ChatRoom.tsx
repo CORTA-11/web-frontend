@@ -52,7 +52,7 @@ export function ChatRoom({ teamId }: { teamId: string }) {
                 return (
                   <div key={message.id}>
                     {newDay && (
-                      <p className="label-eyebrow sticky top-0 z-1 bg-background/90 py-2 backdrop-blur">
+                      <p className="label-eyebrow sticky top-0 z-1 bg-background py-2">
                         {day(message.created_at)}
                       </p>
                     )}

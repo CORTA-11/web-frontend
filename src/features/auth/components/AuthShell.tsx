@@ -12,7 +12,7 @@ import { Wordmark } from "@/components/layout/Wordmark";
 export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-svh lg:grid-cols-[minmax(0,22rem)_1fr]">
-      <aside className="hidden flex-col justify-between border-r border-sidebar-border bg-sidebar p-8 lg:flex">
+      <aside className="hidden flex-col justify-between bg-sidebar p-12 lg:flex">
         <Wordmark />
         {/* <dl className="flex flex-col gap-3">
           {INSTANCE.map(([term, value]) => (
@@ -27,8 +27,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
         </p>
       </aside>
 
-      <main className="flex items-center px-6 py-12 sm:px-12">
-        <div className="w-full max-w-sm">
+      <main className="auth-panel flex items-start px-6 py-12 sm:px-12 lg:py-24">
+        <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
             <Wordmark />
           </div>

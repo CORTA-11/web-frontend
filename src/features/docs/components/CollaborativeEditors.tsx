@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Collaboration } from "@tiptap/extension-collaboration";
 import { CollaborationCaret } from "@tiptap/extension-collaboration-caret";
 import Document from "@tiptap/extension-document";
@@ -14,6 +15,7 @@ type Props = { document: HocuspocusProvider["document"]; provider: HocuspocusPro
 const TitleDocument = Document.extend({ content: "paragraph" });
 
 export function CollaborativeEditors({ document, provider, user }: Props) {
+  const [textSize, setTextSize] = useState(16);
   const caret = () => CollaborationCaret.configure({
     provider,
     user,
@@ -38,20 +40,22 @@ export function CollaborativeEditors({ document, provider, user }: Props) {
   const bodyEditor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ undoRedo: false }),
+      StarterKit.configure({ undoRedo: false, link: { openOnClick: false } }),
       Collaboration.configure({ document, field: "body" }),
       caret(),
       Placeholder.configure({ placeholder: "Start writing…" }),
     ],
-    editorProps: { attributes: { class: "doc-body min-h-96 outline-none" } },
+    editorProps: {
+      attributes: { "aria-label": "Document body", role: "textbox", "aria-multiline": "true", class: "doc-body outline-none" },
+    },
   });
 
   if (!titleEditor || !bodyEditor) return null;
   return (
     <>
       <EditorContent editor={titleEditor} />
-      <EditorToolbar editor={bodyEditor} />
-      <EditorContent editor={bodyEditor} />
+      <EditorToolbar editor={bodyEditor} textSize={textSize} onTextSizeChange={setTextSize} />
+      <EditorContent editor={bodyEditor} style={{ fontSize: `${textSize}px` }} />
     </>
   );
 }
@@ -74,7 +78,7 @@ function renderSelection(user: Record<string, unknown>) {
   return {
     nodeName: "span",
     class: "collaboration-selection",
-    style: `background-color: ${text(user.color)}70`,
+    style: "border-bottom: 2px solid var(--cobalt)",
     "data-user-id": text(user.id),
     "data-session-id": text(user.sessionId),
   };

@@ -21,7 +21,7 @@ export function TeamNameForm({ orgId, team }: { orgId: string; team: Team }) {
         update.mutate({ name: name.trim(), description });
       }}
     >
-      <p className="label-eyebrow">Team settings</p>
+      <h2 className="label-eyebrow">Team details</h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name" htmlFor="team-rename">
           <Input id="team-rename" value={name} onChange={(event) => setName(event.target.value)} />

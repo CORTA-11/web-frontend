@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import { Providers } from "@/app/providers";
 import "./globals.css";
 
-const sans = IBM_Plex_Sans({
+const sans = Archivo({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-sans",
   display: "swap",
 });
 
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
   variable: "--font-mono",
   display: "swap",
 });

@@ -15,11 +15,11 @@ export function UpcomingBookings({
   }
 
   return (
-    <ul className="flex flex-col gap-px">
+    <ul className="overview-list flex flex-col">
       {bookings.map((booking) => {
         const resource = resources.find((entry) => entry.id === booking.resource_id);
         return (
-          <li key={booking.id} className="flex items-baseline gap-3 border-l-2 border-primary/50 bg-card px-3 py-2">
+          <li key={booking.id} className="flex flex-wrap items-baseline gap-3 bg-card px-3 py-4">
             <span className="min-w-0 flex-1 truncate text-sm">{resource?.name ?? "Resource"}</span>
             <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
               {booking.details_visible ? `${booking.team_name} · ${booking.purpose}` : "Reserved"}

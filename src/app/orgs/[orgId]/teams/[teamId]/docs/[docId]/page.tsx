@@ -22,7 +22,7 @@ export default function DocPage() {
   const leaveDeletedDocument = useCallback(() => router.replace(docsPath), [docsPath, router]);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+    <div className="flex w-full min-w-0 flex-col gap-4">
       <div className="flex items-center gap-2">
         <Link href={docsPath} className={buttonVariants({ size: "xs", variant: "ghost" })}>
           <ArrowLeftIcon />

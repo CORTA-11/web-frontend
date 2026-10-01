@@ -34,14 +34,14 @@ export function TaskCard({ task, member, onOpen, dragging }: Props) {
       {...listeners}
       onClick={() => onOpen?.(task)}
       className={cn(
-        "flex cursor-grab flex-col gap-2 border border-l-2 border-border bg-card p-2.5 text-left outline-none",
+        "flex cursor-grab flex-col gap-4 border-3 border-border bg-card p-4 text-left outline-none",
         "hover:border-primary/40 focus-visible:ring-3 focus-visible:ring-ring/50",
         PRIORITY_RULE[task.priority],
         isDragging && "opacity-40",
-        dragging && "cursor-grabbing shadow-md"
+        dragging && "cursor-grabbing"
       )}
     >
-      <p className="text-sm leading-snug text-pretty">{task.title}</p>
+      <p className="text-sm font-bold leading-snug text-pretty">{task.title}</p>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
         {member ? (
@@ -58,18 +58,13 @@ export function TaskCard({ task, member, onOpen, dragging }: Props) {
         {task.due_date && (
           <time
             dateTime={task.due_date}
-            className={cn(overdue && "font-medium text-danger")}
+            className={cn("data-mono", overdue && "font-bold text-danger")}
             title={overdue ? "Past its due date" : undefined}
           >
             {dayShort(task.due_date)}
           </time>
         )}
 
-        {task.tags.map((tag) => (
-          <span key={tag} className="data-mono text-muted-foreground">
-            #{tag}
-          </span>
-        ))}
       </div>
     </article>
   );
