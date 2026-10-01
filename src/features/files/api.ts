@@ -111,6 +111,7 @@ type LiveFileView = {
   iv: string;
   key_version: number;
   uploaded_by: string;
+  uploaded_by_name?: string;
   created_at: string;
   updated_at: string;
 };
@@ -122,7 +123,7 @@ const fromLive = (file: LiveFileView): StoredFile => ({
   size: file.size,
   content_type: file.content_type,
   uploaded_by: 0,
-  uploaded_by_name: "—",
+  uploaded_by_name: file.uploaded_by_name?.trim() || "Unknown uploader",
   uploaded_at: file.created_at,
 });
 

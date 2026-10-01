@@ -16,6 +16,8 @@ test("uploads a file and lists it", async ({ page }) => {
   await expect(
     page.getByRole("cell", { name: "Encrypted, batch05-notes.txt", exact: true })
   ).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: "batch05-notes.txt" })
+    .getByRole("cell", { name: "Sangeeth Kariyapperuma", exact: true })).toBeVisible();
 });
 
 test("seals a file on upload and opens it again on download", async ({ page }) => {
