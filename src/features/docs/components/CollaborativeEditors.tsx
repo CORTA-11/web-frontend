@@ -43,7 +43,9 @@ export function CollaborativeEditors({ document, provider, user }: Props) {
       caret(),
       Placeholder.configure({ placeholder: "Start writing…" }),
     ],
-    editorProps: { attributes: { class: "doc-body min-h-96 outline-none" } },
+    editorProps: {
+      attributes: { "aria-label": "Document body", role: "textbox", "aria-multiline": "true", class: "doc-body outline-none" },
+    },
   });
 
   if (!titleEditor || !bodyEditor) return null;

@@ -19,7 +19,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-border pb-2">
+    <div role="toolbar" aria-label="Document formatting" className="editor-toolbar flex flex-wrap items-center gap-0.5 border-b border-border pb-2">
       {marks.map((mark) => (
         <Button
           key={mark.name}
