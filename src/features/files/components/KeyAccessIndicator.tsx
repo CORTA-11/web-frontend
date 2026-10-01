@@ -8,6 +8,7 @@ import { useTeams } from "@/features/teams/queries";
 import { useKeyAccessRequests } from "@/features/files/queries";
 import { useKeyAccessEvents } from "@/features/files/useKeyAccessEvents";
 import { accessNotifications } from "@/features/files/access-notifications";
+import { useNotificationAcknowledgements } from "@/features/content-access/useNotificationAcknowledgements";
 import { isLive } from "@/lib/env";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -25,15 +26,19 @@ export function KeyAccessIndicator({ orgId, teamId }: { orgId: string; teamId?: 
 function TeamAccessIndicator({ orgId, teamId, userId, isLeader }: {
   orgId: string; teamId: string; userId: string; isLeader: boolean;
 }) {
-  const [read, setRead] = useState<Set<string>>(() => new Set());
+  const [open, setOpen] = useState(false);
+  const { read, markRead } = useNotificationAcknowledgements(`keys:${orgId}:${teamId}:${userId}`);
   const requests = useKeyAccessRequests(teamId, orgId, true);
   useKeyAccessEvents(orgId, teamId, userId);
   const notifications = accessNotifications(requests.data ?? [], userId, isLeader);
   const unread = notifications.filter((entry) => !read.has(entry.key));
-  if (notifications.length === 0) return null;
+  if (notifications.length === 0 || (!unread.length && !open)) return null;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={(nextOpen) => {
+      setOpen(nextOpen);
+      if (nextOpen || open) markRead(notifications.map((entry) => entry.key));
+    }}>
       <DropdownMenuTrigger
         aria-label={`File access notifications, ${unread.length} unread`}
         className="flex h-7 items-center gap-1.5 rounded-sm px-2 text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -50,7 +55,7 @@ function TeamAccessIndicator({ orgId, teamId, userId, isLeader }: {
           <DropdownMenuItem
             key={entry.key}
             render={<Link href={`/orgs/${orgId}/teams/${teamId}/files`} />}
-            onClick={() => setRead((previous) => new Set([...previous, entry.key]))}
+            onClick={() => markRead([entry.key])}
             className="flex items-start gap-2 whitespace-normal"
           >
             <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${read.has(entry.key) ? "bg-muted-foreground" : "bg-primary"}`} />

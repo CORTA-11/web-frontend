@@ -7,6 +7,7 @@ import { BellIcon } from "lucide-react";
 import { useSession } from "@/features/auth/session";
 import { useTeams } from "@/features/teams/queries";
 import { useContentAccess } from "@/features/content-access/queries";
+import { useNotificationAcknowledgements } from "@/features/content-access/useNotificationAcknowledgements";
 import { qk } from "@/lib/query-keys";
 import { subscribe } from "@/lib/http";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -22,7 +23,8 @@ export function AccessNotifications({ orgId, teamId }: { orgId: string; teamId?:
 function TeamNotifications({ orgId, teamId, userId }: { orgId: string; teamId: string; userId: string }) {
   const client = useQueryClient();
   const query = useContentAccess(orgId, teamId);
-  const [read, setRead] = useState<Set<string>>(() => new Set());
+  const [open, setOpen] = useState(false);
+  const { read, markRead } = useNotificationAcknowledgements(`content:${orgId}:${teamId}:${userId}`);
   useEffect(() => subscribe(`/v1/orgs/${orgId}/teams/${teamId}/content-access/events`, "content-access", () => {
     void client.invalidateQueries({ queryKey: qk.contentAccess(orgId, teamId, userId) });
   }), [client, orgId, teamId, userId]);
@@ -32,9 +34,12 @@ function TeamNotifications({ orgId, teamId, userId }: { orgId: string; teamId: s
   }) ?? [];
   const keyOf = (entry: typeof notifications[number]) => `${entry.public_id}:${entry.status}:${entry.updated_at}`;
   const unread = notifications.filter((entry) => !read.has(keyOf(entry))).length;
-  if (!notifications.length) return null;
+  if (!notifications.length || (!unread && !open)) return null;
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={(nextOpen) => {
+      setOpen(nextOpen);
+      if (nextOpen || open) markRead(notifications.map(keyOf));
+    }}>
       <DropdownMenuTrigger aria-label={`Document and file permissions, ${unread} unread`}
         className="flex h-7 items-center gap-1.5 rounded-sm px-2 text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
         <BellIcon className="size-4" /><span aria-live="polite">{unread ? `${unread} new` : "Permissions"}</span>
@@ -44,7 +49,7 @@ function TeamNotifications({ orgId, teamId, userId }: { orgId: string; teamId: s
         {notifications.map((entry) => (
           <DropdownMenuItem key={keyOf(entry)}
             render={<Link href={`/orgs/${orgId}/teams/${teamId}/${entry.kind === "file" ? "files" : "docs"}`} />}
-            onClick={() => setRead((previous) => new Set([...previous, keyOf(entry)]))}
+            onClick={() => markRead([keyOf(entry)])}
             className="flex items-start gap-2 whitespace-normal">
             <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${read.has(keyOf(entry)) ? "bg-muted-foreground" : "bg-primary"}`} />
             {entry.requested_by === userId

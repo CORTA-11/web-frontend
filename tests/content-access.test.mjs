@@ -95,7 +95,10 @@ test("SSE updates permission queries, notifies creators/requesters, and cleans u
   const shell = ({ children }) => React.createElement("div", null, children);
   const { AccessNotifications } = load("../src/features/content-access/components/AccessNotifications.tsx", {
     "react/jsx-runtime": jsxRuntime,
-    react: { useState: () => [new Set(), () => {}], useEffect: (effect) => { cleanup = effect(); } },
+    react: { useState: () => [false, () => {}], useEffect: (effect) => { cleanup = effect(); } },
+    "@/features/content-access/useNotificationAcknowledgements": { useNotificationAcknowledgements: () => ({
+      read: new Set(), markRead: () => {},
+    }) },
     "next/link": { default: ({ children, href }) => React.createElement("a", { href }, children) },
     "lucide-react": { BellIcon: () => null },
     "@tanstack/react-query": { useQueryClient: () => ({ invalidateQueries: (input) => invalidations.push(input) }) },

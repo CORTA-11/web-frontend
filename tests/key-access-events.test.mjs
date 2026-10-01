@@ -84,7 +84,10 @@ test("notification indicator links to files and acknowledges clicked decisions",
   const shell = ({ children, ...props }) => React.createElement("div", props, children);
   const { KeyAccessIndicator } = load("../src/features/files/components/KeyAccessIndicator.tsx", {
     "react/jsx-runtime": jsxRuntime,
-    react: { useState: () => [read, (update) => { read = update(read); }] },
+    react: { useState: () => [false, () => {}] },
+    "@/features/content-access/useNotificationAcknowledgements": { useNotificationAcknowledgements: () => ({
+      read, markRead: (keys) => { read = new Set([...read, ...keys]); },
+    }) },
     "next/link": { default: ({ children, href }) => React.createElement("a", { href }, children) },
     "lucide-react": { BellIcon: () => null },
     "@/features/auth/session": { useSession: () => ({ user: { id: 1, public_id: "me" } }) },
@@ -108,7 +111,7 @@ test("notification indicator links to files and acknowledges clicked decisions",
   assert.equal(menuItems[0].render.props.href, "/orgs/org/teams/team/files");
   assert.match(render(), /Your access to previous files was approved/);
   menuItems[0].onClick();
-  assert.match(render(), /File access notifications, 0 unread/);
+  assert.equal(render(), "");
   member = false;
   const previousSubscriptions = subscriptions;
   assert.equal(render(), "");

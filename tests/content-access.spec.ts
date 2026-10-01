@@ -55,11 +55,26 @@ test("restricted document can be requested, denied, retried and opened after cre
   await expect(row).toContainText("Requested");
   expect(await decideAsCreator(page, "d-1", "deny")).toBe(204);
   await expect(row.getByRole("button", { name: "Request again" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Document and file permissions, 1 unread/ })).toBeVisible();
+  const notification = page.getByRole("button", { name: /Document and file permissions, 1 unread/ });
+  await expect(notification).toBeVisible();
+  await notification.click();
+  await expect(page.getByRole("menuitem").filter({ hasText: "was denied" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: /Document and file permissions/ })).toHaveCount(0);
+  // Leaving and re-entering the team remounts the notification consumer.
+  await page.getByRole("navigation").getByRole("link", { name: "Back to organisation", exact: true }).click();
+  await openTeam(page, "Neural Imaging", "Documents");
+  await expect(row.getByRole("button", { name: "Request again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Document and file permissions/ })).toHaveCount(0);
   await row.getByRole("button", { name: "Request again" }).click();
   await expect(row).toContainText("Requested");
   expect(await decideAsCreator(page, "d-1", "approve")).toBe(204);
   await expect(row.getByRole("link", { name: "Weekly sync — imaging" })).toBeVisible();
+  await expect(notification).toBeVisible();
+  await notification.click();
+  await expect(page.getByRole("menuitem").filter({ hasText: "was approved" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: /Document and file permissions/ })).toHaveCount(0);
   await row.getByRole("link").click();
   await expect(page.locator(".doc-body")).toBeEditable();
 });
