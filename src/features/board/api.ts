@@ -8,7 +8,7 @@ export type TaskMove = TaskDraft & { position?: number };
 
 /**
  * core-api v1 stores a task as { id, description, status, assignee_id } under
- * /orgs/{org_id}/teams/{team_id}/tasks. There is no priority, due date or tags,
+ * /orgs/{org_id}/teams/{team_id}/tasks. There is no priority or tags,
  * and a canonical status set of todo/in_progress/done. The adapter folds that
  * flat list into the board columns, maps assignees between the backend user
  * UUID and the roster numeric key, and reports the missing fields rather than
@@ -25,7 +25,7 @@ const COLUMN_BY_STATUS: Record<Status, string> = {
 
 const STATE_BY_COLUMN = { backlog: "todo", in_progress: "in_progress", done: "done" } as const;
 
-type LiveTask = { id: string; description: string; status: string; assignee_id: string | null; created_at: string };
+type LiveTask = { id: string; description: string; status: string; assignee_id: string | null; created_at: string; start_date?: string | null; due_date?: string | null };
 
 /**
  * Live mode exposes only the three statuses core-api v1 can store. Review is a
@@ -46,8 +46,8 @@ const fromLive = (task: LiveTask): Task => ({
   description: "",
   assignee_id: task.assignee_id ? numericKey(task.assignee_id) : null,
   priority: "medium",
-  start_date: null,
-  due_date: null,
+  start_date: task.start_date ?? null,
+  due_date: task.due_date ?? null,
   tags: [],
   created_at: task.created_at,
 });
@@ -72,7 +72,7 @@ const resolveAssignee = (assignee: number | null | undefined, members: TeamMembe
  * description.
  */
 const liveBody = (patch: TaskMove, current?: Task, members: TeamMember[] = []) => {
-  const body: { description: string; status: string; assignee_id?: string | null } = {
+  const body: { description: string; status: string; assignee_id?: string | null; start_date?: string | null; due_date?: string | null } = {
     // A pure column move carries no text, so echo the task's own text back —
     // in live mode that lives in title (fromLive maps backend description into
     // it) and the backend PATCH rejects an empty description.
@@ -84,6 +84,8 @@ const liveBody = (patch: TaskMove, current?: Task, members: TeamMember[] = []) =
   };
   const assignee = resolveAssignee(patch.assignee_id, members);
   if (assignee !== undefined) body.assignee_id = assignee;
+  if (patch.start_date !== undefined) body.start_date = patch.start_date;
+  if (patch.due_date !== undefined) body.due_date = patch.due_date;
   return body;
 };
 
@@ -111,6 +113,8 @@ export const boardApi = {
               description: draft.title ?? draft.description ?? "",
               status: "todo",
               ...(assignee !== undefined ? { assignee_id: assignee } : {}),
+              ...(draft.start_date !== undefined ? { start_date: draft.start_date } : {}),
+              ...(draft.due_date !== undefined ? { due_date: draft.due_date } : {}),
             },
           }).then(fromLive);
         })()

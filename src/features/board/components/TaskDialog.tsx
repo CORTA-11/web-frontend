@@ -25,7 +25,8 @@ type Values = {
 };
 
 const asDateInput = (value: string | null) => (value ? value.slice(0, 10) : "");
-const asIso = (value: string) => (value ? new Date(`${value}T09:00:00`).toISOString() : null);
+// Dates are calendar days, so saving must not shift them with the browser timezone.
+const asIso = (value: string) => (value ? new Date(`${value}T09:00:00Z`).toISOString() : null);
 
 
 type Props = {
