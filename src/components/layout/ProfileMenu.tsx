@@ -43,7 +43,7 @@ export function ProfileMenu() {
           </span>
         </div>
         <DropdownMenuSeparator />
-        {orgId && (
+        {/* {orgId && (
           <>
             <DropdownMenuItem render={<Link href={`/orgs/${orgId}/notifications`} />}>
               <BellIcon />
@@ -51,7 +51,7 @@ export function ProfileMenu() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
-        )}
+        )} */}
         <TimeZoneSelector />
         <DropdownMenuSeparator />
         <AccentMenu />

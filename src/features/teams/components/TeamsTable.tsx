@@ -67,7 +67,7 @@ export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: 
             <TableCell className="hidden lg:table-cell text-muted-foreground" data-numeric>
               {day(team.created_at)}
             </TableCell>
-            {canDelete && (
+            {/* {canDelete && (
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger
@@ -86,7 +86,7 @@ export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: 
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
-            )}
+            )} */}
           </TableRow>
         ))}
       </TableBody>
