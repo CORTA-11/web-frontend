@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { availableBlocks } from "@/features/resources/available-blocks";
 import { Calendar, dateFnsLocalizer, Views, type View } from "react-big-calendar";
 import { format, getDay, parse, startOfWeek } from "date-fns";
 import { enGB } from "date-fns/locale";
@@ -31,19 +32,16 @@ export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
   const [view, setView] = useState<View>(Views.DAY);
   const [date, setDate] = useState<Date | null>(null);
 
-  const bookable = resources.filter((resource) => resource.enabled);
-
-  const events = useMemo(
-    () =>
-      bookings.map((booking) => ({
-        id: booking.id,
-        title: booking.details_visible ? `${booking.team_name} · ${booking.purpose}` : "Reserved",
-        start: zonedDate(booking.start_time, zone),
-        end: zonedDate(booking.end_time, zone),
-        resourceId: booking.resource_id,
-      })),
-    [bookings, zone]
-  );
+  const [tag, setTag] = useState("");
+  const resource = resources.find((item) => item.code === tag);
+  const events = bookings.filter((booking) => booking.resource_id === resource?.id).map((booking) => ({
+    id: booking.id,
+    title: booking.details_visible ? `${booking.team_name} · ${booking.purpose}` : "Reserved",
+    start: zonedDate(booking.start_time, zone),
+    end: zonedDate(booking.end_time, zone),
+  }));
+  const displayedDate = date ?? zonedDate(new Date(), zone);
+  const backgroundEvents = resource ? availableBlocks(resource, bookings, displayedDate, zone) : [];
 
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);
@@ -52,18 +50,29 @@ export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
 
   return (
     <div className="min-w-0">
-      <p className="data-mono mb-2 text-muted-foreground">Time zone: {zone}</p>
-      <div className="h-[32rem]">
+      <div className="mb-4 flex flex-wrap items-end gap-4">
+        <label className="flex flex-col gap-1">
+          <span className="label-eyebrow">Resource tag</span>
+          <select className="select-field" aria-label="Resource tag" value={tag} onChange={(event) => setTag(event.target.value)}>
+            <option value="">Select a tag from inventory</option>
+            {resources.map((item) => <option key={item.id} value={item.code}>{item.code}</option>)}
+          </select>
+        </label>
+        {resource && <span className="text-sm">{resource.name}</span>}
+        <span className="data-mono text-xs text-muted-foreground">{zone}</span>
+        <span className="schedule-available-key text-xs">Available</span>
+        <span className="schedule-booked-key text-xs">Booked</span>
+      </div>
+      {resource && <div className="h-[32rem]">
       <Calendar
         localizer={localizer}
         culture="en-GB"
         events={events}
-        resources={view === Views.DAY ? bookable.map((r) => ({ id: r.id, title: r.name })) : undefined}
-        resourceIdAccessor="id"
-        resourceTitleAccessor="title"
+        backgroundEvents={backgroundEvents}
+        eventPropGetter={() => ({ className: "schedule-booked" })}
         view={view}
         onView={setView}
-        date={date ?? zonedDate(new Date(), zone)}
+        date={displayedDate}
         getNow={() => zonedDate(new Date(), zone)}
         onNavigate={setDate}
         views={[Views.DAY, Views.WEEK, Views.AGENDA]}
@@ -71,17 +80,17 @@ export function ScheduleCalendar({ resources, bookings, onPickSlot }: Props) {
         timeslots={2}
         min={dayStart}
         max={dayEnd}
-        selectable={Boolean(onPickSlot)}
+        selectable={resource.enabled && Boolean(onPickSlot)}
         onSelectSlot={(slot) =>
           onPickSlot?.({
             start: fromDateTimeInput(dateTimeInput(slot.start, Intl.DateTimeFormat().resolvedOptions().timeZone), zone),
             end: fromDateTimeInput(dateTimeInput(slot.end, Intl.DateTimeFormat().resolvedOptions().timeZone), zone),
-            resourceId: slot.resourceId as string,
+            resourceId: resource.id,
           })
         }
         popup
       />
-      </div>
+      </div>}
     </div>
   );
 }

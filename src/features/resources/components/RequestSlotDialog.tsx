@@ -10,9 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/common/Field";
-import {
-  findClash, fitsAvailability, localTimeZone, summariseAvailability, summariseAvailabilityLocal,
-} from "@/features/resources/availability";
+import { findClash, fitsAvailability } from "@/features/resources/availability";
+import { useTimeZone } from "@/lib/use-time-zone";
 import { useRequestResource } from "@/features/resources/queries";
 import { useFormat } from "@/lib/use-format";
 import { dateTimeInput, fromDateTimeInput } from "@/lib/time-zone";
@@ -29,6 +28,7 @@ type Props = {
 
 export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, onClose }: Props) {
   const { slot } = useFormat();
+  const zone = useTimeZone();
   const request = useRequestResource(orgId);
   const [form, setForm] = useState({
     team_public_id: teams[0]?.public_id ?? "",
@@ -73,13 +73,6 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
             </DialogDescription>
           </DialogHeader>
 
-          <div className="border-l-2 border-primary/40 pl-2.5 text-xs text-muted-foreground">
-            <p>
-              Available in {localTimeZone()}: {summariseAvailabilityLocal(resource.availability, validDates ? start : new Date())}
-            </p>
-            <p className="data-mono">UTC schedule: {summariseAvailability(resource.availability)}</p>
-          </div>
-
           <Field label="Team" htmlFor="request-team">
             <select
               id="request-team"
@@ -94,7 +87,7 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={`From (${localTimeZone()})`} htmlFor="request-start" error={invalid ? "Choose a valid future time before the end" : undefined}>
+            <Field label={`From (${zone})`} htmlFor="request-start" error={invalid ? "Choose a valid future time before the end" : undefined}>
               <Input
                 id="request-start"
                 type="datetime-local"
@@ -103,7 +96,7 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
                 onChange={(event) => setForm({ ...form, start: event.target.value })}
               />
             </Field>
-            <Field label={`To (${localTimeZone()})`} htmlFor="request-end">
+            <Field label={`To (${zone})`} htmlFor="request-end">
               <Input
                 id="request-end"
                 type="datetime-local"
@@ -114,14 +107,9 @@ export function RequestSlotDialog({ orgId, resource, teams, bookings, initial, o
             </Field>
           </div>
 
-          {validDates && (
-            <p className="data-mono text-xs text-muted-foreground">
-              UTC: {startIso.replace("T", " ").slice(0, 16)}–{endIso.replace("T", " ").slice(0, 16)}
-            </p>
-          )}
           {outsideAvailability && (
             <p className="text-xs text-danger">
-              Choose a slot entirely within the local availability shown above.
+              Choose a slot within the green availability blocks in Schedule.
             </p>
           )}
 

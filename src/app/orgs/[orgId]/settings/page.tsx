@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/common/Field";
 import { PageHeader } from "@/components/common/PageHeader";
+import { TimeZoneSelector } from "@/components/common/TimeZoneSelector";
 import { QueryBoundary } from "@/components/common/QueryBoundary";
 import { useOrgSettings, useUpdateOrgSettings } from "@/features/settings/queries";
 import { useSession } from "@/features/auth/session";
@@ -51,6 +52,10 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader eyebrow="Organisation" title="Settings" />
+      <section className="max-w-lg">
+        <TimeZoneSelector />
+        <p className="px-2 text-xs text-muted-foreground">Display preference only. Stored schedules and bookings stay in UTC.</p>
+      </section>
       <QueryBoundary query={settings}>
         {(data) => (
           <div className="pt-4">

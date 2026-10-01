@@ -19,6 +19,7 @@ function load(path, dependencies = {}) {
 const zones = load('../src/lib/time-zone.ts');
 const format = load('../src/lib/format.ts', { '@/lib/time-zone': zones });
 const availability = load('../src/features/resources/availability.ts', { '@/lib/time-zone': zones });
+const { availableBlocks } = load('../src/features/resources/available-blocks.ts', { '@/lib/time-zone': zones });
 
 test('timestamp displays use the selected zone, including date rollover and fractional offsets', () => {
   zones.setTimeZone('Asia/Colombo');
@@ -56,6 +57,32 @@ test('invalid zone preferences cannot replace a valid selection and changes noti
   assert.equal(zones.getTimeZone(), 'Asia/Colombo');
   assert.equal(notifications, 1);
   unsubscribe();
+});
+
+test('available calendar blocks use selected-zone time and exclude only this resource bookings', () => {
+  const resource = { id: 'gpu', enabled: true, availability: [{ weekday: 1, start: '09:00', end: '17:00' }] };
+  const bookings = [
+    { resource_id: 'gpu', start_time: '2026-01-05T10:00:00Z', end_time: '2026-01-05T12:00:00Z' },
+    { resource_id: 'other', start_time: '2026-01-05T13:00:00Z', end_time: '2026-01-05T15:00:00Z' },
+  ];
+  const anchor = new Date(2026, 0, 5);
+  const blocks = availableBlocks(resource, bookings, anchor, 'Asia/Colombo')
+    .filter((block) => block.start.getFullYear() === 2026 && block.start.getMonth() === 0 && block.start.getDate() === 5);
+  assert.deepEqual(blocks.map((block) => [block.start.getHours(), block.start.getMinutes(), block.end.getHours(), block.end.getMinutes()]),
+    [[14, 30, 15, 30], [17, 30, 22, 30]]);
+  assert.equal(availableBlocks({ ...resource, enabled: false }, bookings, anchor, 'UTC').length, 0);
+  assert.equal(bookings[0].start_time, '2026-01-05T10:00:00Z');
+});
+
+test('availability blocks roll over dates and respect daylight saving at display time', () => {
+  const resource = { id: 'gpu', enabled: true, availability: [{ weekday: 1, start: '20:00', end: '23:00' }] };
+  const blocks = availableBlocks(resource, [], new Date(2026, 0, 5), 'Asia/Colombo');
+  const rollover = blocks.find((block) => block.start.getMonth() === 0 && block.start.getDate() === 6);
+  assert.equal(rollover.start.getHours(), 1);
+  assert.equal(rollover.end.getHours(), 4);
+  const summer = availableBlocks(resource, [], new Date(2026, 6, 6), 'America/New_York')
+    .find((block) => block.start.getMonth() === 6 && block.start.getDate() === 6);
+  assert.equal(summer.start.getHours(), 16);
 });
 
 test('UTC availability recurrences display in the selected zone across midnight', () => {

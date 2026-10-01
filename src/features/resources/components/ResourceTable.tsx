@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusDot } from "@/components/common/StatusDot";
-import { localTimeZone, summariseAvailability, summariseAvailabilityLocal } from "@/features/resources/availability";
+import { AvailableTimesButton } from "@/features/resources/components/AvailableTimesButton";
 import { useDeleteResource, useUpdateResource } from "@/features/resources/queries";
 import type { Resource } from "@/lib/types";
 
@@ -30,7 +30,7 @@ export function ResourceTable({ orgId, resources, canManage, canRequest, onEdit,
         <TableRow>
           <TableHead>Resource</TableHead>
           <TableHead className="hidden md:table-cell">Location</TableHead>
-          <TableHead className="hidden lg:table-cell">Available</TableHead>
+          <TableHead>Unique tag</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="w-24" />
         </TableRow>
@@ -42,19 +42,14 @@ export function ResourceTable({ orgId, resources, canManage, canRequest, onEdit,
               <div className="flex flex-col">
                 <span className="font-medium">{resource.name}</span>
                 <span className="data-mono text-muted-foreground">
-                  {resource.code} · {resource.kind}
+                  {resource.kind}
                 </span>
               </div>
             </TableCell>
             <TableCell className="hidden md:table-cell text-muted-foreground">
               {resource.location || "—"}
             </TableCell>
-            <TableCell className="hidden lg:table-cell text-muted-foreground" data-numeric>
-              <div className="flex flex-col">
-                <span>{summariseAvailabilityLocal(resource.availability)}</span>
-                <span className="text-xs">{summariseAvailability(resource.availability)} UTC · {localTimeZone()}</span>
-              </div>
-            </TableCell>
+            <TableCell className="data-mono">{resource.code}</TableCell>
             <TableCell>
               <StatusDot tone={resource.enabled ? "ok" : "muted"}>
                 {resource.enabled ? "Bookable" : "Disabled"}
@@ -62,6 +57,7 @@ export function ResourceTable({ orgId, resources, canManage, canRequest, onEdit,
             </TableCell>
             <TableCell>
               <div className="flex items-center justify-end gap-1">
+                <AvailableTimesButton resource={resource} />
                 {canRequest && resource.enabled && (
                   <Button size="xs" variant="outline" onClick={() => onRequest(resource)}>
                     <CalendarPlusIcon />

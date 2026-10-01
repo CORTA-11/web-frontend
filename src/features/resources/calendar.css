@@ -68,3 +68,13 @@
 .rbc-off-range { color: var(--muted-text); }
 .rbc-current-time-indicator { background: var(--cobalt); height: 3px; }
 .rbc-slot-selection { background: var(--cobalt); color: var(--paper); font-size: 12px; }
+.rbc-background-event {
+  background: var(--schedule-available);
+  opacity: 0.25;
+  border: 1px solid var(--schedule-available);
+}
+.rbc-event.schedule-booked,
+.rbc-event.schedule-booked.rbc-selected,
+.rbc-event.schedule-booked:focus-visible { background: var(--schedule-booked); }
+.schedule-available-key { border-left: 2px solid var(--schedule-available); padding-left: 6px; }
+.schedule-booked-key { border-left: 2px solid var(--schedule-booked); padding-left: 6px; }

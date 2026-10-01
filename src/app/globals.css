@@ -77,6 +77,8 @@
   --ok: var(--ink);
   --warn: var(--ink);
   --danger: var(--ink);
+  --schedule-available: #16803C;
+  --schedule-booked: #C62828;
   --presence-1: var(--cobalt);
   --presence-2: var(--ink);
   --presence-3: var(--muted-text);
