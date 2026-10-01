@@ -24,6 +24,7 @@ export function NavItem({ href, label, icon: Icon, exact, match, indent, trailin
   return (
     <Link
       href={href}
+      data-tour={label}
       aria-current={active ? "page" : undefined}
       className={cn(
         "flex min-h-9 items-center gap-2 pr-5 text-sm font-bold",
