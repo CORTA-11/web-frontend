@@ -9,6 +9,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/common/Field";
+import { useSession } from "@/features/auth/session";
+import { AddToGoogleCalendar } from "@/features/board/components/AddToGoogleCalendar";
 import { useCreateTask, useDeleteTask, useUpdateTask } from "@/features/board/queries";
 import type { Column, Task, TeamMember } from "@/lib/types";
 
@@ -37,6 +39,7 @@ type Props = {
 };
 
 export function TaskDialog({ teamId, orgId, columns, members, task, defaultColumn, onClose }: Props) {
+  const { user } = useSession();
   const create = useCreateTask(teamId, orgId, members);
   const update = useUpdateTask(teamId, orgId, members);
   const remove = useDeleteTask(teamId, orgId);
@@ -118,6 +121,15 @@ export function TaskDialog({ teamId, orgId, columns, members, task, defaultColum
               <Input id="task-due" type="date" {...register("due_date")} />
             </Field>
           </div>
+
+          {task && task.assignee_id === user?.id && (
+            <div className="flex flex-col items-start gap-1">
+              <AddToGoogleCalendar task={task} orgId={orgId} teamId={teamId} />
+              <p className="text-xs text-muted-foreground">
+                Uses saved task details. Set a start or due date first. Calendar events do not sync.
+              </p>
+            </div>
+          )}
 
           <DialogFooter className="justify-between">
             {task ? (
