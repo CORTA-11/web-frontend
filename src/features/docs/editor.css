@@ -70,7 +70,6 @@
 .doc-body hr { margin-block: 1.5em; border-top: 3px solid var(--border); }
 .editor-toolbar [aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .collaboration-caret {
-  border-color: var(--cobalt) !important;
   border-left: 2px solid;
   border-right: 2px solid transparent;
   margin-left: -1px;
@@ -78,7 +77,6 @@
   position: relative;
 }
 .collaboration-caret-label {
-  background: var(--ink) !important;
   color: var(--primary-foreground);
   font-size: 12px;
   left: -2px;

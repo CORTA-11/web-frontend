@@ -33,6 +33,7 @@ test("authenticated Presence distinguishes Editing Sessions and cleans up", asyn
 
   await title.press("ControlOrMeta+A");
   await expect(observer.locator(`.doc-title .collaboration-selection[data-user-id="${memberID}"]`)).toBeVisible();
+  await expectPresenceColors(observer, ".doc-title");
 
   const body = first.locator(".doc-body");
   await body.click();
@@ -42,6 +43,7 @@ test("authenticated Presence distinguishes Editing Sessions and cleans up", asyn
 
   await body.press("ControlOrMeta+A");
   await expect(observer.locator(`.doc-body .collaboration-selection[data-user-id="${memberID}"]`)).toBeVisible();
+  await expectPresenceColors(observer, ".doc-body");
 
   await firstContext.close();
   await expect(present.getByText("Demo Member", { exact: true })).toHaveCount(1);
@@ -49,6 +51,18 @@ test("authenticated Presence distinguishes Editing Sessions and cleans up", asyn
   await secondContext.close();
   await observerContext.close();
 });
+
+async function expectPresenceColors(page: Page, surface: string) {
+  const caret = page.locator(`${surface} .collaboration-caret[data-user-id="${memberID}"]`).first();
+  const sessionID = await caret.getAttribute("data-session-id");
+  const indicator = page.getByRole("list", { name: "Editors present" })
+    .locator(`li[data-session-id="${sessionID}"] [aria-hidden="true"]`);
+  const color = await indicator.evaluate((element) => getComputedStyle(element).backgroundColor);
+  await expect(caret).toHaveCSS("border-left-color", color);
+  await expect(caret.locator(".collaboration-caret-label")).toHaveCSS("background-color", color);
+  await expect(page.locator(`${surface} .collaboration-selection[data-session-id="${sessionID}"]`).first())
+    .toHaveCSS("border-bottom-color", color);
+}
 
 type CreatedDocument = { documentID: string; teamID: string };
 
