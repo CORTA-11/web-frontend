@@ -65,6 +65,18 @@ export const teamHandlers = [
     return HttpResponse.json(withRole(team, actorFrom(request)?.id));
   }),
 
+  http.patch("/api/v1/orgs/:orgId/teams/:teamId", async ({ request, params }) => {
+    const team = findTeam(String(params.teamId));
+    if (!team) return new HttpResponse("Team not found", { status: 404 });
+    const actor = actorFrom(request);
+    if (!actor || teamRoleOf(team.public_id, actor.id) !== "TEAM_LEADER") {
+      return new HttpResponse("Only the team leader can rename this team", { status: 403 });
+    }
+    const body = (await request.json()) as { name?: string; description?: string };
+    Object.assign(team, body.name ? { name: body.name.trim() } : {}, body.description !== undefined ? { description: body.description } : {});
+    return HttpResponse.json(withRole(team, actorFrom(request)?.id));
+  }),
+
   http.delete("/api/teams/:teamId", ({ request, params }) => {
     if (actorFrom(request)?.org_role !== "ORG_ADMIN") {
       return new HttpResponse("Only an organisation admin can delete a team", { status: 403 });

@@ -35,7 +35,7 @@ export function useCreateTeam(orgId: string) {
 export function useUpdateTeam(orgId: string, teamId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (body: { name?: string; description?: string }) => teamsApi.update(teamId, body),
+    mutationFn: (body: { name?: string; description?: string }) => teamsApi.update(orgId, teamId, body),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: qk.team(teamId) });
       client.invalidateQueries({ queryKey: qk.teams(orgId) });

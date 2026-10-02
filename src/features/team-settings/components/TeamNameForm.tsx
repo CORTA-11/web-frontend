@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/common/Field";
@@ -11,6 +11,12 @@ export function TeamNameForm({ orgId, team }: { orgId: string; team: Team }) {
   const [name, setName] = useState(team.name);
   const [description, setDescription] = useState(team.description ?? "");
   const update = useUpdateTeam(orgId, team.public_id);
+
+  useEffect(() => {
+    setName(team.name);
+    setDescription(team.description ?? "");
+  }, [team.name, team.description]);
+
   const dirty = name.trim() !== team.name || description !== (team.description ?? "");
 
   return (

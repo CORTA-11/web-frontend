@@ -13,7 +13,14 @@ import type { OrgUser, Team, TeamMember, TeamRole } from "@/lib/types";
  * remove/leader/leave have no live routes yet.
  */
 
-type LiveTeam = { id: string; name: string; slug: string; created_at: string; my_role: string };
+type LiveTeam = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  created_at: string;
+  my_role: string;
+};
 
 const roleOf = (role: string): TeamRole | undefined => (role === "team_admin" ? "TEAM_LEADER" : "TEAM_MEMBER");
 
@@ -22,6 +29,7 @@ const fromLive = (orgId: string) => (team: LiveTeam): Team => ({
   public_id: team.id,
   org_id: orgId,
   name: team.name,
+  description: team.description,
   member_count: 0,
   created_at: team.created_at,
   my_role: team.my_role ? roleOf(team.my_role) : undefined,
@@ -68,8 +76,16 @@ export const teamsApi = {
         })
       : api<Team>(`/teams/${teamId}`),
 
-  update: (teamId: string, body: { name?: string; description?: string }) =>
-    api<Team>(`/teams/${teamId}`, { method: "PATCH", json: body }),
+  update: (orgId: string, teamId: string, body: { name?: string; description?: string }) =>
+    isLive("teams")
+      ? api<LiveTeam>(`/v1/orgs/${orgId}/teams/${teamId}`, {
+          method: "PATCH",
+          json: {
+            name: body.name,
+            description: body.description,
+          },
+        }).then(fromLive(orgId))
+      : api<Team>(`/teams/${teamId}`, { method: "PATCH", json: body }),
 
   remove: (teamId: string) => api<void>(`/teams/${teamId}`, { method: "DELETE" }),
 
