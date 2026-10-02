@@ -131,8 +131,10 @@ Task = { id, column_id, title, description, assignee_id, priority: "low"|"medium
 ```
 
 **Live today:** `GET/POST/PATCH/DELETE /v1/orgs/{org_id}/teams/{team_id}/tasks`, where a task is
-`{ id, description, status, assignee_id, created_at, updated_at }`. There is no priority, due date
-or tags, and no ordering. `assignee_id` is the user UUID; PATCH treats an absent `assignee_id` as
+`{ id, description, details, status, assignee_id, start_date, due_date, created_at, updated_at }`.
+The legacy `description` field stores the title; `details` stores the UI description. Omitted details
+on PATCH are preserved and an empty string clears them. Dates support omitted (keep) and null (clear).
+There is no priority, tags, or ordering. `assignee_id` is the user UUID; PATCH treats an absent `assignee_id` as
 "keep", an explicit `null` as unassign, and a value as reassign. Team members resolve assignees via
 `/v1/orgs/{org_id}/teams/{team_id}/members`. The UI folds the flat status list (todo/in_progress/done)
 into three columns — Review is not offered because the backend cannot store it — maps assignees to

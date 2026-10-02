@@ -7,7 +7,7 @@ export type TaskDraft = Partial<Omit<Task, "id" | "created_at">>;
 export type TaskMove = TaskDraft & { position?: number };
 
 /**
- * core-api v1 stores a task as { id, description, status, assignee_id } under
+ * core-api v1 stores a task as { id, description (title), details, status, assignee_id } under
  * /orgs/{org_id}/teams/{team_id}/tasks. There is no priority or tags,
  * and a canonical status set of todo/in_progress/done. The adapter folds that
  * flat list into the board columns, maps assignees between the backend user
@@ -25,7 +25,7 @@ const COLUMN_BY_STATUS: Record<Status, string> = {
 
 const STATE_BY_COLUMN = { backlog: "todo", in_progress: "in_progress", done: "done" } as const;
 
-type LiveTask = { id: string; description: string; status: string; assignee_id: string | null; created_at: string; start_date?: string | null; due_date?: string | null };
+type LiveTask = { id: string; description: string; details?: string; status: string; assignee_id: string | null; created_at: string; start_date?: string | null; due_date?: string | null };
 
 /**
  * Live mode exposes only the three statuses core-api v1 can store. Review is a
@@ -43,7 +43,7 @@ const fromLive = (task: LiveTask): Task => ({
   id: task.id,
   column_id: COLUMN_BY_STATUS[task.status as Status] ?? "backlog",
   title: task.description,
-  description: "",
+  description: task.details ?? "",
   assignee_id: task.assignee_id ? numericKey(task.assignee_id) : null,
   priority: "medium",
   start_date: task.start_date ?? null,
@@ -72,15 +72,14 @@ const resolveAssignee = (assignee: number | null | undefined, members: TeamMembe
  * description.
  */
 const liveBody = (patch: TaskMove, current?: Task, members: TeamMember[] = []) => {
-  const body: { description: string; status: string; assignee_id?: string | null; start_date?: string | null; due_date?: string | null } = {
+  const body: { description: string; details?: string; status: string; assignee_id?: string | null; start_date?: string | null; due_date?: string | null } = {
     // A pure column move carries no text, so echo the task's own text back —
     // in live mode that lives in title (fromLive maps backend description into
     // it) and the backend PATCH rejects an empty description.
     description:
-      patch.title ?? patch.description ?? current?.title ?? current?.description ?? "",
-    status: patch.column_id
-      ? STATE_BY_COLUMN[patch.column_id as keyof typeof STATE_BY_COLUMN] ?? "todo"
-      : "todo",
+      patch.title ?? current?.title ?? "",
+    ...(patch.description !== undefined ? { details: patch.description } : {}),
+    status: STATE_BY_COLUMN[(patch.column_id ?? current?.column_id ?? "backlog") as keyof typeof STATE_BY_COLUMN] ?? "todo",
   };
   const assignee = resolveAssignee(patch.assignee_id, members);
   if (assignee !== undefined) body.assignee_id = assignee;
@@ -110,7 +109,8 @@ export const boardApi = {
           return api<LiveTask>(`/v1/orgs/${orgId}/teams/${teamId}/tasks`, {
             method: "POST",
             json: {
-              description: draft.title ?? draft.description ?? "",
+              description: draft.title ?? "",
+              details: draft.description ?? "",
               status: "todo",
               ...(assignee !== undefined ? { assignee_id: assignee } : {}),
               ...(draft.start_date !== undefined ? { start_date: draft.start_date } : {}),
