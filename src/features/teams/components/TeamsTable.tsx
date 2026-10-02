@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { MoreHorizontalIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/common/EmptyState";
 import { StatusDot } from "@/components/common/StatusDot";
-import { useDeleteTeam } from "@/features/teams/queries";
+import { DeleteTeamDialog } from "@/features/teams/components/DeleteTeamDialog";
 import { useFormat } from "@/lib/use-format";
 import type { Team } from "@/lib/types";
 
@@ -17,13 +18,14 @@ const ROLE_LABEL = { TEAM_LEADER: "Leader", TEAM_MEMBER: "Member" };
 
 export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: Team[]; canDelete: boolean }) {
   const { day } = useFormat();
-  const remove = useDeleteTeam(orgId);
+  const [deleting, setDeleting] = useState<Team | null>(null);
 
   if (!teams.length) {
     return <EmptyState title="No teams yet" hint="An organisation admin creates teams and assigns a leader." />;
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -67,7 +69,7 @@ export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: 
             <TableCell className="hidden lg:table-cell text-muted-foreground" data-numeric>
               {day(team.created_at)}
             </TableCell>
-            {/* {canDelete && (
+            {canDelete && (
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger
@@ -78,7 +80,7 @@ export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: 
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       variant="destructive"
-                      onClick={() => remove.mutate(team.public_id)}
+                      onClick={() => setDeleting(team)}
                     >
                       <Trash2Icon />
                       Delete team
@@ -86,10 +88,12 @@ export function TeamsTable({ orgId, teams, canDelete }: { orgId: string; teams: 
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
-            )} */}
+            )}
           </TableRow>
         ))}
       </TableBody>
     </Table>
+    {deleting && <DeleteTeamDialog orgId={orgId} team={deleting} open onOpenChange={(open) => { if (!open) setDeleting(null); }} />}
+    </>
   );
 }

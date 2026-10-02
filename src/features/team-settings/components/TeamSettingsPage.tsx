@@ -6,6 +6,7 @@ import { useTeamContext } from "@/features/teams/queries";
 import { can } from "@/lib/rbac";
 import { TeamAISettingsForm } from "@/features/team-settings/components/TeamAISettingsForm";
 import { TeamNameForm } from "@/features/team-settings/components/TeamNameForm";
+import { TeamDeletion } from "@/features/team-settings/components/TeamDeletion";
 import { TeamKeyRotation } from "@/features/team-settings/components/TeamKeyRotation";
 
 export function TeamSettingsPage({ orgId, teamId }: { orgId: string; teamId: string }) {
@@ -20,6 +21,7 @@ export function TeamSettingsPage({ orgId, teamId }: { orgId: string; teamId: str
               {can(actor, "team:rename") && <TeamNameForm orgId={orgId} team={data} />}
               <TeamAISettingsForm orgId={orgId} teamId={teamId} />
               <TeamKeyRotation orgId={orgId} teamId={teamId} />
+              {can(actor, "team:delete") && <TeamDeletion orgId={orgId} team={data} />}
             </div>
           )
           : <p className="text-sm text-muted-foreground">Only the team admin can access these settings.</p>}

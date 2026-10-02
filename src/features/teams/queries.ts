@@ -48,7 +48,7 @@ export function useUpdateTeam(orgId: string, teamId: string) {
 export function useDeleteTeam(orgId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (teamId: string) => teamsApi.remove(teamId),
+    mutationFn: (teamId: string) => teamsApi.remove(orgId, teamId),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: qk.teams(orgId) });
       toast.success("Team deleted");

@@ -78,8 +78,9 @@ export const teamHandlers = [
   }),
 
   http.delete("/api/teams/:teamId", ({ request, params }) => {
-    if (actorFrom(request)?.org_role !== "ORG_ADMIN") {
-      return new HttpResponse("Only an organisation admin can delete a team", { status: 403 });
+    const actor = actorFrom(request);
+    if (!actor || (actor.org_role !== "ORG_ADMIN" && teamRoleOf(String(params.teamId), actor.id) !== "TEAM_LEADER")) {
+      return new HttpResponse("Only an organisation admin or team admin can delete a team", { status: 403 });
     }
     const index = db.teams.findIndex((t) => t.public_id === String(params.teamId));
     if (index < 0) return new HttpResponse("Team not found", { status: 404 });

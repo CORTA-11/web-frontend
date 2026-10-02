@@ -7,10 +7,10 @@ import type { OrgUser, Team, TeamMember, TeamRole } from "@/lib/types";
  * core-api v1 scopes teams under /orgs/{org_id}/teams and identifies them by
  * UUID. In live mode Team.public_id is set to the backend team UUID, so the
  * sub-routes (board/tasks) resolve without a slug→UUID lookup. The backend
- * returns no description or per-team member counts, so those stay blank/zero.
+ * returns no per-team member counts, so those stay zero.
  *
- * Only listing, creation, member-list and add-member exist on the backend;
- * remove/leader/leave have no live routes yet.
+ * Team listing, creation, updates, deletion and member listing/addition have
+ * live routes; member removal/leader/leave have no live routes yet.
  */
 
 type LiveTeam = {
@@ -87,7 +87,8 @@ export const teamsApi = {
         }).then(fromLive(orgId))
       : api<Team>(`/teams/${teamId}`, { method: "PATCH", json: body }),
 
-  remove: (teamId: string) => api<void>(`/teams/${teamId}`, { method: "DELETE" }),
+  remove: (orgId: string, teamId: string) =>
+    api<void>(isLive("teams") ? `/v1/orgs/${orgId}/teams/${teamId}` : `/teams/${teamId}`, { method: "DELETE" }),
 
   members: (teamId: string, orgId: string) =>
     isLive("teams")
