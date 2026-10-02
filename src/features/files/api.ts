@@ -187,12 +187,72 @@ export const filesApi = {
       decryptedBlob = await fileCrypto.decrypt(await response.blob(), key);
     }
 
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      if (Capacitor.isNativePlatform()) {
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const { Share } = await import("@capacitor/share");
+
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = reject;
+          reader.onload = () => {
+            const dataUrl = reader.result as string;
+            const commaIndex = dataUrl.indexOf(",");
+            resolve(commaIndex !== -1 ? dataUrl.slice(commaIndex + 1) : dataUrl);
+          };
+          reader.readAsDataURL(decryptedBlob);
+        });
+
+        const savedFile = await Filesystem.writeFile({
+          path: file.name,
+          data: base64Data,
+          directory: Directory.Cache,
+          recursive: true,
+        });
+
+        try {
+          await Share.share({
+            title: file.name,
+            url: savedFile.uri,
+            dialogTitle: `Open or Save ${file.name}`,
+          });
+        } catch (shareErr) {
+          console.log("[Files] Share dialog closed/cancelled:", shareErr);
+        }
+        return;
+      }
+    } catch (nativeErr) {
+      console.warn("[Files] Native save/share failed, falling back to Web Share / anchor:", nativeErr);
+    }
+
+    // Try Web Share API (natively supported in Android WebView / Chromium for files)
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        const fileObj = new File([decryptedBlob], file.name, {
+          type: file.content_type || "application/octet-stream",
+        });
+        if (!navigator.canShare || navigator.canShare({ files: [fileObj] })) {
+          await navigator.share({
+            files: [fileObj],
+            title: file.name,
+          });
+          return;
+        }
+      } catch (shareErr: any) {
+        if (shareErr.name === "AbortError") {
+          return; // User cancelled the Android share dialog
+        }
+        console.warn("[Files] Web Share failed, falling back to download link:", shareErr);
+      }
+    }
+
     const url = URL.createObjectURL(decryptedBlob);
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = file.name;
     anchor.click();
     // Revoked a tick later: Chromium reads the blob after the click returns.
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 };

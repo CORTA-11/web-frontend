@@ -1,11 +1,36 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "@/features/auth/session";
 import { api } from "@/lib/http";
 import { toast } from "sonner";
 
+function getTargetRoute(data: Record<string, any> | undefined): string | null {
+  if (!data) return null;
+  if (data.route) return data.route;
+  if (data.team_id && data.org_id) {
+    if (data.type === "file") {
+      return `/orgs/${data.org_id}/teams/${data.team_id}/files`;
+    }
+    if (data.type === "doc" || data.type === "document") {
+      return data.doc_id
+        ? `/orgs/${data.org_id}/teams/${data.team_id}/docs/${data.doc_id}`
+        : `/orgs/${data.org_id}/teams/${data.team_id}/docs`;
+    }
+    if (data.type === "board" || data.type === "task") {
+      return `/orgs/${data.org_id}/teams/${data.team_id}/board`;
+    }
+    return `/orgs/${data.org_id}/teams/${data.team_id}/chat`;
+  }
+  if (data.org_id) {
+    return `/orgs/${data.org_id}`;
+  }
+  return null;
+}
+
 export function NativePushProvider() {
+  const router = useRouter();
   const { user } = useSession();
   const registeredTokenRef = useRef<string | null>(null);
 
@@ -20,6 +45,20 @@ export function NativePushProvider() {
         }
 
         const { PushNotifications } = await import("@capacitor/push-notifications");
+
+        // Ensure high-priority notification channel exists on Android
+        try {
+          await PushNotifications.createChannel({
+            id: "default",
+            name: "General",
+            description: "Notifications for messages and updates",
+            importance: 5,
+            visibility: 1,
+            vibration: true,
+          });
+        } catch (chErr) {
+          console.warn("[Push] Error creating notification channel:", chErr);
+        }
 
         const permStatus = await PushNotifications.checkPermissions();
         if (permStatus.receive === "prompt") {
@@ -56,16 +95,30 @@ export function NativePushProvider() {
         });
 
         await PushNotifications.addListener("pushNotificationReceived", (notification) => {
-          console.log("[Push] Notification received:", notification);
+          console.log("[Push] Notification received in foreground:", notification);
+          const route = getTargetRoute(notification.data);
           if (notification.title) {
             toast(notification.title, {
               description: notification.body,
+              action: route
+                ? {
+                    label: "Open",
+                    onClick: () => {
+                      router.push(route);
+                    },
+                  }
+                : undefined,
+              duration: 6000,
             });
           }
         });
 
         await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
           console.log("[Push] Notification action performed:", action);
+          const route = getTargetRoute(action.notification?.data);
+          if (route) {
+            router.push(route);
+          }
         });
       } catch (err) {
         console.warn("[Push] Native push initialization skipped or failed:", err);
@@ -73,7 +126,7 @@ export function NativePushProvider() {
     }
 
     initPush();
-  }, [user]);
+  }, [user, router]);
 
   // When user logs in or changes, register any existing token with the backend
   useEffect(() => {

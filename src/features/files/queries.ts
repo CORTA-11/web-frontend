@@ -39,6 +39,9 @@ export function useDeleteFile(teamId: string, orgId: string) {
 export function useDownloadFile(teamId: string, orgId: string) {
   return useMutation({
     mutationFn: (file: StoredFile) => filesApi.download(teamId, orgId, file),
+    onSuccess: (_, file) => {
+      toast.success(`Decrypted and opened ${file.name}`);
+    },
     onError: notifyError,
   });
 }

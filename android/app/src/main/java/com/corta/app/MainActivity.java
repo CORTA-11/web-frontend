@@ -1,6 +1,7 @@
 package com.corta.app;
 
 import android.os.Bundle;
+import android.webkit.CookieManager;
 import com.getcapacitor.BridgeActivity;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -22,5 +23,35 @@ public class MainActivity extends BridgeActivity {
             e.printStackTrace();
         }
         super.onCreate(savedInstanceState);
+
+        try {
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.setAcceptCookie(true);
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                cookieManager.setAcceptThirdPartyCookies(getBridge().getWebView(), true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            CookieManager.getInstance().flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        try {
+            CookieManager.getInstance().flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
