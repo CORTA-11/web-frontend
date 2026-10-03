@@ -18,7 +18,7 @@ export function TeamSettingsPage({ orgId, teamId }: { orgId: string; teamId: str
         {(data) => can(actor, "team:settings")
           ? (
             <div key={teamId} className="flex flex-col gap-6">
-              {can(actor, "team:rename") && <TeamNameForm orgId={orgId} team={data} />}
+              {can(actor, "team:rename") && <TeamNameForm key={JSON.stringify([data.name, data.description])} orgId={orgId} team={data} />}
               <TeamAISettingsForm orgId={orgId} teamId={teamId} />
               <TeamKeyRotation orgId={orgId} teamId={teamId} />
               {can(actor, "team:delete") && <TeamDeletion orgId={orgId} team={data} />}
