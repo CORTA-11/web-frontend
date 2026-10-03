@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { BellIcon, LogOutIcon } from "lucide-react";
+import { LogOutIcon } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -17,7 +15,6 @@ const ROLE_LABEL = { ORG_ADMIN: "Organisation admin", ORG_MEMBER: "Member" };
 
 export function ProfileMenu() {
   const { user } = useSession();
-  const { orgId } = useParams<{ orgId: string }>();
   const logout = useLogout();
 
   if (!user) return null;
@@ -43,15 +40,6 @@ export function ProfileMenu() {
           </span>
         </div>
         <DropdownMenuSeparator />
-        {/* {orgId && (
-          <>
-            <DropdownMenuItem render={<Link href={`/orgs/${orgId}/notifications`} />}>
-              <BellIcon />
-              Notification settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )} */}
         <TimeZoneSelector />
         <DropdownMenuSeparator />
         <AccentMenu />
