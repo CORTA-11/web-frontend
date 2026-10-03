@@ -6,15 +6,15 @@ import { useSession } from "@/features/auth/session";
 import { api } from "@/lib/http";
 import { toast } from "sonner";
 
-function getTargetRoute(data: Record<string, any> | undefined): string | null {
+function getTargetRoute(data: Record<string, unknown> | undefined): string | null {
   if (!data) return null;
-  if (data.route) return data.route;
-  if (data.team_id && data.org_id) {
+  if (typeof data.route === "string" && data.route.startsWith("/") && !data.route.startsWith("//")) return data.route;
+  if (typeof data.team_id === "string" && typeof data.org_id === "string") {
     if (data.type === "file") {
       return `/orgs/${data.org_id}/teams/${data.team_id}/files`;
     }
     if (data.type === "doc" || data.type === "document") {
-      return data.doc_id
+      return typeof data.doc_id === "string"
         ? `/orgs/${data.org_id}/teams/${data.team_id}/docs/${data.doc_id}`
         : `/orgs/${data.org_id}/teams/${data.team_id}/docs`;
     }
@@ -23,7 +23,7 @@ function getTargetRoute(data: Record<string, any> | undefined): string | null {
     }
     return `/orgs/${data.org_id}/teams/${data.team_id}/chat`;
   }
-  if (data.org_id) {
+  if (typeof data.org_id === "string") {
     return `/orgs/${data.org_id}`;
   }
   return null;
@@ -72,10 +72,7 @@ export function NativePushProvider() {
           return;
         }
 
-        await PushNotifications.register();
-
         await PushNotifications.addListener("registration", (token) => {
-          console.log("[Push] FCM Device Token:", token.value);
           try {
             localStorage.setItem("corta_fcm_token", token.value);
           } catch {
@@ -95,7 +92,6 @@ export function NativePushProvider() {
         });
 
         await PushNotifications.addListener("pushNotificationReceived", (notification) => {
-          console.log("[Push] Notification received in foreground:", notification);
           const route = getTargetRoute(notification.data);
           if (notification.title) {
             toast(notification.title, {
@@ -114,12 +110,12 @@ export function NativePushProvider() {
         });
 
         await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-          console.log("[Push] Notification action performed:", action);
           const route = getTargetRoute(action.notification?.data);
           if (route) {
             router.push(route);
           }
         });
+        await PushNotifications.register();
       } catch (err) {
         console.warn("[Push] Native push initialization skipped or failed:", err);
       }

@@ -217,8 +217,8 @@ export const filesApi = {
             url: savedFile.uri,
             dialogTitle: `Open or Save ${file.name}`,
           });
-        } catch (shareErr) {
-          console.log("[Files] Share dialog closed/cancelled:", shareErr);
+        } catch {
+          // Closing the native share dialog completes this interaction.
         }
         return;
       }
@@ -239,8 +239,8 @@ export const filesApi = {
           });
           return;
         }
-      } catch (shareErr: any) {
-        if (shareErr.name === "AbortError") {
+      } catch (shareErr) {
+        if (shareErr instanceof Error && shareErr.name === "AbortError") {
           return; // User cancelled the Android share dialog
         }
         console.warn("[Files] Web Share failed, falling back to download link:", shareErr);
