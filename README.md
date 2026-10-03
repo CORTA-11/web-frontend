@@ -61,5 +61,4 @@ documents or downloading files requires current team membership and a creator
 grant; organization administration alone does not grant access to team content.
 
 Feature code lives in `src/features`, shared helpers in `src/lib`, and routes in
-`src/app`. See [the API contract](API_Contract.md) and
-[content access rules](https://github.com/CORTA-11/core-api/blob/main/docs/content-access.md).
+`src/app`. See [the API contract](API_Contract.md).

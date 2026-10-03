@@ -131,7 +131,7 @@ Not on web, per SRS 3.1.10: push notifications, private sticky notes, quick capt
 deletes itself as the backend lands. That is above the 5,000-line target set
 before the platform tier, the privacy gates and the AI module were added; every
 file is still under 200 lines except `lib/types.ts` (the contract mirror, which
-declares no behaviour and is a documented exception in `AGENTS.md`).
+declares no behaviour).
 
 ## 8. Backend asks
 
