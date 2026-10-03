@@ -31,7 +31,7 @@ type LiveTask = { id: string; description: string; details?: string; status: str
  * Live mode exposes only the three statuses core-api v1 can store. Review is a
  * frontend idea the backend cannot represent; offering the column and then
  * silently collapsing it into in_progress on read would read as a drag that
- * fails, so the gap is surfaced by omitting it (API_Contract.md board section).
+ * fails, so the live board omits that column.
  */
 const LIVE_COLUMNS: Column[] = [
   { id: "backlog", title: "Backlog", task_ids: [] },

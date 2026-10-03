@@ -1,15 +1,7 @@
-/**
- * The AES-256 key used for client-side file encryption, kept in the browser.
- *
- * Every browser seeds the same fixed key for now. Real key generation, wrapping
- * and per-team exchange is still an open decision (PLAN.md §8.10), so this is a
- * development key and nothing in the UI claims otherwise. It is the one secret
- * the app persists: the access token stays in memory (`lib/token.ts`) and the
- * refresh token is httpOnly.
- */
+/** Development key for mock file storage. Live files use per-team wrapped keys. */
 const STORAGE_KEY = "corta.file-key";
 
-/** Placeholder 256-bit key, base64. Shared by every client until keys are generated. */
+/** Placeholder 256-bit key, base64. Used only by the mock storage path. */
 const FIXED_KEY = "mOa+YAJZ/k6K44ZZN3HYJScmvuQ7uFfLljWDie9VYeo=";
 
 let cached: Promise<CryptoKey> | null = null;

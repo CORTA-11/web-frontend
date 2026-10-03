@@ -1,8 +1,4 @@
-/**
- * The wire contract, in TypeScript. This file mirrors API_Contract.md one to
- * one and is the only definition of a payload shape — features and mock
- * handlers both import from here, so they cannot drift apart.
- */
+/** Shared frontend payload types, used by feature adapters and mock handlers. */
 
 export type OrgRole = "ORG_ADMIN" | "ORG_MEMBER";
 /** Operator of the whole deployment, above any single tenant. */
