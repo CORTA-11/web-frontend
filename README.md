@@ -1,93 +1,65 @@
-# CORTA — web frontend
+# Synodus web frontend
 
-Next.js app for the privacy-preserving collaborative resource and task
-orchestrator. See `PLAN.md` for the build plan and `API_Contract.md` for the wire
-format.
+Next.js application for organizations, teams, tasks, chat, documents, and files.
+For the complete local stack, use the
+[infra installer](https://github.com/CORTA-11/infra#local-setup).
 
-## Run it
+## Source development
+
+Use Node.js 22+ and start the backend and realtime services first:
 
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
 npm run dev
 ```
 
-Open <http://localhost:3000>.
+Open <http://localhost:3000>. The example configuration uses core-api at
+`localhost:8080` and WebSockets through Envoy at `localhost:10000`.
+`docker-compose.yaml` provides the source-build workflow on `synodus-network`.
 
-Out of the box the app runs entirely against an in-browser mock server (MSW), so
-no backend is needed to click through every screen.
+## Live API and mocks
 
-### Accounts
+`NEXT_PUBLIC_LIVE_MODULES` selects which modules call core-api. The example
+configuration enables auth, teams, AI, board, chat, files, resources, and
+documents; unlisted modules remain mocked. Set it to `all` for all live modules,
+or clear it for mock development. `NEXT_PUBLIC_MOCKS=on` forces mocks.
 
-All passwords are `password123`.
+`API_PROXY_TARGET` sets the backend behind the `/api` proxy. Browser WebSockets
+use the page origin when `NEXT_PUBLIC_WS_BASE_URL` is unset; the example points
+them at local Envoy. `NEXT_PUBLIC_*` values are embedded at build time.
+
+Mock accounts use password `synodus-demo-password`:
 
 | Account | Role |
-|---|---|
-| `platform@corta.dev` | Platform operator — approves and suspends organisations |
-| `admin@aratuwa.edu` | Organisation admin — teams, resources, people, settings |
-| `leader@aratuwa.edu` | Team leader of Neural Imaging |
-| `member@aratuwa.edu` | Team member in three teams |
+| --- | --- |
+| `platform@corta.dev` | Platform operator |
+| `admin@aratuwa.edu` | Organization admin |
+| `leader@aratuwa.edu` | Team leader |
+| `member@aratuwa.edu` | Team member |
 
-Organisation join ID for registration: `aratuwa`.
+These accounts belong to mock mode; register an account for a fresh live stack.
 
-## Going live, module by module
-
-`NEXT_PUBLIC_LIVE_MODULES` decides which modules skip the mock server and hit
-core-api through the `/api` proxy:
-
-```env
-NEXT_PUBLIC_LIVE_MODULES=auth,teams,ai,board,chat,docs,files,resources
-NEXT_PUBLIC_WS_BASE_URL=ws://localhost:10000
-```
-
-Anything not listed stays mocked. `all` switches everything over. Chat live
-mode uses core-api for history/send/delete and fetches a short-lived socket
-ticket before connecting to socket-server at `NEXT_PUBLIC_WS_BASE_URL`.
-Documents live mode uses core-api for the catalog and ticket issuance, then
-connects the Tiptap/Yjs editor to `/ws/docs` at the same WebSocket base URL.
-Title, body, Presence, reconnect merge, and persistence are handled in that
-Document Room; the REST projection is the initial catalog/read fallback.
-When `NEXT_PUBLIC_WS_BASE_URL` is unset, chat and Documents connect through the
-same host as the page, using `wss:` for HTTPS and `ws:` for HTTP. Set the variable
-at build time only when WebSockets use a separate public endpoint.
-
-For Docker, start the backend stack first, then run:
+## Checks
 
 ```bash
-docker compose up --build -d web
+npm run lint
+npx tsc --noEmit
+npm run test:unit
+npx playwright install chromium   # once
+npx playwright test              # mock browser tests
+npm run test:live                # running API and realtime stack required
+npm run build
 ```
 
-## Tests
+## Content security
 
-```bash
-npx playwright install chromium   # first run only
-npx playwright test
-```
+File contents are encrypted in the browser with AES-256-GCM. Account RSA keys
+are stored sealed on the server; the device keeps an unsealed private key per
+account in localStorage. Team keys rotate with membership changes. Opening
+documents or downloading files requires current team membership and a creator
+grant; organization administration alone does not grant access to team content.
 
-31 specs covering sign-in, teams and membership rules, the Kanban board
-(including keyboard drag), chat, resource approval, documents, file upload and
-the encrypt/decrypt round trip, the platform console, and the privacy boundaries
-between the three tiers.
-
-## File encryption
-
-File contents are encrypted in the browser with AES-256-GCM before upload and
-decrypted after download (`lib/crypto.ts`), so the server stores ciphertext and
-sees `application/vnd.corta.encrypted` as the content type. The key is held in
-the browser (`localStorage`, key `corta.file-key`) by `lib/keystore.ts`.
-
-It is a **fixed development key**, the same in every browser: key generation,
-exchange and rotation are still open (`PLAN.md` §8.10). Clearing the key from
-storage restores the same fixed key, so nothing becomes unreadable — but that
-also means this is not yet end-to-end encryption. Files uploaded before this
-existed, and any written by another client in the clear, still download fine:
-the envelope is detected, not assumed.
-
-## Scripts
-
-| Command | Does |
-|---|---|
-| `npm run dev` | Development server |
-| `npm run build` | Production build |
-| `npm run lint` | ESLint |
-| `npx tsc --noEmit` | Type check |
+Feature code lives in `src/features`, shared helpers in `src/lib`, and routes in
+`src/app`. See [the API contract](API_Contract.md) and
+[content access rules](https://github.com/CORTA-11/core-api/blob/main/docs/content-access.md).
