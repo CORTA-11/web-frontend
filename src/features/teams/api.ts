@@ -63,7 +63,7 @@ export const teamsApi = {
     isLive("teams")
       ? api<LiveTeam>(`/v1/orgs/${orgId}/teams`, {
           method: "POST",
-          json: { name: body.name, leader_email: body.leaderEmail },
+          json: { name: body.name, leader_email: body.leaderEmail, description: body.description },
         }).then(fromLive(orgId))
       : api<Team>(`/orgs/${orgId}/teams`, { method: "POST", json: body }),
 
