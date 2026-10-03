@@ -58,6 +58,8 @@ test("a team leader requests a slot", async ({ page }) => {
 });
 
 test("schedule shows only the resource selected by its inventory tag", async ({ page }) => {
+  // A weekend reproduces the empty default day view for this weekday-only resource.
+  await page.clock.setFixedTime(new Date("2026-10-03T12:00:00Z"));
   await signIn(page, ACCOUNTS.admin);
   await page.getByRole("link", { name: /Aratuwa Research Lab/ }).click();
   await page.getByRole("navigation").getByRole("link", { name: "Resources" }).click();
@@ -72,6 +74,9 @@ test("schedule shows only the resource selected by its inventory tag", async ({ 
   await expect(page.locator(".rbc-calendar")).toBeVisible();
   await expect(page.getByText("A100 node 2", { exact: true })).toBeVisible();
   await expect(page.locator(".rbc-time-header-content .rbc-header")).toHaveCount(1);
+  // Week view includes available weekdays regardless of the day the checks run.
+  await page.getByRole("button", { name: "Week", exact: true }).click();
+  await expect(page.locator(".rbc-time-header-content .rbc-header")).toHaveCount(7);
   await expect(page.locator(".rbc-background-event").first()).toBeVisible();
 });
 
