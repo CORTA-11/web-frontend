@@ -8,7 +8,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 function chromiumExecutable() {
-  if (process.env.CI) return '/usr/bin/chromium';
+  if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH) return process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
   if (existsSync(chromium.executablePath())) return undefined;
   const flatpakPath = 'app/com.google.Chrome/current/active/files/extra/chrome';
   return [
@@ -53,11 +53,5 @@ export default defineConfig({
         launchOptions: { executablePath: chromiumExecutable() },
       },
     },
-    
-    /* Commented out because system Firefox lacks the required Juggler patches */
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
   ],
 });
